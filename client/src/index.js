@@ -1,27 +1,38 @@
-import sample from './sample_grpc_web_pb'
+import pb from './sample_grpc_web_pb'
+const { Elm } = require('./main.elm')
 
-const greeter = new sample.GreeterPromiseClient('http://localhost:50051')
-const req = new sample.HelloRequest()
-req.setName('World')
-greeter.sayHello(req)
-    .then((res) => {
-            console.log(res)
-            console.log(res.array)
-        })
-    .catch((err) => {
-            console.error(err)
-        })
+const endpoint = 'http://localhost:50051'
+const client = new pb.GreeterPromiseClient(endpoint)
+const app = Elm.Main.init({
+  node: document.getElementById('app'),
+  // Elmにわたすもの
+  flags: "Hoge"
+})
 
-const stream = greeter.sayHelloManyTimes(req)
+// Elm -> JS
+app.ports.toJS.subscribe(async data => {
+  console.log(data)
+  // gRPC Unary RPCs
+  const req = new pb.HelloRequest()
+  req.setName('Unary RPC')
+  const { array } = await client.sayHello(req)
+    .catch(console.error)
 
-stream.on('data', function(response) {
-  console.log(response.getMessage());
-});
-stream.on('status', function(status) {
-  console.log(status.code);
-  console.log(status.details);
-  console.log(status.metadata);
-});
-stream.on('end', function(end) {
-  // stream end signal
-});
+  // JS -> Elm
+  app.ports.toElm.send(array[0])
+})
+
+// Server Streaming RPCs
+const req = new pb.HelloRequest()
+req.setName('Server Stream')
+const stream = client.sayHelloManyTimes(req)
+
+stream.on('data', res => {
+  const data = res.getMessage()
+  // JS -> Elm
+  app.ports.toElm.send(data)
+})
+
+stream.on('status', status => {
+  console.log(status)
+})

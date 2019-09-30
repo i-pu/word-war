@@ -4,15 +4,16 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "webpack-dev-server --content-base ./ --watch-content-base"
+    "start": "parcel index.html"
   },
   "devDependencies": {
-    "webpack": "^4.41.0",
-    "webpack-cli": "^3.3.9",
-    "webpack-dev-server": "^3.8.1"
+    "elm-hot": "^1.1.2",
+    "node-elm-compiler": "^5.0.4",
+    "parcel-bundler": "^1.12.3"
   },
   "dependencies": {
     "google-protobuf": "^3.9.2",
     "grpc-web": "^1.0.6"
-  }
+  },
+  "browserslist": ["last 1 Chrome versions"]
 }
