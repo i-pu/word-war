@@ -1,4 +1,10 @@
 import pb from './sample_grpc_web_pb'
+import firebase from 'firebase'
+import auth from 'firebase/auth'
+import credential from '../credential'
+
+firebase.initializeApp(credential)
+
 const { Elm } = require('./main.elm')
 
 const endpoint = 'http://localhost:50051'
@@ -10,7 +16,7 @@ const app = Elm.Main.init({
 })
 
 // Elm -> JS
-app.ports.toJS.subscribe(async data => {
+app.ports.toJS.subscribe(async (data) => {
   console.log(data)
   // gRPC Unary RPCs
   const req = new pb.HelloRequest()
@@ -21,6 +27,31 @@ app.ports.toJS.subscribe(async data => {
 
   // JS -> Elm
   app.ports.toElm.send({ name: array[0], message: array[1] })
+})
+
+app.ports.signinWithFirebase.subscribe(async ({ email, password }) => {
+  const auth = await firebase.auth()
+    .signInWithEmailAndPassword(email, password)
+    .catch(console.error)
+
+  if (!auth) {
+    return
+  }
+
+  app.ports.signinCallback.send({ uid: auth.user.uid })
+})
+
+app.ports.signupWithFirebase.subscribe(async ({ email, password }) => {
+  console.log({ email, password })
+  const auth = await firebase.auth()
+    .createUserWithEmailAndPassword(email, password)
+    .catch(console.error)
+
+  if (!auth) {
+    return
+  }
+
+  app.ports.signinCallback.send({ uid: auth.user.uid })
 })
 
 // Server Streaming RPCs
