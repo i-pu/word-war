@@ -3,30 +3,37 @@ package main
 import (
 	"context"
 	"fmt"
-	pb "github.com/i-pu/word-war/server/pb"
-	"github.com/improbable-eng/grpc-web/go/grpcweb"
-	"google.golang.org/grpc"
 	"log"
 	"net/http"
 	"time"
+
+	pb "github.com/i-pu/word-war/server/pb"
+	"github.com/improbable-eng/grpc-web/go/grpcweb"
+	"google.golang.org/grpc"
 )
 
 type gRPCServer struct{}
 
 func (s *gRPCServer) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloResponse, error) {
 	res := pb.HelloResponse{
-		Message: "Hello " + in.Name,
+		Name:    in.Name,
+		Message: in.Message,
 	}
+	log.Printf("[SayHello] name: %v, message: %v", in.Name, in.Message)
 	return &res, nil
 }
 
 func (s *gRPCServer) SayHelloManyTimes(in *pb.HelloRequest, srv pb.Greeter_SayHelloManyTimesServer) error {
 	for i := 0; i < 5; i++ {
-		if err := srv.Send(&pb.HelloResponse{
-			Message: "Hello " + in.Name + " Many times: " + fmt.Sprintf("%d", i),
-		}); err != nil {
+		res := pb.HelloResponse{
+			Name:    in.Name,
+			Message: "Many times: " + fmt.Sprintf("%d", i),
+		}
+		err := srv.Send(&res)
+		if err != nil {
 			return err
 		}
+		log.Printf("[SayHello] name: %v, message: %v", in.Name, in.Message)
 		time.Sleep(5 * time.Second)
 	}
 
@@ -44,7 +51,7 @@ func main() {
 		grpcServer,
 		// CORS対策
 		grpcweb.WithOriginFunc(func(origin string) bool {
-			log.Printf("origin: %v", origin)
+			// log.Printf("origin: %v", origin)
 			return true
 		}),
 	)
@@ -60,7 +67,7 @@ func main() {
 			// Fall back to other servers.
 			// http.DefaultServeMux.ServeHTTP(resp, req)
 			wrappedGrpc.ServeHTTP(resp, req)
-			log.Printf("req: %+v", req)
+			// log.Printf("req: %+v", req)
 		},
 	)
 	if err := httpServer.ListenAndServe(); err != nil {

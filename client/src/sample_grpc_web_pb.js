@@ -88,25 +88,6 @@ proto.sample.GreeterPromiseClient =
 
 /**
  * @const
- * @type {!grpc.web.MethodDescriptor<
- *   !proto.sample.HelloRequest,
- *   !proto.sample.HelloResponse>}
- */
-const methodDescriptor_Greeter_SayHello = new grpc.web.MethodDescriptor(
-  '/sample.Greeter/SayHello',
-  grpc.web.MethodType.UNARY,
-  proto.sample.HelloRequest,
-  proto.sample.HelloResponse,
-  /** @param {!proto.sample.HelloRequest} request */
-  function(request) {
-    return request.serializeBinary();
-  },
-  proto.sample.HelloResponse.deserializeBinary
-);
-
-
-/**
- * @const
  * @type {!grpc.web.AbstractClientBase.MethodInfo<
  *   !proto.sample.HelloRequest,
  *   !proto.sample.HelloResponse>}
@@ -137,7 +118,7 @@ proto.sample.GreeterClient.prototype.sayHello =
       '/sample.Greeter/SayHello',
       request,
       metadata || {},
-      methodDescriptor_Greeter_SayHello,
+      methodInfo_Greeter_SayHello,
       callback);
 };
 
@@ -156,27 +137,8 @@ proto.sample.GreeterPromiseClient.prototype.sayHello =
       '/sample.Greeter/SayHello',
       request,
       metadata || {},
-      methodDescriptor_Greeter_SayHello);
+      methodInfo_Greeter_SayHello);
 };
-
-
-/**
- * @const
- * @type {!grpc.web.MethodDescriptor<
- *   !proto.sample.HelloRequest,
- *   !proto.sample.HelloResponse>}
- */
-const methodDescriptor_Greeter_SayHelloManyTimes = new grpc.web.MethodDescriptor(
-  '/sample.Greeter/SayHelloManyTimes',
-  grpc.web.MethodType.SERVER_STREAMING,
-  proto.sample.HelloRequest,
-  proto.sample.HelloResponse,
-  /** @param {!proto.sample.HelloRequest} request */
-  function(request) {
-    return request.serializeBinary();
-  },
-  proto.sample.HelloResponse.deserializeBinary
-);
 
 
 /**
@@ -208,7 +170,7 @@ proto.sample.GreeterClient.prototype.sayHelloManyTimes =
       '/sample.Greeter/SayHelloManyTimes',
       request,
       metadata || {},
-      methodDescriptor_Greeter_SayHelloManyTimes);
+      methodInfo_Greeter_SayHelloManyTimes);
 };
 
 
@@ -225,7 +187,7 @@ proto.sample.GreeterPromiseClient.prototype.sayHelloManyTimes =
       '/sample.Greeter/SayHelloManyTimes',
       request,
       metadata || {},
-      methodDescriptor_Greeter_SayHelloManyTimes);
+      methodInfo_Greeter_SayHelloManyTimes);
 };
 
 

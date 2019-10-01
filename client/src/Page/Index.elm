@@ -7,13 +7,18 @@ import Html.Attributes exposing (..)
 import Id exposing (Id)
 import Route
 
-port toJS : String -> Cmd msg
-port toElm : ( String -> msg ) -> Sub msg
+port toJS : Message -> Cmd msg
+port toElm : ( Message -> msg ) -> Sub msg
+
+type alias Message =
+  { name : String
+  , message : String
+  }
 
 type alias Model =
   { env : Env
   , input : String
-  , messages : List String
+  , messages : List Message
   }
 
 init : Env -> ( Model, Cmd Msg )
@@ -25,7 +30,7 @@ init env =
 type Msg
   = InputChange String
   | SendToJS
-  | NewMessage String
+  | NewMessage Message
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -33,7 +38,7 @@ update msg model =
     InputChange newInput ->
       ({ model | input = newInput }, Cmd.none)
     SendToJS ->
-      ({ model | input = "" }, toJS model.input)
+      ({ model | input = "" }, toJS ({ name = "hoge", message = model.input}))
     NewMessage incoming ->
       ({ model | messages = model.messages ++ [ incoming ] }, Cmd.none)
 
@@ -54,12 +59,12 @@ view model =
     ]
   }
 
-viewMessages : List String -> Html Msg
+viewMessages : List Message -> Html Msg
 viewMessages messages =
   ul []
     (List.map viewMessage messages)
 
-viewMessage : String -> Html Msg
+viewMessage : Message -> Html Msg
 viewMessage message =
   li []
-    [ text message ]
+    [ text (message.name ++ ":" ++ message.message) ]
