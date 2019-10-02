@@ -8,12 +8,10 @@ import Id exposing (Id)
 import Route
 
 -- to JS
-port toJS : Message -> Cmd msg
 port signupWithFirebase : ({ email : String, password : String }) -> Cmd msg
 port signinWithFirebase : ({ email : String, password : String }) -> Cmd msg
 
 -- from JS
-port toElm : ( Message -> msg ) -> Sub msg
 port signinCallback : ( User -> msg) -> Sub msg
 
 type alias User =
@@ -30,24 +28,19 @@ type alias Model =
   , uid : String
   , emailInput : String
   , passwordInput : String
-  , messageInput : String
-  , messages : List Message
   }
 
 init : Env -> ( Model, Cmd Msg )
 init env =
-  ( Model env "" "" "" "" []
+  ( Model env "" "" ""
   , Cmd.none
   )
 
 type Msg
-  = MessageInputChange String
-  | EmailInputChange String
+  = EmailInputChange String
   | PasswordInputChange String
   | OnClickSignUpButton
   | OnClickSignInButton
-  | SendToJS
-  | NewMessage Message
   | OnSignin User
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -81,87 +74,69 @@ update msg model =
           }
         )
       )
-    MessageInputChange newInput ->
-      ({ model | messageInput = newInput }, Cmd.none)
-    SendToJS ->
-      ({ model | messageInput = "" }, toJS ({ name = "hoge", message = model.messageInput}))
-    NewMessage incoming ->
-      ({ model | messages = model.messages ++ [ incoming ] }, Cmd.none)
     OnSignin user ->
       ({ model | uid = user.uid }, Cmd.none)
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
   Sub.batch
-    [ toElm NewMessage
-    , signinCallback OnSignin
+    [ signinCallback OnSignin
     ]
 
 view : Model -> { title : String, body : List (Html Msg) }
 view model =
   { title = "test | top"
   , body =
-    [ div [ class "container is-fluid" ]
-        [ section [ class "hero is-primary" ]
-          [ div [ class "container" ]
-            [ h1 [ class "title" ] [ text "Primary title" ] ]
-          ]
-        , h3 [] [ text "Signup with firebase/auth" ]
-        , signupForm model
-        , h3 [] [ text "Messages" ]
-        , viewMessages model.messages
-        , input [ type_ "text"
-          , onInput MessageInputChange
-          , value model.messageInput
-          ] []
-        , button [ onClick SendToJS ] [ text "Send" ]
-        ]
+    [ hero
+    , div [ class "container" ] (signupForm model)
     ]
   }
 
-signupForm : Model -> Html Msg
+hero : Html Msg
+hero =
+  section [ class "hero is-primary" ]
+    [ div [ class "hero-body" ]
+      [ div [ class "container" ]
+        [ h1 [ class "title" ]
+          [ text "Word War" ]
+        , h2 [ class "subtitle" ]
+          [ text "リアルタイムしりとり" ]
+        ]
+      ]
+    ]
+
+signupForm : Model -> List (Html Msg)
 signupForm model =
-  div [ class "tile"] 
-    [ h4 [] [ text ("uid: " ++ model.uid) ]
-    , div [ class "field" ]
-      [ label [ class "label" ] [ text "Username" ]
-      , div [ class "control has-icons-left has-icons-right" ]
-        [ input [ class "input is-success", type_ "text", placeholder "Text input", value model.emailInput, onInput EmailInputChange ]
+  [ div [ class "field" ]
+    [ label [ class "label" ] [ text "Username" ]
+    , div [ class "control has-icons-left has-icons-right" ]
+      [ input [ class "input is-success", type_ "text", placeholder "Text input", value model.emailInput, onInput EmailInputChange ]
+        []
+      , span [ class "icon is-small is-left" ]
+        [ i [ class "fas fa-envelope" ] 
           []
-        , span [ class "icon is-small is-left" ]
-          [ i [ class "fas fa-envelope" ] 
-            []
-          ]
         ]
       ]
-    , div [ class "field" ]
-      [ p [ class "control has-icons-left" ]
-        [ input [ class "input", type_ "password", placeholder "Password", value model.passwordInput, onInput PasswordInputChange ]
+    ]
+  , div [ class "field" ]
+    [ label [ class "label" ] [ text "Password" ]
+    , div [ class "control has-icons-left" ]
+      [ input [ class "input", type_ "password", placeholder "Password", value model.passwordInput, onInput PasswordInputChange ]
+        []
+      , span [ class "icon is-small is-left" ]
+        [ i [ class "fas fa-lock" ]
           []
-        , span [ class "icon is-small is-left" ]
-          [ i [ class "fas fa-lock" ]
-            []
-          ]
         ]
       ]
-    , div [ class "field is-grouped" ]
-      [ div [ class "control" ]
-        [ button [ class "button is-success", onClick OnClickSignInButton ]
-          [ text "Signin" ]
-        ]
-      , div [ class "control" ]
-        [ button [ class "button", onClick OnClickSignUpButton ]
-          [ text "Signup" ]
-        ]
+    ]
+  , div [ class "field is-grouped" ]
+    [ div [ class "control" ]
+      [ button [ class "button is-success", onClick OnClickSignInButton ]
+        [ text "Signin" ]
       ]
+    , div [ class "control" ]
+      [ button [ class "button", onClick OnClickSignUpButton ]
+        [ text "Signup" ]
+      ]
+    ]
   ]
-
-viewMessages : List Message -> Html Msg
-viewMessages messages =
-  ul []
-    (List.map viewMessage messages)
-
-viewMessage : Message -> Html Msg
-viewMessage message =
-  li []
-    [ text (message.name ++ ":" ++ message.message) ]
