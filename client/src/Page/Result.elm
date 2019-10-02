@@ -39,5 +39,18 @@ view : Model -> { title : String, body : List (Html Msg) }
 view model =
   { title = "test | result"
   , body =
-    [ div [] [] ]
+    [ hero
+    , a [ Route.href <| Route.Home ] [ text "/home" ]
+    ]
   }
+
+hero : Html Msg
+hero =
+  section [ class "hero is-primary" ]
+    [ div [ class "hero-body" ]
+      [ div [ class "container" ]
+        [ h1 [ class "title" ]
+          [ text "Result" ]
+        ]
+      ]
+    ]

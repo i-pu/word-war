@@ -58,9 +58,21 @@ view model =
         , value model.messageInput
         ] []
       , button [ onClick SendToJS ] [ text "Send" ]
+      , a [ Route.href <| Route.Result ] [ text "/result" ]
       ]
     ]
   }
+
+hero : Html Msg
+hero =
+  section [ class "hero is-primary" ]
+    [ div [ class "hero-body" ]
+      [ div [ class "container" ]
+        [ h1 [ class "title" ]
+          [ text "Game" ]
+        ]
+      ]
+    ]
 
 viewMessages : List Message -> Html Msg
 viewMessages messages =

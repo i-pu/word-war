@@ -89,6 +89,7 @@ view model =
   , body =
     [ hero
     , div [ class "container" ] (signupForm model)
+    , a [ Route.href <| Route.Home ] [ text "/home" ]
     ]
   }
 
