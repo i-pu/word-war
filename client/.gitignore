@@ -3,3 +3,4 @@ elm-stuff/
 dist/
 yarn.lock
 credential.js
+.cache
