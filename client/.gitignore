@@ -3,4 +3,5 @@ elm-stuff/
 dist/
 yarn.lock
 credential.js
+.firebase/
 .cache

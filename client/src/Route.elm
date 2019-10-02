@@ -4,6 +4,7 @@ import Html exposing (Attribute)
 import Html.Attributes as Attr
 import Id exposing (Id)
 import Url exposing (Url)
+import Env exposing (Env)
 import Url.Parser as Parser exposing ((</>), Parser)
 
 type Route
@@ -20,7 +21,6 @@ parser =
         , Parser.map Game (Parser.s "game")
         , Parser.map Result (Parser.s "result")
         ]
-
 
 fromUrl : Url -> Maybe Route
 fromUrl url =
