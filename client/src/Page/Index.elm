@@ -117,20 +117,37 @@ signupForm : Model -> Html Msg
 signupForm model =
   div [] 
     [ h4 [] [ text ("uid: " ++ model.uid) ]
-    , input [ type_ "text"
-      , placeholder "email"
-      , onInput EmailInputChange
-      , value model.emailInput
-      ] []
-    , br [] []
-    , input [ type_ "password"
-      , placeholder "password"
-      , onInput PasswordInputChange
-      , value model.passwordInput
-      ] []
-    , br [] []
-    , button [ onClick OnClickSignInButton ] [ text "Sign in" ]
-    , button [ onClick OnClickSignUpButton ] [ text "Sign up" ]
+    , div [ class "field" ]
+      [ label [ class "label" ] [ text "Username" ]
+      , div [ class "control has-icons-left has-icons-right" ]
+        [ input [ class "input is-success", type_ "text", placeholder "Text input", value model.emailInput, onInput EmailInputChange ]
+          []
+        , span [ class "icon is-small is-left" ]
+          [ i [ class "fas fa-envelope" ] 
+            []
+          ]
+        ]
+      ]
+    , div [ class "field" ]
+      [ p [ class "control has-icons-left" ]
+        [ input [ class "input", type_ "password", placeholder "Password", value model.passwordInput, onInput PasswordInputChange ]
+          []
+        , span [ class "icon is-small is-left" ]
+          [ i [ class "fas fa-lock" ]
+            []
+          ]
+        ]
+      ]
+    , div [ class "field is-grouped" ]
+      [ div [ class "control" ]
+        [ button [ class "button is-success", onClick OnClickSignInButton ]
+          [ text "Signin" ]
+        ]
+      , div [ class "control" ]
+        [ button [ class "button", onClick OnClickSignUpButton ]
+          [ text "Signup" ]
+        ]
+      ]
   ]
 
 viewMessages : List Message -> Html Msg
