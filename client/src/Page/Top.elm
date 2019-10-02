@@ -1,4 +1,4 @@
-port module Page.Index exposing (Model, Msg, init, subscriptions, update, view)
+port module Page.Top exposing (Model, Msg, init, subscriptions, update, view)
 
 import Env exposing (Env)
 import Html exposing (..)
@@ -99,23 +99,29 @@ subscriptions _ =
 
 view : Model -> { title : String, body : List (Html Msg) }
 view model =
-  { title = "test | infex"
+  { title = "test | top"
   , body =
-    [ h3 [] [ text "Signup with firebase/auth" ]
-    , signupForm model
-    , h3 [] [ text "Messages" ]
-    , viewMessages model.messages
-    , input [ type_ "text"
-      , onInput MessageInputChange
-      , value model.messageInput
-      ] []
-    , button [ onClick SendToJS ] [ text "Send" ]
+    [ div [ class "container is-fluid" ]
+        [ section [ class "hero is-primary" ]
+          [ div [ class "container" ]
+            [ h1 [ class "title" ] [ text "Primary title" ] ]
+          ]
+        , h3 [] [ text "Signup with firebase/auth" ]
+        , signupForm model
+        , h3 [] [ text "Messages" ]
+        , viewMessages model.messages
+        , input [ type_ "text"
+          , onInput MessageInputChange
+          , value model.messageInput
+          ] []
+        , button [ onClick SendToJS ] [ text "Send" ]
+        ]
     ]
   }
 
 signupForm : Model -> Html Msg
 signupForm model =
-  div [] 
+  div [ class "tile"] 
     [ h4 [] [ text ("uid: " ++ model.uid) ]
     , div [ class "field" ]
       [ label [ class "label" ] [ text "Username" ]

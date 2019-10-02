@@ -7,14 +7,18 @@ import Url exposing (Url)
 import Url.Parser as Parser exposing ((</>), Parser)
 
 type Route
-    = Index
-    -- | View
+    = Top
+    | Home
+    | Game
+    | Result
 
 parser : Parser (Route -> a) a
 parser =
     Parser.oneOf
-        [ Parser.map Index Parser.top
-        -- , Parser.map View (Parser.s "view" </> Id.idParser)
+        [ Parser.map Top Parser.top
+        , Parser.map Home (Parser.s "view")
+        , Parser.map Game (Parser.s "game")
+        , Parser.map Result (Parser.s "result")
         ]
 
 
@@ -31,10 +35,13 @@ routeToString page =
     let
         pieces =
             case page of
-                Index ->
+                Top ->
                     []
-
-                -- View id ->
-                --     [ "view", Id.toString id ]
+                Home ->
+                    [ "view" ]
+                Game ->
+                    [ "game" ]
+                Result ->
+                    [ "result" ]
     in
     String.join "/" pieces
