@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package word_war;
+
+service WordWar {
+  rpc Say(SayRequest) returns (SayResponse) {};
+  rpc Game(GameRequest) returns (stream GameResponse) {};
+  rpc Result(ResultRequest) returns (ResultResponse) {};
+}
+
+message SayRequest {
+  string userId = 1;
+  string message = 2;
+}
+
+message SayResponse {
+  string userId = 1;
+  string message = 2;
+}
+
+message GameRequest {
+  string userId = 1;
+}
+
+message GameResponse {
+  string userId = 1;
+  string message = 2;
+}
+
+message ResultRequest {
+  string userId = 1;
+}
+
+message ResultResponse {
+  string userId = 1;
+  string score = 2;
+}
