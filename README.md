@@ -4,6 +4,12 @@
 ```
 ./protoc-gen.sh
 ```
+
+## develop setup
+```
+docker-compose up --build
+```
+
 ## server
 ```
 cd server && go run main.go
