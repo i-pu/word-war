@@ -7,9 +7,8 @@ import (
 )
 
 type MessageUsecase interface {
-	SendMessage(key string, message string) error
-	GetMessage(key string) (string, error)
-	GetNowCounter() (int64, error)
+	SendMessage(key string, message *entity.Message) error
+	GetMessage(key string) (*entity.Message, error)
 }
 
 type messageUsecase struct {
@@ -24,16 +23,15 @@ func NewMessageUsecase(repo repository.MessageRepository, service *service.Messa
 	}
 }
 
-func (u *messageUsecase) SendMessage(key string, mes string) error {
-	message := entity.Message{Message: mes}
-	if err := u.repo.Publish(&message); err != nil {
+func (u *messageUsecase) SendMessage(key string, message *entity.Message) error {
+	if err := u.repo.Publish("message", message); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (u *messageUsecase) GetMessage(key string) (string, error) {
-	return "", nil
+func (u *messageUsecase) GetMessage(key string) (*entity.Message, error) {
+	return nil, nil
 }
 
 func (u *messageUsecase) GetNowCounter() (int64, error) {

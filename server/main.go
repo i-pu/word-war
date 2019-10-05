@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/i-pu/word-war/server/domain/service"
+	"github.com/i-pu/word-war/server/infra"
 	"github.com/i-pu/word-war/server/interface/memory"
 	"github.com/i-pu/word-war/server/interface/rpc"
 	pb "github.com/i-pu/word-war/server/interface/rpc/pb"
@@ -14,6 +15,7 @@ import (
 )
 
 func main() {
+	setUpInfra()
 	grpcServer := setUpGrpc()
 
 	// grpc-webを使うためのコード
@@ -41,9 +43,17 @@ func main() {
 
 func setUpGrpc() *grpc.Server {
 	grpcServer := grpc.NewServer()
-	repo := memory.NewMessageRepository()
-	service := service.NewMessageService(repo)
-	usecase := usecase.NewMessageUsecase(repo, service)
-	pb.RegisterWordWarServer(grpcServer, rpc.NewWordWarService(usecase))
+	mRepo := memory.NewMessageRepository()
+	mService := service.NewMessageService(mRepo)
+	mUsecase := usecase.NewMessageUsecase(mRepo, mService)
+
+	cRepo := memory.NewCounterRepository()
+	cService := service.NewCounterService(cRepo)
+	cUsecase := usecase.NewCounterUsecase(cRepo, cService)
+	pb.RegisterWordWarServer(grpcServer, rpc.NewWordWarService(mUsecase, cUsecase))
 	return grpcServer
+}
+
+func setUpInfra() {
+	infra.InitRedis()
 }
