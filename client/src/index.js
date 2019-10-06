@@ -32,11 +32,13 @@ app.ports.toJS.subscribe(async (data) => {
 app.ports.signinWithFirebase.subscribe(async ({ email, password }) => {
   const auth = await firebase.auth()
     .signInWithEmailAndPassword(email, password)
-    .catch(console.error)
+    .catch(console.log)
 
   if (!auth) {
     return
   }
+
+  console.log(`logged in as ${auth.user.uid}`)
 
   app.ports.signinCallback.send({ uid: auth.user.uid })
 })
@@ -50,6 +52,8 @@ app.ports.signupWithFirebase.subscribe(async ({ email, password }) => {
   if (!auth) {
     return
   }
+
+  console.log(`signed up and logged in as ${auth.user.uid}`)
 
   app.ports.signinCallback.send({ uid: auth.user.uid })
 })
