@@ -7,11 +7,12 @@ type Env
 
 type alias Internals =
     { key : Nav.Key
+    , uid : String
     }
 
 create : Nav.Key -> Env
 create key =
-    Env (Internals key)
+    Env (Internals key "")
 
 
 navKey : Env -> Nav.Key

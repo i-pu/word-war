@@ -7,35 +7,44 @@ import Html.Attributes exposing (..)
 import Id exposing (Id)
 import Route
 
--- to JS
+-- 機能の追加の仕方
+-- 1. type msg に update で使いたいイベントを増やす
+-- 2. update の case にモデルと関数を呼ぶ処理を増やす
+-- 3. view と連携したいのであれば 要素の中の onClickなどにtype msg にあるイベントを書く
+
+-- JS を呼ぶ関数をここに書く
 port signupWithFirebase : ({ email : String, password : String }) -> Cmd msg
 port signinWithFirebase : ({ email : String, password : String }) -> Cmd msg
 
--- from JS
+-- JS から呼ばれる関数をここに書いておく
 port signinCallback : ( User -> msg) -> Sub msg
 
+-- ユーザーモデル
 type alias User =
   { uid : String
   }
 
+-- メッセージモデル
 type alias Message =
   { name : String
   , message : String
   }
 
+-- モデル(画面で扱うデータ)
 type alias Model =
-  { env : Env
-  , uid : String
-  , emailInput : String
-  , passwordInput : String
+  { env : Env -- 全体で共有する環境
+  , emailInput : String -- Emailのテキストボックスの中身
+  , passwordInput : String -- Passwordのテキストボックスの中身
   }
 
 init : Env -> ( Model, Cmd Msg )
 init env =
-  ( Model env "" "" ""
+  -- モデルを初期化
+  ( Model env "" ""
   , Cmd.none
   )
 
+-- 画面内で使う関数をユニオン型で表す
 type Msg
   = EmailInputChange String
   | PasswordInputChange String
@@ -46,22 +55,28 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
+    -- Email テキストボックスの中身が変更された時
     EmailInputChange newInput ->
       ({ model | emailInput = newInput }, Cmd.none)
+    -- Password テキストボックスの中身が変更された時
     PasswordInputChange newInput ->
       ({ model | passwordInput = newInput }, Cmd.none)
+    -- SignUp ボタンがクリックされた時
     OnClickSignUpButton ->
       (
+        -- テキストボックスの中身を空に
         { model 
         | emailInput = ""
         , passwordInput = "" 
         },
+        -- JS の 関数を呼ぶ
         signupWithFirebase (
           { email = model.emailInput
           , password = model.passwordInput
           }
         )
       )
+    -- SignIn ボタンがクリックされた時
     OnClickSignInButton ->
       (
         { model 
@@ -74,25 +89,36 @@ update msg model =
           }
         )
       )
+    -- [ゆる募] URL を遷移する方法(model.env をいじりたい)
     OnSignin user ->
-      ({ model | uid = user.uid }, Cmd.none)
+      ( model, Cmd.none)
 
+-- JS から呼ばれる関数を登録する
 subscriptions : Model -> Sub Msg
 subscriptions _ =
+  -- 関数が複数になるときは Sub.batch を使う
   Sub.batch
     [ signinCallback OnSignin
     ]
 
+-- HTML にあたる部分
+-- 要素 [ アトリビュート ] [ 中身 ] の形で
+
+-- 例 <h1 class="hoge">Hello</h1>
+-- は Elm では h1 [ class "hoge" ] [ text "Hello" ] になる
 view : Model -> { title : String, body : List (Html Msg) }
 view model =
   { title = "test | top"
   , body =
+    -- hero は 関数として切り分けてコンポーネント化している
     [ hero
     , div [ class "container" ] (signupForm model)
+    -- 遷移先が Route.Home なリンク
     , a [ Route.href <| Route.Home ] [ text "/home" ]
     ]
   }
 
+-- 返り値の型を Html Msg にすると Html の要素を返せる
 hero : Html Msg
 hero =
   section [ class "hero is-primary" ]
@@ -106,12 +132,13 @@ hero =
       ]
     ]
 
+-- 入力フォームを返す関数
 signupForm : Model -> List (Html Msg)
 signupForm model =
   [ div [ class "field" ]
     [ label [ class "label" ] [ text "Username" ]
     , div [ class "control has-icons-left has-icons-right" ]
-      [ input [ class "input is-success", type_ "text", placeholder "Text input", value model.emailInput, onInput EmailInputChange ]
+      [ input [ class "input is-success", type_ "text", placeholder "Email", value model.emailInput, onInput EmailInputChange ]
         []
       , span [ class "icon is-small is-left" ]
         [ i [ class "fas fa-envelope" ] 
