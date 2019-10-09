@@ -1,10 +1,11 @@
-module Route exposing (Route(..), fromUrl, href, parser, routeToString)
+module Route exposing (Route(..), replaceUrl, fromUrl, href, parser, routeToString)
 
 import Html exposing (Attribute)
 import Html.Attributes as Attr
 import Id exposing (Id)
 import Url exposing (Url)
 import Env exposing (Env)
+import Browser.Navigation as Nav
 import Url.Parser as Parser exposing ((</>), Parser)
 
 type Route
@@ -21,6 +22,10 @@ parser =
         , Parser.map Game (Parser.s "game")
         , Parser.map Result (Parser.s "result")
         ]
+
+replaceUrl : Nav.Key -> Route -> Cmd msg
+replaceUrl key route =
+    Nav.replaceUrl key (routeToString route)
 
 fromUrl : Url -> Maybe Route
 fromUrl url =

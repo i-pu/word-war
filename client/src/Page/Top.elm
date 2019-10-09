@@ -1,6 +1,6 @@
 port module Page.Top exposing (Model, Msg, init, subscriptions, update, view)
 
-import Env exposing (Env)
+import Env exposing (Env, navKey)
 import Html exposing (..)
 import Html.Events exposing (..)
 import Html.Attributes exposing (..)
@@ -89,9 +89,8 @@ update msg model =
           }
         )
       )
-    -- [ゆる募] URL を遷移する方法(model.env をいじりたい)
     OnSignin user ->
-      ( model, changeRouteTo Route.Home model)
+      ( model, Route.replaceUrl (navKey model.env) Route.Home)
 
 -- JS から呼ばれる関数を登録する
 subscriptions : Model -> Sub Msg
@@ -113,8 +112,6 @@ view model =
     -- hero は 関数として切り分けてコンポーネント化している
     [ hero
     , div [ class "container" ] (signupForm model)
-    -- 遷移先が Route.Home なリンク
-    , a [ Route.href <| Route.Home ] [ text "/home" ]
     ]
   }
 
