@@ -22,7 +22,10 @@ func NewMessageRepository() *messageRepository {
 	}
 }
 
-const messageKey = "message"
+// redis message repo の命名規則
+// publish message '{"userID": "7141-1414-1414...", "message": "hello"}'
+// subscribe messae
+// 将来 roomID:message になるかも
 
 func (r *messageRepository) Publish(roomID string, message *entity.Message) error {
 	fmt.Println("[Message/Publish] %+v %+v", roomID, message)

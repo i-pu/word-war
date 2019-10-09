@@ -17,13 +17,12 @@ func NewCounterRepository() *counterRepository {
 	}
 }
 
-const counterKey = "counter"
+// redis counter repo の命名規則
+// incr counter
+// 将来は <roomID>:counter になるかも
 
-// roomID は CA ではどこに書くべき????
 func (r *counterRepository) IncrCounter() (int64, error) {
-	// <部屋名> / <カラム名> に格納
-	// TODO: ラッパー書いたほうがいいかも
-	key := "room1" + "/" + counterKey
+	key := "counter"
 	conn := r.conn.Get()
 
 	value, err := redis.Int64(conn.Do("GET", key))
@@ -38,7 +37,7 @@ func (r *counterRepository) IncrCounter() (int64, error) {
 }
 
 func (r *counterRepository) SetCounter(value int64) error {
-	key := "room1" + "/" + counterKey
+	key := "counter"
 	conn := r.conn.Get()
 
 	_, err := conn.Do("SET", key, value)
@@ -47,7 +46,7 @@ func (r *counterRepository) SetCounter(value int64) error {
 }
 
 func (r *counterRepository) GetCounter() (int64, error) {
-	key := "room1" + "/" + counterKey
+	key := "counter"
 	conn := r.conn.Get()
 
 	value, err := redis.Int64(conn.Do("GET", key))

@@ -21,6 +21,10 @@ func NewResultRepository() *resultRepository {
 	}
 }
 
+// redis result repo の命名規則
+// <userID>:<score>
+// 将来は <roomID>:<userID>:<score>みたいな感じになるかも
+
 func (r *resultRepository) Get(roomID string) (*entity.Result, error) {
 	return nil, errors.New("unimplemented")
 }

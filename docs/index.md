@@ -51,37 +51,3 @@ gRPCのAPI `WordWar.Result(uid)` が呼ばれ、サーバー側ではuidから�
 ## CSS
 CSSフレームワークとして [Bulma](https://bulma.io/) を用いています。
 公式ドキュメントにはHTMLによる例が載っているのでそれを参考に画面を作ってください。なお、HTMLからElmへの変換ツールとして [HTML to Elm](https://marketplace.visualstudio.com/items?itemName=Rubymaniac.vscode-html-to-elm)というVSCodeの拡張機能を利用することを推奨します。
-
-# サーバーサイドのTips
-## `Clean Architecture` っぽい何か
-[これ](https://medium.com/@hatajoe/clean-architecture-in-go-4030f11ec1b1)
-を参考にそれっぽく作りました。
-
-### ディレクトリ構成
-```bash
-$ tree -L 2
-.
-├── domain
-│   ├── entity
-│   ├── repository
-│   └── service
-├── interface
-│   ├── memory
-│   └── rpc
-├── usecase
-└── main.go
-```
-`domain` が一番内側の部分になります。
-
-`interface/memory` は `domain/repository` の実装のつもりです。
-
-`interface/rpc` にgRPCの `rpc` を記述します。
-`rpc` は `usecase` で定義してある関数を呼ぶことになります。
-
-grpcにおけるサービスとCAにおけるサービスとで2つサービスがあるので文脈に注意です。
-
-いまの構成は不完全な部分があるので少しずつ直すことになります。
-
-## Redis `Pub/Sub`
-[`redigo`](https://github.com/gomodule/redigo)を使います。
-`key` の名前と値の構造形式は **TODO**
