@@ -91,7 +91,7 @@ update msg model =
       )
     -- [ゆる募] URL を遷移する方法(model.env をいじりたい)
     OnSignin user ->
-      ( model, Cmd.none)
+      ( model, changeRouteTo Route.Home model)
 
 -- JS から呼ばれる関数を登録する
 subscriptions : Model -> Sub Msg

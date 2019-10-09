@@ -10,18 +10,19 @@ import (
 )
 
 type messageRepository struct {
-	conn      *redis.Pool
-	roomName  string
+	conn *redis.Pool
+	// roomName  string
 	columnKey string
 }
 
 func NewMessageRepository() *messageRepository {
 	return &messageRepository{
-		conn:      infra.RedisPool,
-		roomName:  "room1",
-		columnKey: "message",
+		conn: infra.RedisPool,
+		// roomName:  "room1",
 	}
 }
+
+const messageKey = "message"
 
 func (r *messageRepository) Publish(roomID string, message *entity.Message) error {
 	fmt.Println("[Message/Publish] %+v %+v", roomID, message)

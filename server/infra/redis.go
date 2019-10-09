@@ -1,9 +1,10 @@
 package infra
 
 import (
-	"github.com/gomodule/redigo/redis"
 	"log"
 	"os"
+
+	"github.com/gomodule/redigo/redis"
 )
 
 var RedisPool *redis.Pool

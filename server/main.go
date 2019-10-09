@@ -1,14 +1,15 @@
 package main
 
 import (
+	"log"
+	"net/http"
+
 	"github.com/i-pu/word-war/server/domain/service"
 	"github.com/i-pu/word-war/server/infra"
 	"github.com/i-pu/word-war/server/interface/memory"
 	"github.com/i-pu/word-war/server/interface/rpc"
 	pb "github.com/i-pu/word-war/server/interface/rpc/pb"
 	"github.com/i-pu/word-war/server/usecase"
-	"log"
-	"net/http"
 
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"google.golang.org/grpc"
@@ -43,14 +44,19 @@ func main() {
 
 func setUpGrpc() *grpc.Server {
 	grpcServer := grpc.NewServer()
-	mRepo := memory.NewMessageRepository()
-	mService := service.NewMessageService(mRepo)
-	mUsecase := usecase.NewMessageUsecase(mRepo, mService)
+	messageRepo := memory.NewMessageRepository()
+	messageService := service.NewMessageService(messageRepo)
+	messageUsecase := usecase.NewMessageUsecase(messageRepo, messageService)
 
-	cRepo := memory.NewCounterRepository()
-	cService := service.NewCounterService(cRepo)
-	cUsecase := usecase.NewCounterUsecase(cRepo, cService)
-	pb.RegisterWordWarServer(grpcServer, rpc.NewWordWarService(mUsecase, cUsecase))
+	counterRepo := memory.NewCounterRepository()
+	counterService := service.NewCounterService(counterRepo)
+	counterUsecase := usecase.NewCounterUsecase(counterRepo, counterService)
+
+	resultRepo := memory.NewResultRepository()
+	resultService := service.NewResultService(resultRepo)
+	resultUsecase := usecase.NewResultUsecase(resultRepo, resultService)
+
+	pb.RegisterWordWarServer(grpcServer, rpc.NewWordWarService(messageUsecase, counterUsecase, resultUsecase))
 	return grpcServer
 }
 

@@ -8,7 +8,7 @@ import (
 type counterRepository struct {
 	conn *redis.Pool
 	// 部屋名固定
-	roomName string
+	// roomName string
 }
 
 func NewCounterRepository() *counterRepository {
@@ -17,13 +17,13 @@ func NewCounterRepository() *counterRepository {
 	}
 }
 
-const columnKey = "counter"
+const counterKey = "counter"
 
 // roomID は CA ではどこに書くべき????
 func (r *counterRepository) IncrCounter() (int64, error) {
 	// <部屋名> / <カラム名> に格納
 	// TODO: ラッパー書いたほうがいいかも
-	key := "room1" + "/" + columnKey
+	key := "room1" + "/" + counterKey
 	conn := r.conn.Get()
 
 	value, err := redis.Int64(conn.Do("GET", key))
@@ -38,7 +38,7 @@ func (r *counterRepository) IncrCounter() (int64, error) {
 }
 
 func (r *counterRepository) SetCounter(value int64) error {
-	key := "room1" + "/" + columnKey
+	key := "room1" + "/" + counterKey
 	conn := r.conn.Get()
 
 	_, err := conn.Do("SET", key, value)
@@ -47,7 +47,7 @@ func (r *counterRepository) SetCounter(value int64) error {
 }
 
 func (r *counterRepository) GetCounter() (int64, error) {
-	key := "room1" + "/" + columnKey
+	key := "room1" + "/" + counterKey
 	conn := r.conn.Get()
 
 	value, err := redis.Int64(conn.Do("GET", key))

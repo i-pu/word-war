@@ -10,18 +10,21 @@ import (
 )
 
 type wordWarService struct {
+	// 個々にいろんなusecaseついかすればよさそう
 	messageUsecase usecase.MessageUsecase
 	counterUsecase usecase.CounterUsecase
-	// 個々にいろんなusecaseついかすればよさそう
+	resultUsecase  usecase.ResultUsecase
 }
 
 func NewWordWarService(
 	messageUsecase usecase.MessageUsecase,
 	counterUsecase usecase.CounterUsecase,
+	resultUsecase usecase.ResultUsecase,
 ) *wordWarService {
 	return &wordWarService{
 		messageUsecase: messageUsecase,
 		counterUsecase: counterUsecase,
+		resultUsecase:  resultUsecase,
 	}
 }
 
@@ -35,7 +38,6 @@ func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) err
 		if err != nil {
 			return err
 		}
-		// 今は累計メッセージが100を超えたら終了するので
 		// ! 10件にしましょう
 		if counter.Value > 10 {
 			// TODO: resultを保存する
