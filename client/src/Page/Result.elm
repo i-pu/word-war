@@ -7,33 +7,45 @@ import Html.Attributes exposing (..)
 import Id exposing (Id)
 import Route
 
-type alias Message =
-  { name : String
-  , message : String
+-- to js
+port requestResult : ( String ) -> Cmd msg
+
+-- from js
+port resultCallback : ( Result -> msg ) -> Sub msg
+
+type alias Result =
+  { userId : String
+  , score : Int
   }
 
 type alias Model =
   { env : Env
+  , result : Result
   }
 
 init : Env -> ( Model, Cmd Msg )
 init env =
-  ( Model env
+  ( Model env { userId = "", score = 0 }
   , Cmd.none
   )
 
 type Msg
-  = Hoge
+  = OnResult Result
+  | Request
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
-    Hoge ->
-      (model, Cmd.none)
+    OnResult newResult ->
+      ({ model | result = newResult }, Cmd.none)
+    Request ->
+      (model, requestResult "uid")
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-  Sub.none
+  Sub.batch 
+  [ resultCallback OnResult
+  ]
 
 view : Model -> { title : String, body : List (Html Msg) }
 view model =
@@ -41,6 +53,8 @@ view model =
   , body =
     [ hero
     , a [ Route.href <| Route.Home ] [ text "/home" ]
+    , button [ onClick Request ] [ text "push me" ]
+    , h3 [] [ text model.result.userId ]
     ]
   }
 

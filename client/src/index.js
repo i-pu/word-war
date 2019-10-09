@@ -90,6 +90,11 @@ app.ports.signupWithFirebase.subscribe(async ({ email, password }) => {
   app.ports.signinCallback.send({ uid: auth.user.uid })
 })
 
+app.ports.requestResult.subscribe(async () => {
+  const result = { score: 1, userId: 'hoge' }
+  app.ports.resultCallback.send(result)
+})
+
 // Server Streaming RPCs
 const req = new pb.HelloRequest()
 req.setName('Server Stream')
