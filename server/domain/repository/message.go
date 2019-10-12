@@ -1,8 +1,11 @@
 package repository
 
-import "github.com/i-pu/word-war/server/domain/entity"
+import (
+	"context"
+	"github.com/i-pu/word-war/server/domain/entity"
+)
 
 type MessageRepository interface {
-	Publish(roomID string, message *entity.Message) error
-	Subscribe(roomID string) (string, error)
+	Publish(message *entity.Message) error
+	Subscribe(ctx context.Context) (<-chan *entity.Message, error)
 }

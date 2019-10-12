@@ -1,12 +1,13 @@
 package memory
 
 import (
-	"errors"
-	"fmt"
-
+	"context"
+	"encoding/json"
 	"github.com/gomodule/redigo/redis"
 	"github.com/i-pu/word-war/server/domain/entity"
 	"github.com/i-pu/word-war/server/infra"
+	"log"
+	"time"
 )
 
 type messageRepository struct {
@@ -27,18 +28,66 @@ func NewMessageRepository() *messageRepository {
 // subscribe messae
 // 将来 roomID:message になるかも
 
-func (r *messageRepository) Publish(roomID string, message *entity.Message) error {
-	fmt.Println("[Message/Publish] %+v %+v", roomID, message)
-
-	// <https://godoc.org/github.com/gomodule/redigo/redis#pkg-examples>
-	// Pub Sub どうやるんだ
-	return errors.New("not implemented")
+func (r *messageRepository) Publish(message *entity.Message) error {
+	mesBytes, err := json.Marshal(message)
+	if err != nil {
+		return err
+	}
+	conn := r.conn.Get()
+	defer conn.Close()
+	rep, err := conn.Do("PUBLISH", "message", mesBytes)
+	if err != nil {
+		return err
+	}
+	log.Printf("publish reply: %+v", rep)
+	return nil
 }
 
-func (r *messageRepository) Subscribe(roomID string) (string, error) {
-	return "", errors.New("not implemented")
-}
-
-func (r *messageRepository) SetCounter(value int64) error {
-	return errors.New("not implemented")
+// Subscribeのより良いやり方あるかも
+func (r *messageRepository) Subscribe(ctx context.Context) (<-chan *entity.Message, error) {
+	ch := make(chan *entity.Message)
+	go func() {
+		defer close(ch)
+		conn := r.conn.Get()
+		defer conn.Close()
+		psc := redis.PubSubConn{Conn: conn}
+		_ = psc.Subscribe("message")
+		for {
+			// 1秒ごとにタイムアウトするのでずっと待ち続けることがなくなる
+			switch v := psc.ReceiveWithTimeout(time.Second).(type) {
+			case redis.Message:
+				var message *entity.Message
+				if err := json.Unmarshal(v.Data, message); err != nil {
+					panic(err)
+				}
+				// TODO: ctxが終了したことをチェックしてから送信する
+				// こんな適当でいいのだろうか?
+				select {
+				case <-ctx.Done():
+					return
+				default:
+					ch <- message
+				}
+			case redis.Subscription:
+				log.Printf("%s: %s %d\n", v.Channel, v.Kind, v.Count)
+				select {
+				case <-ctx.Done():
+					return
+				default:
+					continue
+				}
+			case error:
+				log.Printf("error: %+v", v.Error())
+				// TODO: redisのwithTimeoutのエラーとその他の接続エラーの区別がしたい
+				// いま全部ログに出すだけしてるので不安
+				select {
+				case <-ctx.Done():
+					return
+				default:
+					continue
+				}
+			}
+		}
+	}()
+	return ch, nil
 }

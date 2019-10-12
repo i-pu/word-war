@@ -1,14 +1,15 @@
 package usecase
 
 import (
+	"context"
 	"github.com/i-pu/word-war/server/domain/entity"
 	"github.com/i-pu/word-war/server/domain/repository"
 	"github.com/i-pu/word-war/server/domain/service"
 )
 
 type MessageUsecase interface {
-	SendMessage(roomID string, message *entity.Message) error
-	GetMessage(roomID string) (*entity.Message, error)
+	SendMessage(message *entity.Message) error
+	GetMessage(ctx context.Context) (<-chan *entity.Message, error)
 }
 
 type messageUsecase struct {
@@ -23,17 +24,19 @@ func NewMessageUsecase(repo repository.MessageRepository, service *service.Messa
 	}
 }
 
-func (u *messageUsecase) SendMessage(roomID string, message *entity.Message) error {
-	if err := u.repo.Publish(roomID, message); err != nil {
+func (u *messageUsecase) SendMessage(message *entity.Message) error {
+	if err := u.repo.Publish(message); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (u *messageUsecase) GetMessage(roomID string) (*entity.Message, error) {
-	return nil, nil
-}
-
-func (u *messageUsecase) GetNowCounter() (int64, error) {
-	return 3, nil
+// GetMessage ctx is used to get cancel signal from parent to cancel pub/sub job
+// , so this ctx must be child context.
+func (u *messageUsecase) GetMessage(ctx context.Context) (<-chan *entity.Message, error) {
+	messageChan, err := u.repo.Subscribe(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return messageChan, nil
 }

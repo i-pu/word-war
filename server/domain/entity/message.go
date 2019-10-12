@@ -1,6 +1,6 @@
 package entity
 
 type Message struct {
-	Message string
-	UserID  string
+	Message string `json:"message" validate:"required"`
+	UserID  string `json:"userID" validate:"required"`
 }
