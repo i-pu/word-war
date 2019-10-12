@@ -10,8 +10,8 @@ import (
 
 type ResultUsecase interface {
 	// userIDはそのuserの結果
-	CalResult(roomID string, userID string) (*entity.Result, error)
-	GetResult(roomID string, userID string) (*entity.Result, error)
+	CalResult(userID string) (*entity.Result, error)
+	GetResult(userID string) (*entity.Result, error)
 }
 
 type resultUsecase struct {
@@ -26,10 +26,10 @@ func NewResultUsecase(repo repository.ResultRepository, service *service.ResultS
 	}
 }
 
-func (u *resultUsecase) CalResult(roomID string, userID string) (*entity.Result, error) {
+func (u *resultUsecase) CalResult(userID string) (*entity.Result, error) {
 	return nil, errors.New("unimplemented")
 }
 
-func (u *resultUsecase) GetResult(roomID string, userID string) (*entity.Result, error) {
+func (u *resultUsecase) GetResult(userID string) (*entity.Result, error) {
 	return nil, errors.New("unimplemented")
 }

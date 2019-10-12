@@ -3,6 +3,6 @@ package repository
 import "github.com/i-pu/word-war/server/domain/entity"
 
 type ResultRepository interface {
-	Get(roomID string) (*entity.Result, error)
-	Set(roomID string, result *entity.Result) error
+	Get(userID string) (*entity.Result, error)
+	Set(userID string, result *entity.Result) error
 }
