@@ -3,6 +3,7 @@ package rpc
 import (
 	"context"
 	"errors"
+	"log"
 
 	"github.com/i-pu/word-war/server/domain/entity"
 	pb "github.com/i-pu/word-war/server/interface/rpc/pb"
@@ -29,27 +30,36 @@ func NewWordWarService(
 }
 
 func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) error {
-	for {
-		message, err := s.messageUsecase.GetMessage("message")
-		if err != nil {
-			return err
-		}
-		counter, err := s.counterUsecase.Get()
-		if err != nil {
-			return err
-		}
-		// ! 10件にしましょう
-		if counter.Value > 10 {
-			// TODO: resultを保存する
-			return nil
-		}
+	ctx, cancel := context.WithCancel(context.Background())
+	// childのcontext荷関数が終了することを教えてあげる
+	defer cancel()
 
-		res := &pb.GameResponse{
-			UserId:  message.UserID,
-			Message: message.Message,
-		}
-		if err := srv.Send(res); err != nil {
-			return err
+	messageChan, errChan := s.messageUsecase.GetMessage(ctx)
+	for {
+		select {
+		case message, ok := <-messageChan:
+			if !ok {
+				// channelが先に閉じてることはないはずなので
+				return errors.New("logical error about redis channel")
+			}
+			counter, err := s.counterUsecase.Get()
+			if err != nil {
+				return err
+			}
+			// ! 10件にしましょう
+			if counter.Value > 10 {
+				// 終了処理
+				return nil
+			}
+			res := &pb.GameResponse{
+				UserId:  message.UserID,
+				Message: message.Message,
+			}
+			if err := srv.Send(res); err != nil {
+				return err
+			}
+		case err := <-errChan:
+			log.Printf("error in game: %+v", err)
 		}
 	}
 }
@@ -61,8 +71,10 @@ func (s *wordWarService) Say(ctx context.Context, in *pb.SayRequest) (*pb.SayRes
 		Message: in.GetMessage(),
 	}
 
-	// Redisに(部屋ID固定)
-	err := s.messageUsecase.SendMessage("room1", &entity.Message{UserID: in.GetUserId(), Message: in.GetMessage()})
+	// FIXME: 部屋の機能はまだないので、部屋IDはまだ指定しないようにします
+	err := s.messageUsecase.SendMessage(&entity.Message{UserID: in.GetUserId(), Message: in.GetMessage()})
+	// TODO: 今何回Sayが言われたかをCountする
+	// redis.do("incr"...
 
 	if err != nil {
 		return nil, err

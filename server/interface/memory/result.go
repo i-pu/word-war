@@ -25,9 +25,9 @@ func NewResultRepository() *resultRepository {
 // <userID>:<score>
 // 将来は <roomID>:<userID>:<score>みたいな感じになるかも
 
-func (r *resultRepository) Get(roomID string) (*entity.Result, error) {
+func (r *resultRepository) Get(userID string) (*entity.Result, error) {
 	return nil, errors.New("unimplemented")
 }
-func (r *resultRepository) Set(roomID string, result *entity.Result) error {
+func (r *resultRepository) Set(userID string, result *entity.Result) error {
 	return errors.New("unimplemented")
 }

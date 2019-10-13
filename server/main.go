@@ -1,15 +1,14 @@
 package main
 
 import (
-	"log"
-	"net/http"
-
 	"github.com/i-pu/word-war/server/domain/service"
 	"github.com/i-pu/word-war/server/infra"
 	"github.com/i-pu/word-war/server/interface/memory"
 	"github.com/i-pu/word-war/server/interface/rpc"
 	pb "github.com/i-pu/word-war/server/interface/rpc/pb"
 	"github.com/i-pu/word-war/server/usecase"
+	"log"
+	"net/http"
 
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"google.golang.org/grpc"
