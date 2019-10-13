@@ -3,6 +3,7 @@ package memory
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"github.com/gomodule/redigo/redis"
 	"github.com/i-pu/word-war/server/domain/entity"
 	"github.com/i-pu/word-war/server/infra"
@@ -44,21 +45,30 @@ func (r *messageRepository) Publish(message *entity.Message) error {
 }
 
 // Subscribeのより良いやり方あるかも
-func (r *messageRepository) Subscribe(ctx context.Context) (<-chan *entity.Message, error) {
+func (r *messageRepository) Subscribe(ctx context.Context) (<-chan *entity.Message, <-chan error) {
 	ch := make(chan *entity.Message)
+	errCh := make(chan error)
 	go func() {
 		defer close(ch)
+		defer close(errCh)
+
 		conn := r.conn.Get()
 		defer conn.Close()
+
 		psc := redis.PubSubConn{Conn: conn}
-		_ = psc.Subscribe("message")
+		err := psc.Subscribe("message")
+		if err != nil {
+			errCh <- err
+		}
+
 		for {
 			// 1秒ごとにタイムアウトするのでずっと待ち続けることがなくなる
-			switch v := psc.ReceiveWithTimeout(time.Second).(type) {
+			switch v := psc.ReceiveWithTimeout(2 * time.Second).(type) {
 			case redis.Message:
-				var message *entity.Message
-				if err := json.Unmarshal(v.Data, message); err != nil {
-					panic(err)
+				var message entity.Message
+				log.Printf("%s", string(v.Data))
+				if err := json.Unmarshal(v.Data, &message); err != nil {
+					errCh <- err
 				}
 				// TODO: ctxが終了したことをチェックしてから送信する
 				// こんな適当でいいのだろうか?
@@ -66,7 +76,7 @@ func (r *messageRepository) Subscribe(ctx context.Context) (<-chan *entity.Messa
 				case <-ctx.Done():
 					return
 				default:
-					ch <- message
+					ch <- &message
 				}
 			case redis.Subscription:
 				log.Printf("%s: %s %d\n", v.Channel, v.Kind, v.Count)
@@ -77,17 +87,22 @@ func (r *messageRepository) Subscribe(ctx context.Context) (<-chan *entity.Messa
 					continue
 				}
 			case error:
-				log.Printf("error: %+v", v.Error())
-				// TODO: redisのwithTimeoutのエラーとその他の接続エラーの区別がしたい
-				// いま全部ログに出すだけしてるので不安
 				select {
 				case <-ctx.Done():
 					return
 				default:
-					continue
+					// TODO: redisのwithTimeoutのエラーとその他の接続エラーの区別がしたい
+					// timeoutという文字列を含んでたらtimeoutと判別するとか?
+					conn = r.conn.Get()
+					psc = redis.PubSubConn{Conn: conn}
+					err := psc.Subscribe("message")
+					if err != nil {
+						errCh <- err
+					}
+					errCh <- errors.New(v.Error())
 				}
 			}
 		}
 	}()
-	return ch, nil
+	return ch, errCh
 }

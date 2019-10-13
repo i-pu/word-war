@@ -9,7 +9,7 @@ import (
 
 type MessageUsecase interface {
 	SendMessage(message *entity.Message) error
-	GetMessage(ctx context.Context) (<-chan *entity.Message, error)
+	GetMessage(ctx context.Context) (<-chan *entity.Message, <-chan error)
 }
 
 type messageUsecase struct {
@@ -33,10 +33,7 @@ func (u *messageUsecase) SendMessage(message *entity.Message) error {
 
 // GetMessage ctx is used to get cancel signal from parent to cancel pub/sub job
 // , so this ctx must be child context.
-func (u *messageUsecase) GetMessage(ctx context.Context) (<-chan *entity.Message, error) {
-	messageChan, err := u.repo.Subscribe(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return messageChan, nil
+func (u *messageUsecase) GetMessage(ctx context.Context) (<-chan *entity.Message, <-chan error) {
+	messageChan, errChan := u.repo.Subscribe(ctx)
+	return messageChan, errChan
 }

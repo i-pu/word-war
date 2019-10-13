@@ -3,6 +3,7 @@ package rpc
 import (
 	"context"
 	"errors"
+	"log"
 
 	"github.com/i-pu/word-war/server/domain/entity"
 	pb "github.com/i-pu/word-war/server/interface/rpc/pb"
@@ -33,10 +34,7 @@ func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) err
 	// childのcontext荷関数が終了することを教えてあげる
 	defer cancel()
 
-	messageChan, err := s.messageUsecase.GetMessage(ctx)
-	if err != nil {
-		return err
-	}
+	messageChan, errChan := s.messageUsecase.GetMessage(ctx)
 	for {
 		select {
 		case message, ok := <-messageChan:
@@ -60,6 +58,8 @@ func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) err
 			if err := srv.Send(res); err != nil {
 				return err
 			}
+		case err := <-errChan:
+			log.Printf("error in game: %+v", err)
 		}
 	}
 }

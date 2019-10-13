@@ -7,5 +7,5 @@ import (
 
 type MessageRepository interface {
 	Publish(message *entity.Message) error
-	Subscribe(ctx context.Context) (<-chan *entity.Message, error)
+	Subscribe(ctx context.Context) (<-chan *entity.Message, <-chan error)
 }
