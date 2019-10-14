@@ -1,6 +1,6 @@
 port module Page.Top exposing (Model, Msg, init, subscriptions, update, view)
 
-import Env exposing (Env, navKey)
+import Env exposing (Env, User, navKey)
 import Html exposing (..)
 import Html.Events exposing (..)
 import Html.Attributes exposing (..)
@@ -18,11 +18,6 @@ port signinWithFirebase : ({ email : String, password : String }) -> Cmd msg
 
 -- JS から呼ばれる関数をここに書いておく
 port signinCallback : ( User -> msg) -> Sub msg
-
--- ユーザーモデル
-type alias User =
-  { uid : String
-  }
 
 -- メッセージモデル
 type alias Message =
@@ -44,7 +39,7 @@ init env =
   , Cmd.none
   )
 
--- 画面内で使う関数をユニオン型で表す
+-- アクションのイベントを列挙する
 type Msg
   = EmailInputChange String
   | PasswordInputChange String
@@ -90,7 +85,11 @@ update msg model =
         )
       )
     OnSignin user ->
-      ( model, Route.replaceUrl (navKey model.env) Route.Home)
+      (model
+      , Cmd.batch 
+        [ Route.replaceUrl (navKey model.env) Route.Home
+        ]
+      )
 
 -- JS から呼ばれる関数を登録する
 subscriptions : Model -> Sub Msg

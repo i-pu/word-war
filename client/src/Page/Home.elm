@@ -7,11 +7,6 @@ import Html.Attributes exposing (..)
 import Id exposing (Id)
 import Route
 
-type alias Message =
-  { name : String
-  , message : String
-  }
-
 type alias Model =
   { env : Env
   }
