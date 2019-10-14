@@ -6,12 +6,13 @@ import Html.Events exposing (..)
 import Html.Attributes exposing (..)
 import Id exposing (Id)
 import Route
+import String exposing (fromInt)
 
 -- to js
 port requestResult : ( String ) -> Cmd msg
 
 -- from js
-port resultCallback : ( Result -> msg ) -> Sub msg
+port onResult : ( Result -> msg ) -> Sub msg
 
 type alias Result =
   { userId : String
@@ -26,25 +27,22 @@ type alias Model =
 init : Env -> ( Model, Cmd Msg )
 init env =
   ( Model env { userId = "", score = 0 }
-  , Cmd.none
+  , requestResult "testuid"
   )
 
 type Msg
   = OnResult Result
-  | Request
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
     OnResult newResult ->
       ({ model | result = newResult }, Cmd.none)
-    Request ->
-      (model, requestResult "uid")
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
   Sub.batch 
-  [ resultCallback OnResult
+  [ onResult OnResult
   ]
 
 view : Model -> { title : String, body : List (Html Msg) }
@@ -52,9 +50,8 @@ view model =
   { title = "test | result"
   , body =
     [ hero
-    , a [ Route.href <| Route.Home ] [ text "/home" ]
-    , button [ onClick Request ] [ text "push me" ]
-    , h3 [] [ text model.result.userId ]
+    , h3 [] [ text (fromInt model.result.score ++ "点") ]
+    , a [ Route.href <| Route.Home ] [ text "ホームへ" ]
     ]
   }
 

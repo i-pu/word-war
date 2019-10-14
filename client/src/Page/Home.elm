@@ -7,11 +7,6 @@ import Html.Attributes exposing (..)
 import Id exposing (Id)
 import Route
 
-type alias Message =
-  { name : String
-  , message : String
-  }
-
 type alias Model =
   { env : Env
   }
@@ -40,7 +35,7 @@ view model =
   { title = "test | home"
   , body =
     [ hero
-    , a [ Route.href <| Route.Game ] [ text "/game" ]
+    , a [ Route.href <| Route.Game ] [ text "ゲーム開始" ]
     ]
   }
 
