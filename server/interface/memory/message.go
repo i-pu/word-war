@@ -62,7 +62,9 @@ func (r *messageRepository) Subscribe(ctx context.Context) (<-chan *entity.Messa
 		}
 
 		for {
-			// 1秒ごとにタイムアウトするのでずっと待ち続けることがなくなる
+			// 2秒ごとにタイムアウトするのでずっと待ち続けることがなくなる
+			// timeoutしたタイミングでpublishされるとまずい
+			// そもそもtimeoutしたらConnectionが切れてしまうのか?変じゃね?
 			switch v := psc.ReceiveWithTimeout(2 * time.Second).(type) {
 			case redis.Message:
 				var message entity.Message

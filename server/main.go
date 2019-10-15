@@ -1,43 +1,32 @@
 package main
 
 import (
+	"log"
+	"net"
+
 	"github.com/i-pu/word-war/server/domain/service"
 	"github.com/i-pu/word-war/server/infra"
 	"github.com/i-pu/word-war/server/interface/memory"
 	"github.com/i-pu/word-war/server/interface/rpc"
 	pb "github.com/i-pu/word-war/server/interface/rpc/pb"
 	"github.com/i-pu/word-war/server/usecase"
-	"log"
-	"net/http"
 
-	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 func main() {
+	lis, err := net.Listen("tcp", ":50051")
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+
 	setUpInfra()
 	grpcServer := setUpGrpc()
+	reflection.Register(grpcServer)
 
-	// grpc-webを使うためのコード
-	wrappedGrpc := grpcweb.WrapServer(
-		grpcServer,
-		grpcweb.WithOriginFunc(func(origin string) bool {
-			// すべてのホストから許可するので
-			return true
-		}),
-	)
-
-	httpServer := &http.Server{
-		Addr: ":50051",
-	}
-	httpServer.Handler = http.HandlerFunc(
-		func(resp http.ResponseWriter, req *http.Request) {
-			wrappedGrpc.ServeHTTP(resp, req)
-		},
-	)
-
-	if err := httpServer.ListenAndServe(); err != nil {
-		log.Fatalf("failed to listen and serve: %v", err)
+	if err := grpcServer.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
 	}
 }
 

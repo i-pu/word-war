@@ -2,7 +2,7 @@ import { ports, firebase } from './index'
 import pb from './word_war_grpc_web_pb'
 
 // gRPC API のエンドポイント
-const endpoint = 'http://localhost:50051'
+const endpoint = 'http://localhost:8080'
 // gRPC のクライアント
 const client = new pb.WordWarPromiseClient()
 
