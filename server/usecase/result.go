@@ -1,8 +1,6 @@
 package usecase
 
 import (
-	"errors"
-
 	"github.com/i-pu/word-war/server/domain/entity"
 	"github.com/i-pu/word-war/server/domain/repository"
 	"github.com/i-pu/word-war/server/domain/service"
@@ -31,5 +29,5 @@ func (u *resultUsecase) IncrResult(userID string, by int64) error {
 }
 
 func (u *resultUsecase) GetResult(userID string) (*entity.Result, error) {
-	return nil, errors.New("unimplemented")
+	return u.repo.Get(userID)
 }

@@ -15,14 +15,15 @@ const app = Elm.Main.init({
   flags: "Hoge",
 })
 
-const STUBBED = true
+const STUBBED = false
 
 const store = {}
 
 // gRPC API のエンドポイント
-const endpoint = process.env.NODE_ENV === 'development'
-  ? process.env.ELM_APP_API_ENDPOINT_DEV
-  : process.env.ELM_APP_API_ENDPOINT
+const endpoint = process.env.ELM_APP_API_ENDPOINT_DEV
+// process.env.NODE_ENV === 'development'
+//   ? process.env.ELM_APP_API_ENDPOINT_DEV
+//   : process.env.ELM_APP_API_ENDPOINT
 // gRPC のクライアント
 const client = new pb.WordWarPromiseClient(endpoint)
 
