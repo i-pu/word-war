@@ -1,9 +1,7 @@
 name: Node CI
 
 on:
-  push:
-    branches: 
-      - '*'
+  - push
 
 jobs:
   build:
