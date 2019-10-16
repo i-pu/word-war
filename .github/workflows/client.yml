@@ -20,9 +20,11 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
-    - name: npm install, build, and test
+    - name: npm install, build
       run: |
-        npm install
-        npm run deploy
-      env:
-        CI: true
+        cd client
+        yarn install
+    - name: deploy to Firebase Hosting
+      run: |
+        ./node_modules/.bin/firebase deploy --token=${{ secrets.FIREBASE_TOKEN }}
+      
