@@ -15,12 +15,12 @@ const app = Elm.Main.init({
   flags: "Hoge",
 })
 
-const STUBBED = true
-
 const store = {}
 
+const isDevelop = process.env.NODE_ENV === 'development'
+
 // gRPC API のエンドポイント
-const endpoint = process.env.NODE_ENV === 'development'
+const endpoint = isDevelop
   ? process.env.ELM_APP_API_ENDPOINT_DEV
   : process.env.ELM_APP_API_ENDPOINT
 // gRPC のクライアント
@@ -72,7 +72,9 @@ app.ports.signupWithFirebase.subscribe(async ({ email, password }) => {
 // ====================
 app.ports.startGame.subscribe(async userId => {
   console.log('start game')
-  if (!STUBBED) {
+
+
+  if (!isDevelop) {
     // Server Streaming RPCs
     const req = new pb.GameRequest()
     req.setUserid(userId)
@@ -85,8 +87,11 @@ app.ports.startGame.subscribe(async userId => {
       app.ports.onMessage.send({ userId, message })
     })
 
-    stream.on('end', () => {
-      app.ports.onFinish.send(null)
+    stream.on('status', ({ status }) => {
+      // be sent when finish streaming
+      if (status.code === 0) {
+        app.ports.onFinish.send(null)
+      }
     })
   } else {
     return new Promise(async () => {
@@ -105,7 +110,7 @@ app.ports.startGame.subscribe(async userId => {
 app.ports.say.subscribe(async ({ userId, message }) => {
   console.log({ userId, message })
 
-  if (!STUBBED) {
+  if (!isDevelop) {
     // gRPC Unary RPCs
     const req = new pb.SayRequest()
     req.setUserid(userId)
@@ -127,7 +132,7 @@ app.ports.say.subscribe(async ({ userId, message }) => {
 // ====================
 
 app.ports.requestResult.subscribe(async userId => {
-  if (!STUBBED) {
+  if (!isDevelop) {
     const req = new pb.ResultRequest()
     req.setUserid(userId)
 
