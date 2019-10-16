@@ -18,11 +18,15 @@ const app = Elm.Main.init({
 const store = {}
 
 const isDevelop = process.env.NODE_ENV === 'development'
+const isStub = false // isDevelop
 
 // gRPC API のエンドポイント
 const endpoint = isDevelop
   ? process.env.ELM_APP_API_ENDPOINT_DEV
   : process.env.ELM_APP_API_ENDPOINT
+
+console.log(`endpoint is ${endpoint}`)
+
 // gRPC のクライアント
 const client = new pb.WordWarPromiseClient(endpoint)
 
@@ -74,7 +78,7 @@ app.ports.startGame.subscribe(async userId => {
   console.log('start game')
 
 
-  if (!isDevelop) {
+  if (!isStub) {
     // Server Streaming RPCs
     const req = new pb.GameRequest()
     req.setUserid(userId)
@@ -87,7 +91,7 @@ app.ports.startGame.subscribe(async userId => {
       app.ports.onMessage.send({ userId, message })
     })
 
-    stream.on('status', ({ status }) => {
+    stream.on('status', status => {
       // be sent when finish streaming
       if (status.code === 0) {
         app.ports.onFinish.send(null)
@@ -110,7 +114,7 @@ app.ports.startGame.subscribe(async userId => {
 app.ports.say.subscribe(async ({ userId, message }) => {
   console.log({ userId, message })
 
-  if (!isDevelop) {
+  if (!isStub) {
     // gRPC Unary RPCs
     const req = new pb.SayRequest()
     req.setUserid(userId)
@@ -132,7 +136,7 @@ app.ports.say.subscribe(async ({ userId, message }) => {
 // ====================
 
 app.ports.requestResult.subscribe(async userId => {
-  if (!isDevelop) {
+  if (!isStub) {
     const req = new pb.ResultRequest()
     req.setUserid(userId)
 
