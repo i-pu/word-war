@@ -1,7 +1,7 @@
 version: '3.7'
 services:
   server:
-    build: ./server
+    image: iputus/server
     ports:
       - 50051:50051
     environment:
@@ -11,8 +11,7 @@ services:
     ports:
       - 6379:6379
   envoy:
-    build: ./envoy
+    image: iputus/server
     ports:
       - "80:8080"
       - "9901:9901"
-
