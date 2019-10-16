@@ -6,7 +6,7 @@ import credential from '../credential'
 firebase.initializeApp(credential)
 import pb from './word_war_grpc_web_pb'
 // Parcel を使っているので直接 import できる
-const { Elm } = require('./main.elm')
+const { Elm } = require('./Main.elm')
 
 // Elm を初期化して #app に配置
 const app = Elm.Main.init({
