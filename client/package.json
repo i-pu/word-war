@@ -4,8 +4,8 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "parcel index.html",
-    "build": "parcel build index.html",
+    "start": "npx elm-app start",
+    "build": "npx elm-app build",
     "deploy": "yarn build && firebase deploy"
   },
   "devDependencies": {
@@ -16,7 +16,9 @@
   },
   "dependencies": {
     "bulma": "^0.7.5",
-    "firebase": "^7.0.0",
+    "create-elm-app": "^3.2.2",
+    "firebase": "^7.2.0",
+    "global": "^4.4.0",
     "google-protobuf": "^3.9.2",
     "grpc-web": "^1.0.6"
   },
