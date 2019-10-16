@@ -1,6 +1,6 @@
 port module Page.Game exposing (Model, Msg, init, subscriptions, update, view)
 
-import Env exposing (Env)
+import Env exposing (Env, navKey)
 import Html exposing (..)
 import Html.Events exposing (..)
 import Html.Attributes exposing (..)
@@ -9,7 +9,9 @@ import Route
 
 port startGame : String -> Cmd msg
 port say : Message -> Cmd msg
+
 port onMessage : ( Message -> msg ) -> Sub msg
+port onFinish : ( () -> msg ) -> Sub msg
 
 type alias Message =
   { userId : String
@@ -25,7 +27,7 @@ type alias Model =
 
 init : Env -> ( Model, Cmd Msg )
 init env =
-  ( Model env "" [] { userId = "" }
+  ( Model env "" [] { userId = "testuid" }
   , startGame "testuid"
   )
 
@@ -34,6 +36,7 @@ type Msg
   | StartGame
   | Say
   | OnMessage Message
+  | OnFinish ()
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -49,10 +52,14 @@ update msg model =
         ({ model | messageInput = "" }, say ({ userId = user.userId, message = model.messageInput}))
       OnMessage incoming ->
         ({ model | messages = model.messages ++ [ incoming ] }, Cmd.none)
+      OnFinish _ ->
+        ( model, Route.replaceUrl (navKey model.env) Route.Result )
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
-  onMessage OnMessage
+subscriptions _ = Sub.batch
+  [ onMessage OnMessage
+  , onFinish OnFinish
+  ]
 
 view : Model -> { title : String, body : List (Html Msg) }
 view model =
@@ -60,13 +67,12 @@ view model =
   , body =
     [ div [ class "container" ]
       [ h3 [] [ text "Messages" ]
-      , viewMessages model.messages
       , input [ type_ "text"
         , onInput MessageInputChange
         , value model.messageInput
         ] []
       , button [ onClick Say ] [ text "Send" ]
-      , a [ Route.href <| Route.Result ] [ text "/result" ]
+      , viewMessages model.messages
       ]
     ]
   }

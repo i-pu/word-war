@@ -35,7 +35,7 @@ view model =
   { title = "test | home"
   , body =
     [ hero
-    , a [ Route.href <| Route.Game ] [ text "/game" ]
+    , a [ Route.href <| Route.Game ] [ text "ゲーム開始" ]
     ]
   }
 
