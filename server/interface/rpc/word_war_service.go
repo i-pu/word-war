@@ -42,13 +42,14 @@ func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) err
 				// channelが先に閉じてることはないはずなので
 				return errors.New("logical error about redis channel")
 			}
-			counter, err := s.counterUsecase.Get()
+			counter, err := s.counterUsecase.Incr()
 			if err != nil {
 				return err
 			}
 			// ! 10件にしましょう
 			if counter.Value > 10 {
 				// 終了処理
+				log.Printf("finish game")
 				return nil
 			}
 			res := &pb.GameResponse{

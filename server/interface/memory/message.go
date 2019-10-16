@@ -76,6 +76,7 @@ func (r *messageRepository) Subscribe(ctx context.Context) (<-chan *entity.Messa
 				// こんな適当でいいのだろうか?
 				select {
 				case <-ctx.Done():
+					log.Printf("parent ctx done!")
 					return
 				default:
 					ch <- &message
@@ -84,6 +85,7 @@ func (r *messageRepository) Subscribe(ctx context.Context) (<-chan *entity.Messa
 				log.Printf("%s: %s %d\n", v.Channel, v.Kind, v.Count)
 				select {
 				case <-ctx.Done():
+					log.Printf("parent ctx done!")
 					return
 				default:
 					continue
@@ -91,6 +93,7 @@ func (r *messageRepository) Subscribe(ctx context.Context) (<-chan *entity.Messa
 			case error:
 				select {
 				case <-ctx.Done():
+					log.Printf("parent ctx done!")
 					return
 				default:
 					// TODO: redisのwithTimeoutのエラーとその他の接続エラーの区別がしたい
