@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [8.x, 10.x, 12.x]
+        node-version: [12.x]
 
     steps:
     - uses: actions/checkout@v1
@@ -27,5 +27,6 @@ jobs:
     - name: build artifacts and deploy to Firebase Hosting
       run: |
         cd client
-        yarn deploy --token=${{ secrets.FIREBASE_TOKEN }}
+        echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > credential.js
+        yarn deploy --only=hosting --token=${{ secrets.FIREBASE_TOKEN }}
       
