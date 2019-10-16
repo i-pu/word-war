@@ -20,7 +20,9 @@ const STUBBED = true
 const store = {}
 
 // gRPC API のエンドポイント
-const endpoint = 'http://localhost:8080'
+const endpoint = process.env.NODE_ENV === 'development'
+  ? process.env.ELM_APP_API_ENDPOINT_DEV
+  : process.env.ELM_APP_API_ENDPOINT
 // gRPC のクライアント
 const client = new pb.WordWarPromiseClient(endpoint)
 
