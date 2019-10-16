@@ -25,15 +25,13 @@ func (r *counterRepository) IncrCounter() (int64, error) {
 	key := "counter"
 	conn := r.conn.Get()
 
-	value, err := redis.Int64(conn.Do("GET", key))
+	value, err := redis.Int64(conn.Do("Incr", key))
 
 	if err != nil {
 		return -1, err
 	}
 
-	conn.Do("SET", key, value+1)
-
-	return value + 1, nil
+	return value, nil
 }
 
 func (r *counterRepository) SetCounter(value int64) error {

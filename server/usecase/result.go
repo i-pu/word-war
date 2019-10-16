@@ -10,7 +10,7 @@ import (
 
 type ResultUsecase interface {
 	// userIDはそのuserの結果
-	CalResult(userID string) (*entity.Result, error)
+	IncrResult(userID string, by int64) error
 	GetResult(userID string) (*entity.Result, error)
 }
 
@@ -26,8 +26,8 @@ func NewResultUsecase(repo repository.ResultRepository, service *service.ResultS
 	}
 }
 
-func (u *resultUsecase) CalResult(userID string) (*entity.Result, error) {
-	return nil, errors.New("unimplemented")
+func (u *resultUsecase) IncrResult(userID string, by int64) error {
+	return u.repo.IncrBy(userID, by)
 }
 
 func (u *resultUsecase) GetResult(userID string) (*entity.Result, error) {

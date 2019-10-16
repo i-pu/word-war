@@ -6,7 +6,7 @@ import credential from '../credential'
 firebase.initializeApp(credential)
 import pb from './word_war_grpc_web_pb'
 // Parcel を使っているので直接 import できる
-const { Elm } = require('./main.elm')
+const { Elm } = require('./Main.elm')
 
 // Elm を初期化して #app に配置
 const app = Elm.Main.init({
@@ -20,9 +20,9 @@ const STUBBED = true
 const store = {}
 
 // gRPC API のエンドポイント
-const endpoint = 'http://localhost:50051'
+const endpoint = 'http://localhost:8080'
 // gRPC のクライアント
-const client = new pb.WordWarPromiseClient()
+const client = new pb.WordWarPromiseClient(endpoint)
 
 // ====================
 //        Top
@@ -73,12 +73,12 @@ app.ports.startGame.subscribe(async userId => {
   if (!STUBBED) {
     // Server Streaming RPCs
     const req = new pb.GameRequest()
-    req.setUserId(userId)
+    req.setUserid(userId)
     const stream = client.game(req)
 
     stream.on('data', res => {
       const message = res.getMessage()
-      const userId = req.getUserId()
+      const userId = req.getUserid()
       // JS -> Elm
       app.ports.onMessage.send({ userId, message })
     })
@@ -106,15 +106,14 @@ app.ports.say.subscribe(async ({ userId, message }) => {
   if (!STUBBED) {
     // gRPC Unary RPCs
     const req = new pb.SayRequest()
-    req.setUserId(userId)
+    req.setUserid(userId)
     req.setMessage(message)
 
-    const [ userId, message ] = await client.Say(req)
-      .then(res => res.array)
+    const res = await client.say(req)
       .catch(console.error)
 
     // Elm の onMessage を呼ぶ
-    app.ports.onMessage.send({ userId, message })
+    app.ports.onMessage.send({ "userId": res.getUserid(), "message": res.getMessage() })
   } else {
     store.messages.push({ userId, message })
     app.ports.onMessage.send({ userId, message })
@@ -128,13 +127,12 @@ app.ports.say.subscribe(async ({ userId, message }) => {
 app.ports.requestResult.subscribe(async userId => {
   if (!STUBBED) {
     const req = new pb.ResultRequest()
-    req.setUserId(userId)
+    req.setUserid(userId)
 
-    const [ userId, score ] = await client.Result(req)
-      .then(res => res.array)
+    const res = await client.result(req)
       .catch(console.error)
 
-    app.ports.onResult.send({ userId, score })
+    app.ports.onResult.send({ "userId": res.getUserid(), "score": res.getScore() })
   } else {
     const score = store.messages.length
     console.log({ userId, score })

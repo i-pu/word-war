@@ -22,12 +22,20 @@ func NewResultRepository() *resultRepository {
 }
 
 // redis result repo の命名規則
-// <userID>:<score>
-// 将来は <roomID>:<userID>:<score>みたいな感じになるかも
+// <userID>:score
+// 将来は <roomID>:<userID>:scoreみたいな感じになるかも
 
 func (r *resultRepository) Get(userID string) (*entity.Result, error) {
 	return nil, errors.New("unimplemented")
 }
 func (r *resultRepository) Set(userID string, result *entity.Result) error {
 	return errors.New("unimplemented")
+}
+func (r *resultRepository) IncrBy(userID string, by int64) error {
+	conn := r.conn.Get()
+	_, err := conn.Do("INCRBY", userID+":"+"score", by)
+	if err != nil {
+		return err
+	}
+	return nil
 }

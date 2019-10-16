@@ -1,6 +1,6 @@
 node_modules/
 elm-stuff/
-dist/
+build/
 yarn.lock
 credential.js
 .firebase/

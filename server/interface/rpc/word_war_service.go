@@ -3,11 +3,11 @@ package rpc
 import (
 	"context"
 	"errors"
-	"log"
-
 	"github.com/i-pu/word-war/server/domain/entity"
 	pb "github.com/i-pu/word-war/server/interface/rpc/pb"
 	"github.com/i-pu/word-war/server/usecase"
+	"log"
+	"strconv"
 )
 
 type wordWarService struct {
@@ -42,13 +42,14 @@ func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) err
 				// channelが先に閉じてることはないはずなので
 				return errors.New("logical error about redis channel")
 			}
-			counter, err := s.counterUsecase.Get()
+			counter, err := s.counterUsecase.Incr()
 			if err != nil {
 				return err
 			}
 			// ! 10件にしましょう
 			if counter.Value > 10 {
 				// 終了処理
+				log.Printf("finish game")
 				return nil
 			}
 			res := &pb.GameResponse{
@@ -73,9 +74,14 @@ func (s *wordWarService) Say(ctx context.Context, in *pb.SayRequest) (*pb.SayRes
 
 	// FIXME: 部屋の機能はまだないので、部屋IDはまだ指定しないようにします
 	err := s.messageUsecase.SendMessage(&entity.Message{UserID: in.GetUserId(), Message: in.GetMessage()})
-	// TODO: 今何回Sayが言われたかをCountする
-	// redis.do("incr"...
+	if err != nil {
+		return nil, err
+	}
 
+	// TODO: スコア計算はどこで？
+
+	// てんすう固定
+	err = s.resultUsecase.IncrResult(in.GetUserId(), 5)
 	if err != nil {
 		return nil, err
 	}
@@ -84,5 +90,18 @@ func (s *wordWarService) Say(ctx context.Context, in *pb.SayRequest) (*pb.SayRes
 }
 
 func (s *wordWarService) Result(ctx context.Context, in *pb.ResultRequest) (*pb.ResultResponse, error) {
-	return nil, errors.New("not implemented")
+	// 結果を取得する
+	result, err := s.resultUsecase.GetResult(in.GetUserId())
+	if err != nil {
+		return nil, err
+	}
+
+	num := strconv.FormatInt(result.Score, 10)
+
+	res := &pb.ResultResponse{
+		UserId: result.UserID,
+		Score:  num,
+	}
+
+	return res, nil
 }
