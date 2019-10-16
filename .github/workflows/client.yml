@@ -24,7 +24,7 @@ jobs:
       run: |
         cd client
         yarn install
-    - name: deploy to Firebase Hosting
+    - name: build artifacts and deploy to Firebase Hosting
       run: |
-        ./node_modules/.bin/firebase deploy --token=${{ secrets.FIREBASE_TOKEN }}
+        yarn deploy --token=${{ secrets.FIREBASE_TOKEN }}
       
