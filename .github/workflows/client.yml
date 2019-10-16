@@ -27,6 +27,6 @@ jobs:
     - name: build artifacts and deploy to Firebase Hosting
       run: |
         cd client
-        echo ${{ secrets.FIREBASE_SERVICE_ACCOUNT }} > credential.js
+        echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > credential.js
         yarn deploy --only=hosting --token=${{ secrets.FIREBASE_TOKEN }}
       
