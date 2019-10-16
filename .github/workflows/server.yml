@@ -18,6 +18,7 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
         workdir: server
+        tag: latest
 
     - name: Publish server image
       uses: elgohr/Publish-Docker-Github-Action@master
@@ -26,3 +27,4 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
         workdir: envoy
+        tag: latest

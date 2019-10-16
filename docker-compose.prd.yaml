@@ -11,7 +11,7 @@ services:
     ports:
       - 6379:6379
   envoy:
-    image: iputus/server
+    image: iputus/envoy
     ports:
       - "80:8080"
       - "9901:9901"
