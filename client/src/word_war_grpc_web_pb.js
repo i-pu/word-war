@@ -88,25 +88,6 @@ proto.word_war.WordWarPromiseClient =
 
 /**
  * @const
- * @type {!grpc.web.MethodDescriptor<
- *   !proto.word_war.SayRequest,
- *   !proto.word_war.SayResponse>}
- */
-const methodDescriptor_WordWar_Say = new grpc.web.MethodDescriptor(
-  '/word_war.WordWar/Say',
-  grpc.web.MethodType.UNARY,
-  proto.word_war.SayRequest,
-  proto.word_war.SayResponse,
-  /** @param {!proto.word_war.SayRequest} request */
-  function(request) {
-    return request.serializeBinary();
-  },
-  proto.word_war.SayResponse.deserializeBinary
-);
-
-
-/**
- * @const
  * @type {!grpc.web.AbstractClientBase.MethodInfo<
  *   !proto.word_war.SayRequest,
  *   !proto.word_war.SayResponse>}
@@ -137,7 +118,7 @@ proto.word_war.WordWarClient.prototype.say =
       '/word_war.WordWar/Say',
       request,
       metadata || {},
-      methodDescriptor_WordWar_Say,
+      methodInfo_WordWar_Say,
       callback);
 };
 
@@ -156,27 +137,8 @@ proto.word_war.WordWarPromiseClient.prototype.say =
       '/word_war.WordWar/Say',
       request,
       metadata || {},
-      methodDescriptor_WordWar_Say);
+      methodInfo_WordWar_Say);
 };
-
-
-/**
- * @const
- * @type {!grpc.web.MethodDescriptor<
- *   !proto.word_war.GameRequest,
- *   !proto.word_war.GameResponse>}
- */
-const methodDescriptor_WordWar_Game = new grpc.web.MethodDescriptor(
-  '/word_war.WordWar/Game',
-  grpc.web.MethodType.SERVER_STREAMING,
-  proto.word_war.GameRequest,
-  proto.word_war.GameResponse,
-  /** @param {!proto.word_war.GameRequest} request */
-  function(request) {
-    return request.serializeBinary();
-  },
-  proto.word_war.GameResponse.deserializeBinary
-);
 
 
 /**
@@ -208,7 +170,7 @@ proto.word_war.WordWarClient.prototype.game =
       '/word_war.WordWar/Game',
       request,
       metadata || {},
-      methodDescriptor_WordWar_Game);
+      methodInfo_WordWar_Game);
 };
 
 
@@ -225,27 +187,8 @@ proto.word_war.WordWarPromiseClient.prototype.game =
       '/word_war.WordWar/Game',
       request,
       metadata || {},
-      methodDescriptor_WordWar_Game);
+      methodInfo_WordWar_Game);
 };
-
-
-/**
- * @const
- * @type {!grpc.web.MethodDescriptor<
- *   !proto.word_war.ResultRequest,
- *   !proto.word_war.ResultResponse>}
- */
-const methodDescriptor_WordWar_Result = new grpc.web.MethodDescriptor(
-  '/word_war.WordWar/Result',
-  grpc.web.MethodType.UNARY,
-  proto.word_war.ResultRequest,
-  proto.word_war.ResultResponse,
-  /** @param {!proto.word_war.ResultRequest} request */
-  function(request) {
-    return request.serializeBinary();
-  },
-  proto.word_war.ResultResponse.deserializeBinary
-);
 
 
 /**
@@ -280,7 +223,7 @@ proto.word_war.WordWarClient.prototype.result =
       '/word_war.WordWar/Result',
       request,
       metadata || {},
-      methodDescriptor_WordWar_Result,
+      methodInfo_WordWar_Result,
       callback);
 };
 
@@ -299,7 +242,7 @@ proto.word_war.WordWarPromiseClient.prototype.result =
       '/word_war.WordWar/Result',
       request,
       metadata || {},
-      methodDescriptor_WordWar_Result);
+      methodInfo_WordWar_Result);
 };
 
 
