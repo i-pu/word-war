@@ -13,5 +13,5 @@ services:
   envoy:
     image: iputus/envoy:develop-1.0
     ports:
-      - "80:8080"
+      - "8080:8080"
       - "9901:9901"
