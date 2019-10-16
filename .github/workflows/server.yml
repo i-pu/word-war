@@ -1,0 +1,33 @@
+name: Node CI
+
+on:
+  push:
+    branches: 
+      - '*'
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@master
+
+    - name: Publish server image
+      uses: elgohr/Publish-Docker-Github-Action@master
+      with:
+        name: iputus/server
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        workdir: server
+
+    - name: Publish server image
+      uses: elgohr/Publish-Docker-Github-Action@master
+      env:
+        ENVOY_FILE: ./envoy.prd.yaml
+      with:
+        name: iputus/envoy
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        workdir: envoy
+        buildargs: ENVOY_FILE
