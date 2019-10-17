@@ -1,4 +1,4 @@
-port module Page.Top exposing (Model, Msg, init, subscriptions, update, view)
+port module Page.Top exposing (Model, Msg, init, subscriptions, update, view, hero)
 
 import Env exposing (Env, User, navKey)
 import Html exposing (..)
