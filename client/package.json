@@ -6,6 +6,7 @@
   "scripts": {
     "start": "npx elm-app start",
     "build": "npx elm-app build",
+    "test": "npx elm-app test",
     "deploy": "yarn build && firebase deploy"
   },
   "devDependencies": {

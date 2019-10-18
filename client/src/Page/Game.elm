@@ -1,9 +1,10 @@
-port module Page.Game exposing (Model, Msg, init, subscriptions, update, view)
+port module Page.Game exposing (Model, Msg, init, subscriptions, update, view, isHiragana)
 
 import Env exposing (Env, navKey)
 import Html exposing (..)
 import Html.Events exposing (..)
 import Html.Attributes exposing (..)
+import Regex
 import Id exposing (Id)
 import Route
 
@@ -61,29 +62,47 @@ subscriptions _ = Sub.batch
   , onFinish OnFinish
   ]
 
+hiragana : Regex.Regex
+hiragana =
+  Maybe.withDefault Regex.never <| Regex.fromString "^[ぁ-んー]+$"
+
+isHiragana : String -> Bool
+isHiragana str =
+  Regex.find hiragana str
+    |> List.isEmpty
+    |> not
+
 view : Model -> { title : String, body : List (Html Msg) }
 view model =
   { title = "test | game"
   , body =
-    [ div [ class "container" ]
-      [ h3 [] [ text "Messages" ]
-      , input [ type_ "text"
-        , onInput MessageInputChange
-        , value model.messageInput
-        ] []
-      , button [ onClick Say ] [ text "Send" ]
+    [ section [ class "section" ]
+      [ form model
       , viewMessages model.messages
       ]
     ]
   }
 
-hero : Html Msg
-hero =
-  section [ class "hero is-primary" ]
-    [ div [ class "hero-body" ]
-      [ div [ class "container" ]
-        [ h1 [ class "title" ]
-          [ text "Game" ]
+form : Model -> Html Msg
+form model =
+  div [ class "container" ]
+    [ div [ class "field has-addons" ]
+      [ div [ class "control is-expanded" ]
+        [ input
+          [ type_ "text"
+          , class "input"
+          , placeholder "Word"
+          , onInput MessageInputChange
+          , value model.messageInput
+          ] []
+        ]
+      , div [ class "control" ]
+        [ button 
+          [ class "button is-primary"
+          , onClick Say
+          , disabled <| not (isHiragana model.messageInput)
+          ]
+          [ text "Send" ]
         ]
       ]
     ]

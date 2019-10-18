@@ -18,14 +18,18 @@ const app = Elm.Main.init({
 const store = {}
 
 const isDevelop = process.env.NODE_ENV === 'development'
-const isStub = false // isDevelop
+const isStub = true // isDevelop
 
 // gRPC API のエンドポイント
 const endpoint = isDevelop
   ? process.env.ELM_APP_API_ENDPOINT_DEV
   : process.env.ELM_APP_API_ENDPOINT
 
-console.log(`endpoint is ${endpoint}`)
+if (isStub) {
+  console.log(`stub mode`)
+} else {
+  console.log(`endpoint is ${endpoint}`)
+}
 
 // gRPC のクライアント
 const client = new pb.WordWarPromiseClient(endpoint)
@@ -105,8 +109,6 @@ app.ports.startGame.subscribe(async userId => {
         app.ports.onMessage.send({ userId: 'u012', message: 'message' })
         await new Promise(resolve => setTimeout(resolve, 2000))
       }
-
-      app.ports.onFinish.send(null)
     })
   }
 })
@@ -125,6 +127,10 @@ app.ports.say.subscribe(async ({ userId, message }) => {
 
     // Elm の onMessage を呼ぶ
     app.ports.onMessage.send({ "userId": res.getUserid(), "message": res.getMessage() })
+
+    if (store.messages.length > 3) {
+      app.ports.onFinish.send(null)
+    }
   } else {
     store.messages.push({ userId, message })
     app.ports.onMessage.send({ userId, message })
@@ -145,7 +151,7 @@ app.ports.requestResult.subscribe(async userId => {
 
     app.ports.onResult.send({ "userId": res.getUserid(), "score": res.getScore() })
   } else {
-    const score = store.messages.length
+    const score = store.messages ? store.messages.length : 0
     console.log({ userId, score })
     app.ports.onResult.send({ userId, score })
   }

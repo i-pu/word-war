@@ -1,6 +1,6 @@
 port module Page.Home exposing (Model, Msg, init, subscriptions, update, view)
 
-import Env exposing (Env)
+import Env exposing (Env, navKey)
 import Html exposing (..)
 import Html.Events exposing (..)
 import Html.Attributes exposing (..)
@@ -18,13 +18,13 @@ init env =
   )
 
 type Msg
-  = Hoge
+  = ToGame
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
-    Hoge ->
-      (model, Cmd.none)
+    ToGame ->
+      (model, Route.replaceUrl (navKey model.env) Route.Game)
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
@@ -35,7 +35,7 @@ view model =
   { title = "test | home"
   , body =
     [ hero
-    , a [ Route.href <| Route.Game ] [ text "ゲーム開始" ]
+    , selectMenu
     ]
   }
 
@@ -45,7 +45,16 @@ hero =
     [ div [ class "hero-body" ]
       [ div [ class "container" ]
         [ h1 [ class "title" ]
-          [ text "Home" ]
+          [ text ("{Name}" ++ "Rating: 0.00") ]
         ]
+      ]
+    ]
+
+selectMenu : Html Msg
+selectMenu =
+  section [ class "section" ]
+    [ div [ class "container" ]
+      [ button [ style "margin-bottom" "10px", class "button is-primary is-large is-fullwidth", onClick ToGame ] [ text "ランダムマッチ" ]
+      , button [ class "button is-link is-large is-fullwidth", disabled True ] [ text "部屋を作る" ]
       ]
     ]
