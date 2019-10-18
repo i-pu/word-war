@@ -106,7 +106,7 @@ app.ports.startGame.subscribe(async userId => {
       // stub
       store.messages = []
       for (let i = 0; i < 5; i++) {
-        app.ports.onMessage.send({ userId: 'u012', message: 'message' })
+        app.ports.onMessage.send({ userId: 'bcEudVn6dlYAdAPqWSrDA7dWAv82', message: 'りんご' })
         await new Promise(resolve => setTimeout(resolve, 2000))
       }
     })
@@ -127,13 +127,13 @@ app.ports.say.subscribe(async ({ userId, message }) => {
 
     // Elm の onMessage を呼ぶ
     app.ports.onMessage.send({ "userId": res.getUserid(), "message": res.getMessage() })
-
-    if (store.messages.length > 3) {
-      app.ports.onFinish.send(null)
-    }
   } else {
     store.messages.push({ userId, message })
     app.ports.onMessage.send({ userId, message })
+
+    if (store.messages.length >= 3) {
+      app.ports.onFinish.send(null)
+    }
   }
 })
 

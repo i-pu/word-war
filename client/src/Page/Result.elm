@@ -1,10 +1,9 @@
 port module Page.Result exposing (Model, Msg, init, subscriptions, update, view)
 
-import Env exposing (Env)
+import Env exposing (Env, navKey, getUid)
 import Html exposing (..)
 import Html.Events exposing (..)
 import Html.Attributes exposing (..)
-import Id exposing (Id)
 import Route
 import String exposing (fromInt)
 
@@ -27,17 +26,20 @@ type alias Model =
 init : Env -> ( Model, Cmd Msg )
 init env =
   ( Model env { userId = "", score = 0 }
-  , requestResult "testuid"
+  , requestResult (getUid env)
   )
 
 type Msg
   = OnResult Result
+  | ToHome
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
     OnResult newResult ->
       ({ model | result = newResult }, Cmd.none)
+    ToHome ->
+      (model, Route.replaceUrl (navKey model.env) Route.Home)
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
@@ -50,8 +52,7 @@ view model =
   { title = "test | result"
   , body =
     [ hero
-    , h3 [] [ text (fromInt model.result.score ++ "点") ]
-    , a [ Route.href <| Route.Home ] [ text "ホームへ" ]
+    , section [ class "section" ] [ resultView model ]
     ]
   }
 
@@ -64,4 +65,11 @@ hero =
           [ text "Result" ]
         ]
       ]
+    ]
+
+resultView : Model -> Html Msg
+resultView model =
+  div [ class "container has-text-centered" ]
+    [ h1 [ class "title" ] [ text (fromInt model.result.score ++ "点") ]
+    , button [ class "button is-primary is-large is-fullwidth", onClick ToHome ] [ text "ホームへ" ]
     ]

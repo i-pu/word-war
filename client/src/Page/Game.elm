@@ -1,11 +1,10 @@
 port module Page.Game exposing (Model, Msg, init, subscriptions, update, view, isHiragana)
 
-import Env exposing (Env, navKey)
+import Env exposing (Env, navKey, getUid)
 import Html exposing (..)
 import Html.Events exposing (..)
 import Html.Attributes exposing (..)
 import Regex
-import Id exposing (Id)
 import Route
 
 port startGame : String -> Cmd msg
@@ -23,13 +22,12 @@ type alias Model =
   { env : Env
   , messageInput : String
   , messages : List Message
-  , user : { userId : String }
   }
 
 init : Env -> ( Model, Cmd Msg )
 init env =
-  ( Model env "" [] { userId = "testuid" }
-  , startGame "testuid"
+  ( Model env "" []
+  , startGame (getUid env)
   )
 
 type Msg
@@ -42,15 +40,15 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   let
-    user = model.user
+    userId = getUid model.env
   in
     case msg of
       MessageInputChange newInput ->
         ({ model | messageInput = newInput }, Cmd.none)
       StartGame ->
-        ( model, startGame user.userId )
+        ( model, startGame userId )
       Say ->
-        ({ model | messageInput = "" }, say ({ userId = user.userId, message = model.messageInput}))
+        ({ model | messageInput = "" }, say ({ userId = userId, message = model.messageInput}))
       OnMessage incoming ->
         ({ model | messages = model.messages ++ [ incoming ] }, Cmd.none)
       OnFinish _ ->
@@ -91,7 +89,7 @@ form model =
         [ input
           [ type_ "text"
           , class "input"
-          , placeholder "Word"
+          , placeholder "単語(ひらがなのみ)"
           , onInput MessageInputChange
           , value model.messageInput
           ] []
