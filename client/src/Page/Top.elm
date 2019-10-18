@@ -1,10 +1,9 @@
-port module Page.Top exposing (Model, Msg, init, subscriptions, update, view)
+port module Page.Top exposing (Model, Msg, init, subscriptions, update, view, hero)
 
-import Env exposing (Env, User, navKey)
+import Env exposing (Env, User, navKey, setUid)
 import Html exposing (..)
 import Html.Events exposing (..)
 import Html.Attributes exposing (..)
-import Id exposing (Id)
 import Route
 
 -- 機能の追加の仕方
@@ -85,8 +84,8 @@ update msg model =
         )
       )
     OnSignin user ->
-      (model
-      , Cmd.batch 
+      ({ model | env = setUid model.env user.uid }
+      , Cmd.batch
         [ Route.replaceUrl (navKey model.env) Route.Home
         ]
       )

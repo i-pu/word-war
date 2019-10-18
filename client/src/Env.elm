@@ -1,25 +1,34 @@
-module Env exposing (Env, User, create, navKey)
+module Env exposing (Env, User, create, navKey, setUid, getUid)
 
 import Browser.Navigation as Nav
 
--- ユーザーモデル
+type Env
+  = Env Internals
+
 type alias User =
   { uid : String
   }
 
-type Env
-    = Env Internals
-
--- [TODO] セッションデータをもたせたい
 type alias Internals =
-    { key : Nav.Key
-    -- , user : User
-    }
+  { key : Nav.Key
+  , uid : String
+  }
 
-create : Nav.Key -> Env
-create key =
-    Env (Internals key)
+create : Nav.Key -> String -> Env
+create key str =
+  Env (Internals key str)
 
 navKey : Env -> Nav.Key
 navKey (Env internals) =
-    internals.key
+  internals.key
+
+-- [TODO] 保存方法考える
+
+getUid : Env -> String
+getUid (Env internals) =
+  "ESHNsCBaZHVQEjgDeEB2VXSCG262"
+  -- internals.uid
+
+setUid : Env -> String -> Env
+setUid (Env internals) uid =
+  create internals.key uid

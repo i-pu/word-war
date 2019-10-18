@@ -5,7 +5,6 @@ import Browser.Navigation as Nav
 import Env exposing (Env)
 import Html exposing (Html, button, div, text)
 import Html.Events exposing (onClick)
-import Id exposing (Id)
 import Page.Top as TopPage
 import Page.Home as HomePage
 import Page.Game as GamePage
@@ -39,7 +38,7 @@ init : Flags -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
     changeRouteTo (Route.fromUrl url)
         (NotFound <|
-            Env.create key
+            Env.create key ""
         )
 
 -- UPDATE
