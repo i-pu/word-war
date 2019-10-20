@@ -22,6 +22,7 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
         workdir: server
+        snapshot: true
 
     - name: Publish envoy image
       id: publish-envoy-image
@@ -31,6 +32,7 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
         workdir: envoy
+        snapshot: true
     
     - name: echo outputs
       id: echo
