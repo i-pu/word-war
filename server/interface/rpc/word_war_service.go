@@ -32,6 +32,7 @@ func NewWordWarService(
 func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	// childのcontext荷関数が終了することを教えてあげる
+	defer s.counterUsecase.Init(&entity.Counter{Value: 0})
 	defer cancel()
 
 	messageChan, errChan := s.messageUsecase.GetMessage(ctx)
@@ -44,6 +45,7 @@ func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) err
 			}
 			counter, err := s.counterUsecase.Incr()
 			if err != nil {
+				log.Printf("error in incr: %+v", err)
 				return err
 			}
 			// ! 10件にしましょう
