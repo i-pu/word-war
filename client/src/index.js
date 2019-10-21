@@ -40,40 +40,65 @@ const client = new pb.WordWarPromiseClient(endpoint)
 
 // ログインボタンが押されて Elm から呼ばれる
 app.ports.signinWithFirebase.subscribe(async ({ email, password }) => {
-  // firebase auth でユーザー認証
-  const auth = await firebase.auth()
-    .signInWithEmailAndPassword(email, password)
-    .catch(console.log)
+  try {
+    // firebase auth でユーザー認証
+    const auth = await firebase.auth()
+      .signInWithEmailAndPassword(email, password)
 
-  if (!auth) {
+    const userId = auth.user.uid
+
+    // create user data
+    const snapshot = await firebase.firestore()
+      .collection('users')
+      .doc(userId)
+      .get()
+
+    const userData = snapshot.data()
+
+    console.log(`logged in as ${userId}`)
+    console.log(userData)
+
+    app.ports.signinCallback.send({ uid: userId })
+
+  } catch (e) {
+    console.error(e)
     return
   }
-
-  console.log(`logged in as ${auth.user.uid}`)
-
-  app.ports.signinCallback.send({ uid: auth.user.uid })
 })
 
 // サインアップボタンが押されたときの処理
 app.ports.signupWithFirebase.subscribe(async ({ email, password }) => {
   console.log({ email, password })
-  const auth = await firebase.auth()
-    .createUserWithEmailAndPassword(email, password)
-    .catch(console.error)
 
-  if (!auth) {
+  try {
+    // create user
+    const auth = await firebase.auth()
+      .createUserWithEmailAndPassword(email, password)
+
+    const userId = auth.user.uid
+
+    console.log(`signed up and logged in as ${userId}`)
+
+    // create user data
+    await firebase.firestore()
+      .collection('users')
+      .doc(userId)
+      .set({
+        rating: 1500, 
+        history: [1500]
+      })
+
+    app.ports.signinCallback.send({ uid: userId })
+
+  } catch (e) {
+    console.error(e)
     return
   }
-
-  console.log(`signed up and logged in as ${auth.user.uid}`)
-
-  app.ports.signinCallback.send({ uid: auth.user.uid })
 })
 
 // ====================
 //        Home
 // ====================
-
 
 // ====================
 //        Game
