@@ -1,6 +1,6 @@
 port module Page.Home exposing (Model, Msg, init, subscriptions, update, view)
 
-import Env exposing (Env, navKey, getUid)
+import Env exposing (Env, navKey, getUid, getScore)
 import Html exposing (..)
 import Html.Events exposing (..)
 import Html.Attributes exposing (..)
@@ -46,7 +46,7 @@ hero model =
         [ h1 [ class "title" ]
           [ text (getUid model.env) ]
         , h3 [ class "subtitle" ]
-          [ text ("Rating: " ++ String.fromFloat 0.1) ]
+          [ text ("Rating: " ++ String.fromInt (getScore model.env)) ]
         ]
       ]
     ]
