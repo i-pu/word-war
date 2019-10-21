@@ -1,5 +1,6 @@
 import firebase from 'firebase/app'
 import 'firebase/auth'
+import 'firebase/firestore'
 import credential from '../credential'
 
 // firebase の初期化
@@ -58,7 +59,7 @@ app.ports.signinWithFirebase.subscribe(async ({ email, password }) => {
     console.log(`logged in as ${userId}`)
     console.log(userData)
 
-    app.ports.signinCallback.send({ uid: userId })
+    app.ports.signinCallback.send({ uid: userId, rating: userData.rating })
 
   } catch (e) {
     console.error(e)
@@ -67,8 +68,8 @@ app.ports.signinWithFirebase.subscribe(async ({ email, password }) => {
 })
 
 // サインアップボタンが押されたときの処理
-app.ports.signupWithFirebase.subscribe(async ({ email, password }) => {
-  console.log({ email, password })
+app.ports.signupWithFirebase.subscribe(async ({ name, email, password }) => {
+  console.log({ name, email, password })
 
   try {
     // create user
@@ -84,11 +85,12 @@ app.ports.signupWithFirebase.subscribe(async ({ email, password }) => {
       .collection('users')
       .doc(userId)
       .set({
-        rating: 1500, 
+        name,
+        rating: 1500,
         history: [1500]
       })
 
-    app.ports.signinCallback.send({ uid: userId })
+    app.ports.signinCallback.send({ uid: userId, rating: 1500 })
 
   } catch (e) {
     console.error(e)
