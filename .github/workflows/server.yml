@@ -3,8 +3,7 @@ name: Server Docker Build
 on:
   push:
     branches:
-      - 'develop/**'
-      - 'chore/**'
+      - 'develop/1.0'
 
 jobs:
   build:
