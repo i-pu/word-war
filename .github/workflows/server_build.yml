@@ -3,8 +3,7 @@ name: Server Docker Build
 on:
   push:
     branches:
-      - 'develop/**'
-      - 'chore/**'
+      - 'develop/1.0'
 
 jobs:
   build:
@@ -33,7 +32,9 @@ jobs:
         password: ${{ secrets.DOCKER_PASSWORD }}
         workdir: envoy
         snapshot: true
-    
+
     - name: echo outputs
       id: echo
-      run: echo ${{ steps.publish-server-image.outputs.snapshot-tag }}
+      run: |
+        echo ${{ steps.publish-server-image.outputs.snapshot-tag }}
+        echo ${{ steps.publish-envoy-image.outputs.snapshot-tag }}
