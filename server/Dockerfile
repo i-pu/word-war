@@ -1,15 +1,47 @@
-FROM intimatemerger/mecab-ipadic-neologd as builder
-FROM golang:1.13.1
+FROM golang:1.13.1-alpine
+
+# ref https://hub.docker.com/r/smizy/mecab/dockerfile
+RUN apk add --update --no-cache build-base
+
+ENV MECAB_VERSION 0.996
+ENV IPADIC_VERSION 2.7.0-20070801
+ENV mecab_url https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7cENtOXlicTFaRUE
+ENV ipadic_url https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7MWVlSDBCSXZMTXM
+ENV build_deps 'curl git bash file sudo openssh'
+ENV dependencies 'openssl'
+
+RUN apk add --update --no-cache ${build_deps} \
+  # Install dependencies
+  && apk add --update --no-cache ${dependencies} \
+  # Install MeCab
+  && curl -SL -o mecab-${MECAB_VERSION}.tar.gz ${mecab_url} \
+  && tar zxf mecab-${MECAB_VERSION}.tar.gz \
+  && cd mecab-${MECAB_VERSION} \
+  && ./configure --enable-utf8-only --with-charset=utf8 \
+  && make \
+  && make install \
+  && cd \
+  # Install IPA dic
+  && curl -SL -o mecab-ipadic-${IPADIC_VERSION}.tar.gz ${ipadic_url} \
+  && tar zxf mecab-ipadic-${IPADIC_VERSION}.tar.gz \
+  && cd mecab-ipadic-${IPADIC_VERSION} \
+  && ./configure --with-charset=utf8 \
+  && make \
+  && make install \
+  && cd \
+  # Install Neologd
+  && git clone --depth 1 https://github.com/neologd/mecab-ipadic-neologd.git \
+  && mecab-ipadic-neologd/bin/install-mecab-ipadic-neologd -n -y \
+  # Clean up
+  && apk del ${build_deps} \
+  && rm -rf \
+    mecab-${MECAB_VERSION}* \
+    mecab-${IPADIC_VERSION}* \
+    mecab-ipadic-neologd
 
 WORKDIR /go/src/app
 
-# https://blog.csdn.net/zxy131072/article/details/90514978
-RUN apt update && apt -y install sudo gcc-multilib libmecab-dev mecab-ipadic-utf8
-
 ENV GO111MODULE on
-
-RUN groupadd -g 10001 myapp &&\
-  useradd -u 10001 -g myapp myapp
 
 COPY go.mod go.sum ./
 
@@ -23,23 +55,9 @@ RUN CGO_ENABLED=1\
   CGO_LDFLAGS="`mecab-config --libs`"\
   CGO_CFLAGS="-I`mecab-config --inc-dir`"\
   GOOS=linux\
-  GOARCH=386\
+  GOARCH=amd64\
   go build -o /go/bin/app
 
-# [Error message]
-# runtime/cgo
-# /usr/bin/ld: cannot find -lmecab
-# /usr/bin/ld: cannot find -lstdc++
-# collect2: error: ld returned 1 exit status
-
-FROM alpine:3.9
-
-COPY --from=builder /go/bin/app /go/bin/app
-COPY --from=builder /etc/group /etc/group
-COPY --from=builder /etc/passwd /etc/passwd
-
 EXPOSE 50051
-
-USER myapp
 
 ENTRYPOINT ["/go/bin/app"]

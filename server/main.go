@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net"
 
@@ -11,7 +12,7 @@ import (
 	pb "github.com/i-pu/word-war/server/interface/rpc/pb"
 	"github.com/i-pu/word-war/server/usecase"
 
-	// mecab "github.com/shogo82148/go-mecab"
+	mecab "github.com/shogo82148/go-mecab"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -19,22 +20,22 @@ import (
 
 const (
 	ipadic = "/usr/local/lib/mecab/dic/mecab-ipadic-neologd"
-	text   = "10日放送の「中居正広のミになる図書館」（テレビ朝日系）で、SMAPの中居正広が、篠原信一の過去の勘違いを明かす一幕があった。"
+	text   = "dmm.com"
 )
 
-// func parse(args map[string]string) {
-// 	mecab, err := mecab.New(args)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	defer mecab.Destroy()
+func parse(args map[string]string) {
+	mecab, err := mecab.New(args)
+	if err != nil {
+		panic(err)
+	}
+	defer mecab.Destroy()
 
-// 	node, err := mecab.ParseToNode(text)
+	node, err := mecab.ParseToNode(text)
 
-// 	for ; !node.IsZero(); node = node.Next() {
-// 		fmt.Printf("%s\t%s\n", node.Surface(), node.Feature())
-// 	}
-// }
+	for ; !node.IsZero(); node = node.Next() {
+		fmt.Printf("%s\t%s\n", node.Surface(), node.Feature())
+	}
+}
 
 func main() {
 	lis, err := net.Listen("tcp", ":50051")
@@ -47,8 +48,8 @@ func main() {
 	reflection.Register(grpcServer)
 
 	// ====  mecab test  ====
-	// fmt.Println("# ipadic")
-	// parse(map[string]string{})
+	fmt.Println("# ipadic")
+	parse(map[string]string{"dicdir": ipadic})
 	// ======================
 
 	if err := grpcServer.Serve(lis); err != nil {
