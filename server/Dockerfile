@@ -1,21 +1,15 @@
-FROM golang:1.13.1 as builder
+FROM intimatemerger/mecab-ipadic-neologd as builder
+FROM golang:1.13.1
 
 WORKDIR /go/src/app
 
-# for mecab
-RUN apt update
-RUN apt -y install sudo
-RUN sudo apt install -y mecab libmecab-dev mecab-ipadic-utf8 git
+# https://blog.csdn.net/zxy131072/article/details/90514978
+RUN apt update && apt -y install sudo gcc-multilib libmecab-dev mecab-ipadic-utf8
 
 ENV GO111MODULE on
-# for mecab
-RUN export CGO_LDFLAGS="`mecab-config --libs`"
-RUN export CGO_CFLAGS="-I`mecab-config --inc-dir`"
-# ENV CGO_LDFLAGS -L/usr/lib/x86_64-linux-gnu -lmecab -lstdc++
-# ENV CGO_CFLAGS -I/usr/include
 
 RUN groupadd -g 10001 myapp &&\
-    useradd -u 10001 -g myapp myapp
+  useradd -u 10001 -g myapp myapp
 
 COPY go.mod go.sum ./
 
@@ -23,10 +17,22 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=1 GOOS=linux GOARCH=386 go build -o /go/bin/app
+# https://studygolang.com/topics/5954
+# enable cgo
+RUN CGO_ENABLED=1\
+  CGO_LDFLAGS="`mecab-config --libs`"\
+  CGO_CFLAGS="-I`mecab-config --inc-dir`"\
+  GOOS=linux\
+  GOARCH=386\
+  go build -o /go/bin/app
+
+# [Error message]
+# runtime/cgo
+# /usr/bin/ld: cannot find -lmecab
+# /usr/bin/ld: cannot find -lstdc++
+# collect2: error: ld returned 1 exit status
 
 FROM alpine:3.9
-
 
 COPY --from=builder /go/bin/app /go/bin/app
 COPY --from=builder /etc/group /etc/group
