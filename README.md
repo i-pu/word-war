@@ -1,5 +1,6 @@
 # word-war
 [![Go Report Card](https://goreportcard.com/badge/github.com/i-pu/word-war)](https://goreportcard.com/report/github.com/i-pu/word-war)
+[![codecov](https://codecov.io/gh/i-pu/word-war/branch/develop%2F1.0/graph/badge.svg)](https://codecov.io/gh/i-pu/word-war)
 
 <img src="https://img.shields.io/badge/-Go-76E1FE.svg?logo=go&style=flat-square">
 <img src="https://img.shields.io/badge/-Elm-3DBB3D.svg?logo=&style=flat-square">

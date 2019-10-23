@@ -11,8 +11,8 @@ on:
     branches:
       - '**'
 jobs:
-  build:
-    name: build
+  test:
+    name: go test
     runs-on: ubuntu-latest
 
     steps:
@@ -26,4 +26,5 @@ jobs:
     - name: Run tests
       run: |
         cd server
-        go test -v ./...
+        go test -v ./... -race -coverprofile=coverage.txt -covermode=atomic
+        bash <(curl -s https://codecov.io/bash)
