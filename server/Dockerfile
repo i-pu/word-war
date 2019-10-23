@@ -9,8 +9,10 @@ RUN sudo apt install -y mecab libmecab-dev mecab-ipadic-utf8 git
 
 ENV GO111MODULE on
 # for mecab
-ENV CGO_LDFLAGS -L/usr/lib/x86_64-linux-gnu -lmecab -lstdc++
-ENV CGO_CFLAGS -I/usr/include
+RUN export CGO_LDFLAGS="`mecab-config --libs`"
+RUN export CGO_CFLAGS="-I`mecab-config --inc-dir`"
+# ENV CGO_LDFLAGS -L/usr/lib/x86_64-linux-gnu -lmecab -lstdc++
+# ENV CGO_CFLAGS -I/usr/include
 
 RUN groupadd -g 10001 myapp &&\
     useradd -u 10001 -g myapp myapp
@@ -21,7 +23,7 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /go/bin/app
+RUN CGO_ENABLED=1 GOOS=linux GOARCH=386 go build -o /go/bin/app
 
 FROM alpine:3.9
 

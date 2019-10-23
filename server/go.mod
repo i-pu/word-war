@@ -9,6 +9,7 @@ require (
 	github.com/improbable-eng/grpc-web v0.11.0
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f // indirect
 	github.com/rs/cors v1.7.0 // indirect
+	github.com/shogo82148/go-mecab v0.0.2
 	github.com/stretchr/testify v1.4.0 // indirect
 	google.golang.org/grpc v1.24.0
 )
