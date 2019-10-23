@@ -1,6 +1,7 @@
 port module Page.Top exposing (Model, Msg, init, subscriptions, update, view, hero)
 
-import Env exposing (Env, User, navKey, setUid)
+import Env exposing (Env, navKey, setUid)
+import User exposing (User)
 import Html exposing (..)
 import Html.Events exposing (..)
 import Html.Attributes exposing (..)
@@ -84,9 +85,11 @@ update msg model =
         )
       )
     OnSignin user ->
-      ({ model | env = setUid model.env user.uid }
+      let newModel = { model | env = setUid model.env user.uid }
+      in
+      (newModel
       , Cmd.batch
-        [ Route.replaceUrl (navKey model.env) Route.Home
+        [ Route.replaceUrl (navKey newModel.env) Route.Home
         ]
       )
 

@@ -1,4 +1,4 @@
-module Main exposing (Flags, Model(..), Msg(..), changeRouteTo, init, main, subscriptions, toEnv, update, updateWith, view)
+module Main exposing (Flags, Model(..), Msg(..), changeRouteTo, init, main, subscriptions, update, updateWith, view)
 
 import Browser
 import Browser.Navigation as Nav
@@ -26,10 +26,10 @@ main =
 -- MODEL
 type Model
     = NotFound Env
-    | Top Env TopPage.Model
-    | Home Env HomePage.Model
-    | Game Env GamePage.Model
-    | Result Env ResultPage.Model
+    | Top TopPage.Model
+    | Home HomePage.Model
+    | Game GamePage.Model
+    | Result ResultPage.Model
 
 type alias Flags =
     {}
@@ -53,8 +53,8 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
     let
-        env =
-            toEnv model
+        -- ここでそれぞれのページのモデルの中にある方のEnvを持ってくる
+        env = fetchEnv model
     in
     case ( message, model ) of
         ( LinkClicked urlRequest, _ ) ->
@@ -77,21 +77,21 @@ update message model =
         ( UrlChanged url, _ ) ->
             changeRouteTo (Route.fromUrl url) model
 
-        ( GotTopMsg subMsg, Top _ subModel ) ->
+        ( GotTopMsg subMsg, Top subModel ) ->
             TopPage.update subMsg subModel
-                |> updateWith (Top env) GotTopMsg
+                |> updateWith Top GotTopMsg
 
-        ( GotHomeMsg subMsg, Home _ subModel ) ->
+        ( GotHomeMsg subMsg, Home subModel ) ->
             HomePage.update subMsg subModel
-                |> updateWith (Home env) GotHomeMsg
+                |> updateWith Home GotHomeMsg
 
-        ( GotGameMsg subMsg, Game _ subModel ) ->
+        ( GotGameMsg subMsg, Game subModel ) ->
             GamePage.update subMsg subModel
-                |> updateWith (Game env) GotGameMsg
+                |> updateWith Game GotGameMsg
         
-        ( GotResultMsg subMsg, Result _ subModel ) ->
+        ( GotResultMsg subMsg, Result subModel ) ->
             ResultPage.update subMsg subModel
-                |> updateWith (Result env) GotResultMsg
+                |> updateWith Result GotResultMsg
 
         ( _, _ ) ->
             ( model, Cmd.none )
@@ -101,24 +101,24 @@ changeRouteTo : Maybe Route -> Model -> ( Model, Cmd Msg )
 changeRouteTo maybeRoute model =
     let
         env =
-            toEnv model
+            fetchEnv model
     in
     case maybeRoute of
         Just Route.Top ->
             TopPage.init env
-                |> updateWith (Top env) GotTopMsg
+                |> updateWith Top GotTopMsg
 
         Just Route.Home ->
             HomePage.init env
-                |> updateWith (Home env) GotHomeMsg
+                |> updateWith Home GotHomeMsg
 
         Just Route.Game ->
             GamePage.init env
-                |> updateWith (Game env) GotGameMsg
+                |> updateWith Game GotGameMsg
 
         Just Route.Result ->
             ResultPage.init env
-                |> updateWith (Result env) GotResultMsg
+                |> updateWith Result GotResultMsg
 
         Nothing ->
             ( NotFound env, Cmd.none )
@@ -127,26 +127,26 @@ changeRouteTo maybeRoute model =
         --     ViewPage.init env id
         --         |> updateWith (View env id) GotViewMsg
 
-toEnv : Model -> Env
-toEnv page =
-    case page of
+{-| fetchEnv
+NotFoundのみなんか気持ち悪い
+-}
+fetchEnv : Model -> Env
+fetchEnv model =
+    case model of
         NotFound env ->
             env
 
-        Top env _ ->
-            env
+        Top innerModel ->
+           innerModel.env
         
-        Home env _ ->
-            env
+        Home innerModel ->
+            innerModel.env
 
-        Game env _ ->
-            env
+        Game innerModel ->
+            innerModel.env
 
-        Result env _ ->
-            env
-
-        -- View env _ _ ->
-        --     env
+        Result innerModel ->
+            innerModel.env
 
 
 updateWith : (subModel -> Model) -> (subMsg -> Msg) -> ( subModel, Cmd subMsg ) -> ( Model, Cmd Msg )
@@ -162,16 +162,16 @@ subscriptions model =
         NotFound _ ->
             Sub.none
 
-        Top _ subModel ->
+        Top subModel ->
             Sub.map GotTopMsg (TopPage.subscriptions subModel)
 
-        Home _ subModel ->
+        Home subModel ->
             Sub.map GotHomeMsg (HomePage.subscriptions subModel)
 
-        Game _ subModel ->
+        Game subModel ->
             Sub.map GotGameMsg (GamePage.subscriptions subModel)
 
-        Result _ subModel ->
+        Result subModel ->
             Sub.map GotResultMsg (ResultPage.subscriptions subModel)
 
         -- View _ _ subModel ->
@@ -190,16 +190,16 @@ view model =
         NotFound _ ->
             { title = "Not Found", body = [ Html.text "Not Found" ] }
 
-        Top _ subModel ->
+        Top subModel ->
             viewPage GotTopMsg (TopPage.view subModel)
 
-        Home _ subModel ->
+        Home subModel ->
             viewPage GotHomeMsg (HomePage.view subModel)
 
-        Game _ subModel ->
+        Game subModel ->
             viewPage GotGameMsg (GamePage.view subModel)
 
-        Result _ subModel ->
+        Result subModel ->
             viewPage GotResultMsg (ResultPage.view subModel)
 
         -- View _ _ subModel ->
