@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strings"
 
 	"github.com/i-pu/word-war/server/domain/service"
 	"github.com/i-pu/word-war/server/infra"
@@ -18,23 +19,44 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
-const (
-	ipadic = "/usr/local/lib/mecab/dic/mecab-ipadic-neologd"
-	text   = "dmm.com"
-)
+const ipadic = "/usr/local/lib/mecab/dic/mecab-ipadic-neologd"
 
-func parse(args map[string]string) {
-	mecab, err := mecab.New(args)
+func IsSingleNoun(str string) (bool, error) {
+	mecab, err := mecab.New(map[string]string{"dicdir": ipadic})
 	if err != nil {
-		panic(err)
+		return false, err
 	}
 	defer mecab.Destroy()
 
-	node, err := mecab.ParseToNode(text)
+	// XXX: avoid GC problem with MeCab 0.996 (see https://github.com/taku910/mecab/pull/24)
+	mecab.Parse("")
+
+	node, err := mecab.ParseToNode(str)
+
+	if err != nil {
+		return false, err
+	}
+
+	parts := strings.Split(node.Next().Feature(), ",")
+	part := parts[0]
+
+	fmt.Println(part)
+
+	// must be a noun
+	if part != "名詞" {
+		return false, nil
+	}
+
+	// must be single part
+	if !node.Next().Next().IsZero() {
+		return false, nil
+	}
 
 	for ; !node.IsZero(); node = node.Next() {
-		fmt.Printf("%s\t%s\n", node.Surface(), node.Feature())
+		fmt.Printf("%s \n", strings.Split(node.Feature(), ",")[0])
 	}
+
+	return true, nil
 }
 
 func main() {
@@ -49,7 +71,9 @@ func main() {
 
 	// ====  mecab test  ====
 	fmt.Println("# ipadic")
-	parse(map[string]string{"dicdir": ipadic})
+	fmt.Println(IsSingleNoun("りんご"))
+	fmt.Println(IsSingleNoun("動く"))
+	fmt.Println(IsSingleNoun("青い鳥"))
 	// ======================
 
 	if err := grpcServer.Serve(lis); err != nil {

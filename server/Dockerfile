@@ -1,4 +1,4 @@
-FROM golang:1.13.1-alpine
+FROM golang:1.13.1-alpine as build
 
 # ref https://hub.docker.com/r/smizy/mecab/dockerfile
 RUN apk add --update --no-cache build-base
@@ -42,9 +42,7 @@ RUN apk add --update --no-cache ${build_deps} \
 WORKDIR /go/src/app
 
 ENV GO111MODULE on
-
 COPY go.mod go.sum ./
-
 RUN go mod download
 
 COPY . .
@@ -58,6 +56,21 @@ RUN CGO_ENABLED=1\
   GOARCH=amd64\
   go build -o /go/bin/app
 
+# prd
+FROM alpine:latest AS prd
+COPY --from=build /go/bin/app /go/bin/app
+WORKDIR /go/src/app
+COPY . .
 EXPOSE 50051
+ENTRYPOINT ["/go/bin/app"]
 
+# dev
+FROM golang:1.13.1 AS dev
+EXPOSE 50051
+WORKDIR /go/src/app
+ENV GO111MODULE=on
+COPY . .
+# [TODO] Hot reload
+# RUN go get github.com/oxequa/realize
+# CMD ["realize start"]
 ENTRYPOINT ["/go/bin/app"]
