@@ -1,8 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net"
+
+	"github.com/bluele/mecab-golang"
 
 	"github.com/i-pu/word-war/server/domain/service"
 	"github.com/i-pu/word-war/server/infra"
@@ -24,6 +27,30 @@ func main() {
 	setUpInfra()
 	grpcServer := setUpGrpc()
 	reflection.Register(grpcServer)
+
+	// ====  mecab test  ====
+	mecab, err := mecab.New("-Owakati")
+	if err != nil {
+		panic(err)
+	}
+
+	defer m.Destroy()
+
+	tg, err := mecab.NewTagger()
+	if err != nil {
+		panic(err)
+	}
+	defer tg.Destroy()
+
+	lt, err := mecab.NewLattice("すもももももももものうち")
+	if err != nil {
+		panic(err)
+	}
+
+	defer lt.Destroy()
+
+	fmt.Println(tg.Parse(lt))
+	// ======================
 
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
