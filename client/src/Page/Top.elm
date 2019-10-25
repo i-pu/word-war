@@ -13,21 +13,16 @@ import Route
 -- 3. view と連携したいのであれば 要素の中の onClickなどにtype msg にあるイベントを書く
 
 -- JS を呼ぶ関数をここに書く
-port signupWithFirebase : ({ email : String, password : String }) -> Cmd msg
+port signupWithFirebase : ({ name : String, email : String, password : String }) -> Cmd msg
 port signinWithFirebase : ({ email : String, password : String }) -> Cmd msg
 
 -- JS から呼ばれる関数をここに書いておく
-port signinCallback : ( User -> msg) -> Sub msg
-
--- メッセージモデル
-type alias Message =
-  { name : String
-  , message : String
-  }
+port signinCallback : ( User -> msg ) -> Sub msg
 
 -- モデル(画面で扱うデータ)
 type alias Model =
   { env : Env -- 全体で共有する環境
+  , nameInput : String
   , emailInput : String -- Emailのテキストボックスの中身
   , passwordInput : String -- Passwordのテキストボックスの中身
   }
@@ -35,13 +30,14 @@ type alias Model =
 init : Env -> ( Model, Cmd Msg )
 init env =
   -- モデルを初期化
-  ( Model env "" ""
+  ( Model env "" "" ""
   , Cmd.none
   )
 
 -- アクションのイベントを列挙する
 type Msg
-  = EmailInputChange String
+  = NameInputChange String
+  | EmailInputChange String
   | PasswordInputChange String
   | OnClickSignUpButton
   | OnClickSignInButton
@@ -50,23 +46,24 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
-    -- Email テキストボックスの中身が変更された時
+    NameInputChange newInput ->
+      ({ model | nameInput = newInput }, Cmd.none)
     EmailInputChange newInput ->
       ({ model | emailInput = newInput }, Cmd.none)
-    -- Password テキストボックスの中身が変更された時
     PasswordInputChange newInput ->
       ({ model | passwordInput = newInput }, Cmd.none)
-    -- SignUp ボタンがクリックされた時
     OnClickSignUpButton ->
       (
         -- テキストボックスの中身を空に
         { model 
-        | emailInput = ""
+        | nameInput = ""
+        , emailInput = ""
         , passwordInput = "" 
         },
         -- JS の 関数を呼ぶ
         signupWithFirebase (
-          { email = model.emailInput
+          { name = model.nameInput
+          , email = model.emailInput
           , password = model.passwordInput
           }
         )
@@ -75,7 +72,8 @@ update msg model =
     OnClickSignInButton ->
       (
         { model 
-        | emailInput = ""
+        | nameInput = ""
+        , emailInput = ""
         , passwordInput = "" 
         },
         signinWithFirebase (
@@ -135,6 +133,17 @@ signupForm : Model -> List (Html Msg)
 signupForm model =
   [ div [ class "field" ]
     [ label [ class "label" ] [ text "Username" ]
+    , div [ class "control has-icons-left has-icons-right" ]
+      [ input [ class "input is-success", type_ "text", placeholder "Name", value model.nameInput, onInput NameInputChange ]
+        []
+      , span [ class "icon is-small is-left" ]
+        [ i [ class "fas fa-user" ] 
+          []
+        ]
+      ]
+    ]
+  , div [ class "field" ]
+    [ label [ class "label" ] [ text "Email" ]
     , div [ class "control has-icons-left has-icons-right" ]
       [ input [ class "input is-success", type_ "text", placeholder "Email", value model.emailInput, onInput EmailInputChange ]
         []
