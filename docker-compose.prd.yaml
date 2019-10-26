@@ -2,9 +2,7 @@ version: '3.7'
 services:
   server:
     image: iputus/server:develop-1.0
-    build: 
-      context: ./server
-      target: prd
+    build: ./server
     ports:
       - 50051:50051
     environment:

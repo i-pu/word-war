@@ -21,42 +21,27 @@ import (
 
 const ipadic = "/usr/local/lib/mecab/dic/mecab-ipadic-neologd"
 
-func IsSingleNoun(str string) (bool, error) {
+func generateMeCab() mecab.MeCab {
 	mecab, err := mecab.New(map[string]string{"dicdir": ipadic})
 	if err != nil {
-		return false, err
+		panic(err)
 	}
-	defer mecab.Destroy()
+	return mecab
+}
 
-	// XXX: avoid GC problem with MeCab 0.996 (see https://github.com/taku910/mecab/pull/24)
-	mecab.Parse("")
-
-	node, err := mecab.ParseToNode(str)
-
+func isSingleNoun(mecab *mecab.MeCab, text string) bool {
+	node, err := mecab.ParseToNode(text)
 	if err != nil {
-		return false, err
+		panic(err)
 	}
 
-	parts := strings.Split(node.Next().Feature(), ",")
-	part := parts[0]
+	node = node.Next()
 
-	fmt.Println(part)
+	features := strings.Split(node.Feature(), ",")
 
-	// must be a noun
-	if part != "名詞" {
-		return false, nil
-	}
+	fmt.Println(text, features[0], node.Next().Feature(), node.Next().Stat().String() == "EOS")
 
-	// must be single part
-	if !node.Next().Next().IsZero() {
-		return false, nil
-	}
-
-	for ; !node.IsZero(); node = node.Next() {
-		fmt.Printf("%s \n", strings.Split(node.Feature(), ",")[0])
-	}
-
-	return true, nil
+	return features[0] == "名詞" && node.Next().Stat().String() == "EOS"
 }
 
 func main() {
@@ -70,10 +55,11 @@ func main() {
 	reflection.Register(grpcServer)
 
 	// ====  mecab test  ====
-	fmt.Println("# ipadic")
-	fmt.Println(IsSingleNoun("りんご"))
-	fmt.Println(IsSingleNoun("動く"))
-	fmt.Println(IsSingleNoun("青い鳥"))
+	mecab := generateMeCab()
+	defer mecab.Destroy()
+	fmt.Println(isSingleNoun(&mecab, "りんご"))
+	fmt.Println(isSingleNoun(&mecab, "動く"))
+	fmt.Println(isSingleNoun(&mecab, "青い鳥"))
 	// ======================
 
 	if err := grpcServer.Serve(lis); err != nil {
