@@ -79,6 +79,7 @@ func (r *messageRepository) Subscribe(ctx context.Context) (<-chan *entity.Messa
 					log.Printf("parent ctx done!")
 					return
 				default:
+					log.Printf("send message: %v", message)
 					ch <- &message
 				}
 			case redis.Subscription:
