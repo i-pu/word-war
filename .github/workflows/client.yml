@@ -1,9 +1,10 @@
-name: Node CI
+name: Client Firebase Hosting
 
 on:
   push:
     branches: 
-      - 'develop/**'
+      # if 'develop/**', all versions are targetted.
+      - 'develop/1.0'
 
 jobs:
   build:

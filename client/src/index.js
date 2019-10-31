@@ -19,7 +19,7 @@ const app = Elm.Main.init({
 const store = {}
 
 const isDevelop = process.env.NODE_ENV === 'development'
-const isStub = true // isDevelop
+const isStub = false // isDevelop
 
 // gRPC API のエンドポイント
 const endpoint = isDevelop
@@ -176,7 +176,7 @@ app.ports.requestResult.subscribe(async userId => {
     const res = await client.result(req)
       .catch(console.error)
 
-    app.ports.onResult.send({ "userId": res.getUserid(), "score": res.getScore() })
+    app.ports.onResult.send({ "userId": res.getUserid(), "score": parseInt(res.getScore(), 10) })
   } else {
     const score = store.messages ? store.messages.length : 0
     console.log({ userId, score })

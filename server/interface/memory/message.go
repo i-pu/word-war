@@ -8,7 +8,7 @@ import (
 	"github.com/i-pu/word-war/server/domain/entity"
 	"github.com/i-pu/word-war/server/infra"
 	"log"
-	"time"
+	// "time"
 )
 
 type messageRepository struct {
@@ -65,7 +65,7 @@ func (r *messageRepository) Subscribe(ctx context.Context) (<-chan *entity.Messa
 			// 2秒ごとにタイムアウトするのでずっと待ち続けることがなくなる
 			// timeoutしたタイミングでpublishされるとまずい
 			// そもそもtimeoutしたらConnectionが切れてしまうのか?変じゃね?
-			switch v := psc.ReceiveWithTimeout(2 * time.Second).(type) {
+			switch v := psc.Receive().(type) {
 			case redis.Message:
 				var message entity.Message
 				log.Printf("%s", string(v.Data))
@@ -79,6 +79,7 @@ func (r *messageRepository) Subscribe(ctx context.Context) (<-chan *entity.Messa
 					log.Printf("parent ctx done!")
 					return
 				default:
+					log.Printf("send message: %v", message)
 					ch <- &message
 				}
 			case redis.Subscription:
@@ -96,14 +97,14 @@ func (r *messageRepository) Subscribe(ctx context.Context) (<-chan *entity.Messa
 					log.Printf("parent ctx done!")
 					return
 				default:
-					// TODO: redisのwithTimeoutのエラーとその他の接続エラーの区別がしたい
-					// timeoutという文字列を含んでたらtimeoutと判別するとか?
-					conn = r.conn.Get()
-					psc = redis.PubSubConn{Conn: conn}
-					err := psc.Subscribe("message")
-					if err != nil {
-						errCh <- err
-					}
+					// // TODO: redisのwithTimeoutのエラーとその他の接続エラーの区別がしたい
+					// // timeoutという文字列を含んでたらtimeoutと判別するとか?
+					// conn = r.conn.Get()
+					// psc = redis.PubSubConn{Conn: conn}
+					// err := psc.Subscribe("message")
+					// if err != nil {
+					// 	errCh <- err
+					// }
 					errCh <- errors.New(v.Error())
 				}
 			}

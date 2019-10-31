@@ -2,8 +2,8 @@ name: Server Docker Build
 
 on:
   push:
-    branches: 
-      - 'develop/**'
+    branches:
+      - 'develop/1.0'
 
 jobs:
   build:
@@ -14,19 +14,27 @@ jobs:
     - uses: actions/checkout@master
 
     - name: Publish server image
+      id: publish-server-image
       uses: elgohr/Publish-Docker-Github-Action@master
       with:
         name: iputus/server
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
         workdir: server
-        tag: latest
+        snapshot: true
 
-    - name: Publish server image
+    - name: Publish envoy image
+      id: publish-envoy-image
       uses: elgohr/Publish-Docker-Github-Action@master
       with:
         name: iputus/envoy
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
         workdir: envoy
-        tag: latest
+        snapshot: true
+
+    - name: echo outputs
+      id: echo
+      run: |
+        echo ${{ steps.publish-server-image.outputs.snapshot-tag }}
+        echo ${{ steps.publish-envoy-image.outputs.snapshot-tag }}
