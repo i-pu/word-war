@@ -1,6 +1,6 @@
 port module Page.Game exposing (Model, Msg, init, subscriptions, update, view, isHiragana)
 
-import Env exposing (Env, navKey, getUid)
+import Env exposing (Env, navKey, getUid, getName)
 import Html exposing (..)
 import Html.Events exposing (..)
 import Html.Attributes exposing (..)
