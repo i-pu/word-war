@@ -3,7 +3,6 @@ module github.com/i-pu/word-war/server
 go 1.13
 
 require (
-	github.com/bluele/mecab-golang v0.0.0-20180831023624-c8cfe04e87f9
 	github.com/golang/mock v1.3.1
 	github.com/golang/protobuf v1.3.2
 	github.com/gomodule/redigo v2.0.0+incompatible

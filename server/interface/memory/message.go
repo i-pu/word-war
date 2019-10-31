@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	mecab "github.com/bluele/mecab-golang"
 	"github.com/gomodule/redigo/redis"
 	"github.com/i-pu/word-war/server/domain/entity"
 	"github.com/i-pu/word-war/server/infra"
+	mecab "github.com/shogo82148/go-mecab"
 )
 
 type messageRepository struct {
