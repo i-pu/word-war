@@ -1,0 +1,29 @@
+{
+  "name": "client",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "npx elm-app start",
+    "build": "npx elm-app build",
+    "test": "npx elm-app test",
+    "deploy": "yarn build && firebase deploy"
+  },
+  "devDependencies": {
+    "elm-hot": "^1.1.2",
+    "node-elm-compiler": "^5.0.4",
+    "parcel-bundler": "^1.12.3",
+    "sass": "^1.23.0"
+  },
+  "dependencies": {
+    "bulma": "^0.7.5",
+    "create-elm-app": "^3.2.2",
+    "firebase": "^7.2.0",
+    "global": "^4.4.0",
+    "google-protobuf": "^3.9.2",
+    "grpc-web": "^1.0.6"
+  },
+  "browserslist": [
+    "last 1 Chrome versions"
+  ]
+}
