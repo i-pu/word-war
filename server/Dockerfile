@@ -1,4 +1,4 @@
-FROM wakametech/go-mecab-neologd
+FROM iputus/go-mecab-neologd
 
 WORKDIR /go/src/app
 

@@ -2,7 +2,6 @@ version: '3.7'
 services:
   server:
     image: iputus/server:develop-1.0
-    build: ./server
     ports:
       - 50051:50051
     environment:
