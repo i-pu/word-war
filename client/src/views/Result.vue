@@ -1,6 +1,6 @@
 <template>
-  <div class="home">
-    <b-button type="is-link" tag="router-link" to="/game">Game Start</b-button>
+  <div class="result">
+    <p>WIP</p>
   </div>
 </template>
 
@@ -10,5 +10,5 @@ import { Component, Vue } from "vue-property-decorator";
 @Component({
   components: {}
 })
-export default class Home extends Vue {}
+export default class Result extends Vue {}
 </script>
