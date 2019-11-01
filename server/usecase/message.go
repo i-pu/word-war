@@ -2,12 +2,14 @@ package usecase
 
 import (
 	"context"
+
 	"github.com/i-pu/word-war/server/domain/entity"
 	"github.com/i-pu/word-war/server/domain/repository"
 	"github.com/i-pu/word-war/server/domain/service"
 )
 
 type MessageUsecase interface {
+	JudgeMessage(message *entity.Message) bool
 	SendMessage(message *entity.Message) error
 	GetMessage(ctx context.Context) (<-chan *entity.Message, <-chan error)
 }
@@ -24,7 +26,14 @@ func NewMessageUsecase(repo repository.MessageRepository, service *service.Messa
 	}
 }
 
+// test usecase
+func (u *messageUsecase) JudgeMessage(message *entity.Message) bool {
+	return u.repo.IsSingleNoun(message)
+}
+
 func (u *messageUsecase) SendMessage(message *entity.Message) error {
+	// [TODO] validation message
+
 	if err := u.repo.Publish(message); err != nil {
 		return err
 	}
