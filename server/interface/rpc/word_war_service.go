@@ -3,11 +3,13 @@ package rpc
 import (
 	"context"
 	"errors"
+	"fmt"
+	"log"
+	"strconv"
+
 	"github.com/i-pu/word-war/server/domain/entity"
 	pb "github.com/i-pu/word-war/server/interface/rpc/pb"
 	"github.com/i-pu/word-war/server/usecase"
-	"log"
-	"strconv"
 )
 
 type wordWarService struct {
@@ -68,6 +70,10 @@ func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) err
 }
 
 func (s *wordWarService) Say(ctx context.Context, in *pb.SayRequest) (*pb.SayResponse, error) {
+	// mecab test
+	isSingleNoun := s.messageUsecase.JudgeMessage(&entity.Message{UserID: in.GetUserId(), Message: in.GetMessage()})
+	fmt.Printf("%v is %v", in.GetMessage(), isSingleNoun)
+
 	// 発言者にはそのまま返す
 	res := &pb.SayResponse{
 		UserId:  in.GetUserId(),

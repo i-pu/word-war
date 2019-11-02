@@ -4,6 +4,8 @@ services:
     build: ./server
     ports:
       - 50051:50051
+    volumes:
+      - ./server/:/go/src/app
     environment:
       REDIS_URL: redis
   redis:

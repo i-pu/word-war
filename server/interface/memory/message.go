@@ -4,24 +4,45 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"log"
+	"strings"
+	"time"
+
 	"github.com/gomodule/redigo/redis"
 	"github.com/i-pu/word-war/server/domain/entity"
 	"github.com/i-pu/word-war/server/infra"
-	"log"
-	// "time"
+	mecab "github.com/shogo82148/go-mecab"
 )
 
 type messageRepository struct {
-	conn *redis.Pool
+	conn   *redis.Pool
+	tagger *mecab.MeCab
 	// roomName  string
-	columnKey string
+	// columnKey string
 }
 
 func NewMessageRepository() *messageRepository {
 	return &messageRepository{
-		conn: infra.RedisPool,
+		conn:   infra.RedisPool,
+		tagger: infra.Tagger,
 		// roomName:  "room1",
 	}
+}
+
+func (r *messageRepository) IsSingleNoun(message *entity.Message) bool {
+	node, err := r.tagger.ParseToNode(message.Message)
+	if err != nil {
+		panic(err)
+	}
+
+	node = node.Next()
+
+	features := strings.Split(node.Feature(), ",")
+
+	fmt.Println(message.Message, features[0], node.Next().Feature(), node.Next().Stat().String() == "EOS")
+
+	return features[0] == "名詞" && node.Next().Stat().String() == "EOS"
 }
 
 // redis message repo の命名規則
