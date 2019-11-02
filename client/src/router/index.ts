@@ -2,6 +2,8 @@ import Vue from "vue"
 import VueRouter from "vue-router"
 
 Vue.use(VueRouter)
+// TODO: router.beforeEachを使ってログイン済みか確認する
+// see also https://qiita.com/sunadorinekop/items/f3486da415d3024c7ed4
 
 const routes = [
   {

@@ -8,5 +8,5 @@ describe("HelloWorld.vue", () => {
       propsData: { msg }
     })
     expect(wrapper.text()).toMatch(msg)
-  });
+  })
 })

@@ -32,8 +32,8 @@ import firebase from "@/config/firebase"
 
 @Component
 export default class Login extends Vue {
-  private email: string
-  private password: string
+  private email: string;
+  private password: string;
 
   constructor() {
     super()

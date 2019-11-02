@@ -1,7 +1,9 @@
 <template>
   <div>
-    <div class="hero">
-      <h2>uid: {{ $store.state.user.uid }}</h2>
+    <div class="hero is-primary">
+      <div class="container">
+        <h2 class="subtitle">uid: {{ $store.state.user.uid }}</h2>
+      </div>
     </div>
   </div>
 </template>

@@ -1,7 +1,6 @@
 <template>
   <div class="game">
     <Hero></Hero>
-    <p>WIP</p>
     <Siritori></Siritori>
   </div>
 </template>

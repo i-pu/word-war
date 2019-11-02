@@ -1,7 +1,7 @@
-import Vue from "vue";
-import Vuex, { Module } from "vuex";
+import Vue from "vue"
+import Vuex, { Module } from "vuex"
 
-Vue.use(Vuex);
+Vue.use(Vuex)
 
 interface IUser {
   uid: string;
@@ -14,11 +14,11 @@ const user: Module<IUser, RootState> = {
   },
   mutations: {
     setUid(state, { uid }: { uid: string }) {
-      state.uid = uid;
+      state.uid = uid
     }
   },
   getters: {}
-};
+}
 
 interface ISample {
   count: number;
@@ -35,10 +35,10 @@ const sample: Module<ISample, RootState> = {
   },
   mutations: {
     increment(commit) {
-      commit.count++;
+      commit.count++
     }
   }
-};
+}
 
 export default new Vuex.Store<RootState>({
   state: {
@@ -48,4 +48,4 @@ export default new Vuex.Store<RootState>({
     user,
     sample
   }
-});
+})

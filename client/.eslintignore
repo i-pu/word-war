@@ -1,3 +1,5 @@
 src/pb/*
 
 src/shims*
+*.js
+test/**
