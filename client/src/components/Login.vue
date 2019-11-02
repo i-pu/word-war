@@ -27,20 +27,18 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from "vue-property-decorator";
-import firebase from "@/config/firebase";
+import { Component, Vue } from "vue-property-decorator"
+import firebase from "@/config/firebase"
 
 @Component
 export default class Login extends Vue {
-  private email: string;
-  private password: string;
-  private uid: string;
+  private email: string
+  private password: string
 
   constructor() {
-    super();
-    this.email = "";
-    this.password = "";
-    this.uid = "";
+    super()
+    this.email = ""
+    this.password = ""
   }
 
   private async signIn() {
@@ -49,16 +47,16 @@ export default class Login extends Vue {
       .signInWithEmailAndPassword(this.email, this.password)
       .then((result: firebase.auth.UserCredential | null) => {
         if (result != null && result.user != null) {
-          this.uid = result.user.uid;
-          this.$router.push("/home");
+          this.$store.commit("user/setUid", { uid: result.user.uid })
+          this.$router.push("/home")
         } else {
-          throw new Error(`can't authorized: ${this.email}, ${this.password}`);
+          throw new Error(`can't authorized: ${this.email}, ${this.password}`)
         }
       })
       .catch(error => {
-        console.log(error);
-      });
-    console.log(`signIn: ${this.email}, ${this.password}`);
+        console.log(error)
+      })
+    console.log(`signIn: ${this.email}, ${this.password}`)
   }
 
   private async signUp() {
@@ -68,16 +66,16 @@ export default class Login extends Vue {
       .createUserWithEmailAndPassword(this.email, this.password)
       .then((result: firebase.auth.UserCredential | null) => {
         if (result != null && result.user != null) {
-          this.uid = result.user.uid;
-          this.$router.push("/home");
+          this.$store.commit("user/setUid", { uid: result.user.uid })
+          this.$router.push("/home")
         } else {
-          throw new Error(`can't authorized: ${this.email}, ${this.password}`);
+          throw new Error(`can't authorized: ${this.email}, ${this.password}`)
         }
       })
       .catch(error => {
-        console.log(error);
-      });
-    console.log(`signUp: ${this.email}, ${this.password}`);
+        console.log(error)
+      })
+    console.log(`signUp: ${this.email}, ${this.password}`)
   }
 }
 </script>
