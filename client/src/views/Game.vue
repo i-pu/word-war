@@ -1,7 +1,7 @@
 <template>
   <div class="game">
-    <Hero></Hero>
-    <Siritori></Siritori>
+    <Hero />
+    <Siritori />
   </div>
 </template>
 

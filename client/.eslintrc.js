@@ -14,8 +14,8 @@ module.exports = {
     'prettier/prettier': [
       'error',
       {
-        "semi": false,
-        "singleQuote": true
+        'semi': false,
+        'singleQuote': true
       }
     ],
   },

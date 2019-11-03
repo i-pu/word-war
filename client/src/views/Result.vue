@@ -1,6 +1,6 @@
 <template>
   <div class="result">
-    <Hero></Hero>
+    <Hero />
     <p>result: {{ score }}</p>
   </div>
 </template>
@@ -17,20 +17,12 @@ import { ResultRequest, ResultResponse } from '@/pb/word_war_pb'
   }
 })
 export default class Result extends Vue {
-  private wordWarPromiseClient: WordWarPromiseClient
+  // TODO: 環境変数で切り替えるようにする
+  private wordWarPromiseClient: WordWarPromiseClient = new WordWarPromiseClient(
+    'http://localhost:8080'
+  )
   private result?: ResultResponse
-  private score: string
-
-  constructor() {
-    super()
-    // TODO: 環境変数で切り替えるようにする
-    this.wordWarPromiseClient = new WordWarPromiseClient(
-      'http://localhost:8080',
-      null,
-      null
-    )
-    this.score = ''
-  }
+  private score: string = ''
 
   created() {
     const req = new ResultRequest()

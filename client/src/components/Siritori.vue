@@ -10,8 +10,8 @@
       </div>
       <ul>
         <!-- FIXME: word.id を keyにするのダメそう -->
-        <li v-for="word in siritoriWords" :key="word.id">
-          {{ word.id }}: {{ word.uid }}: {{ word.message }}
+        <li v-for="(word, i) in siritoriWords" :key="i">
+          {{ word.uid }}: {{ word.uid }}: {{ word.message }}
         </li>
       </ul>
     </div>
@@ -25,25 +25,18 @@ import { SayRequest, GameRequest } from '@/pb/word_war_pb'
 
 @Component
 export default class Siritori extends Vue {
-  private wordWarPromiseClient: WordWarPromiseClient
-  private message: string
-  private siritoriWords: { uid: string; message: string }[]
-  constructor() {
-    super()
-    // TODO: 環境変数で切り替えるようにする
-    this.wordWarPromiseClient = new WordWarPromiseClient(
-      'http://localhost:8080',
-      null,
-      null
-    )
-    this.message = ''
-    this.siritoriWords = []
-  }
+  // TODO: 環境変数で切り替えるようにする
+  private wordWarPromiseClient: WordWarPromiseClient = new WordWarPromiseClient(
+    'http://localhost:8080'
+  )
+  private message: string = ''
+  private siritoriWords: Array<{ uid: string; message: string }> = []
 
   created() {
     const req: GameRequest = new GameRequest()
     req.setUserid(this.$store.state.user.uid)
     const stream = this.wordWarPromiseClient.game(req)
+
     stream.on('data', res => {
       console.log(res)
       this.siritoriWords.push({
@@ -51,12 +44,14 @@ export default class Siritori extends Vue {
         message: res.getMessage()
       })
     })
+
     stream.on('status', status => {
       console.log('status', status)
       if (status.code === 0) {
         this.$router.push('/result')
       }
     })
+
     stream.on('error', res => {
       console.log('error', res)
     })

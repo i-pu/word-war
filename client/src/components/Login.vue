@@ -32,49 +32,39 @@ import firebase from '@/config/firebase'
 
 @Component
 export default class Login extends Vue {
-  private email: string
-  private password: string
-
-  constructor() {
-    super()
-    this.email = ''
-    this.password = ''
-  }
+  private email: string = ''
+  private password: string = ''
 
   private async signIn() {
-    await firebase
+    const result = await firebase
       .auth()
       .signInWithEmailAndPassword(this.email, this.password)
-      .then((result: firebase.auth.UserCredential | null) => {
-        if (result != null && result.user != null) {
-          this.$store.commit('user/setUid', { uid: result.user.uid })
-          this.$router.push('/home')
-        } else {
-          throw new Error(`can't authorized: ${this.email}, ${this.password}`)
-        }
-      })
-      .catch(error => {
-        console.log(error)
-      })
+      .catch(console.error)
+
+    if (!result || !result.user) {
+      throw new Error(`can't authorized: ${this.email}, ${this.password}`)
+    }
+
+    this.$store.commit('user/setUid', { uid: result.user.uid })
+    this.$router.push('/home')
+
     console.log(`signIn: ${this.email}, ${this.password}`)
   }
 
   private async signUp() {
     // create user
-    await firebase
+    const result = await firebase
       .auth()
       .createUserWithEmailAndPassword(this.email, this.password)
-      .then((result: firebase.auth.UserCredential | null) => {
-        if (result != null && result.user != null) {
-          this.$store.commit('user/setUid', { uid: result.user.uid })
-          this.$router.push('/home')
-        } else {
-          throw new Error(`can't authorized: ${this.email}, ${this.password}`)
-        }
-      })
-      .catch(error => {
-        console.log(error)
-      })
+      .catch(console.error)
+
+    if (!result || !result.user) {
+      throw new Error(`can't authorized: ${this.email}, ${this.password}`)
+    }
+
+    this.$store.commit('user/setUid', { uid: result.user.uid })
+    this.$router.push('/home')
+
     console.log(`signUp: ${this.email}, ${this.password}`)
   }
 }

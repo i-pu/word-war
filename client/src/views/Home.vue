@@ -1,6 +1,6 @@
 <template>
   <div class="home">
-    <Hero></Hero>
+    <Hero />
     <b-button type="is-link" tag="router-link" to="/game">Game Start</b-button>
 
     <b-button type="is-dark" @click="onClick">vuex</b-button>

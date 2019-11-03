@@ -1,11 +1,7 @@
 import { WordWarPromiseClient } from '@/pb/word_war_grpc_web_pb'
 import { SayRequest, GameRequest, ResultRequest } from '@/pb/word_war_pb'
 
-const wordWarPromiseClient = new WordWarPromiseClient(
-  'http://localhost:50051',
-  null,
-  null
-)
+const wordWarPromiseClient = new WordWarPromiseClient('http://localhost:50051')
 
 const req: SayRequest = new SayRequest()
 req.setUserid('')

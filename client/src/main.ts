@@ -14,8 +14,6 @@ Vue.config.productionTip = false
 Vue.use(Buefy)
 Vue.use(VueHead)
 
-Vue.config.productionTip = false
-
 new Vue({
   router,
   store,
