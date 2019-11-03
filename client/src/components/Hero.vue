@@ -9,8 +9,8 @@
 </template>
 
 <script lang="ts">
-import "bulma/css/bulma.css"
-import { Component, Vue } from "vue-property-decorator"
+import 'bulma/css/bulma.css'
+import { Component, Vue } from 'vue-property-decorator'
 
 @Component
 export default class Hero extends Vue {}

@@ -1,16 +1,16 @@
-import Vue from "vue"
-import Vuex, { Module } from "vuex"
+import Vue from 'vue'
+import Vuex, { Module } from 'vuex'
 
 Vue.use(Vuex)
 
 interface IUser {
-  uid: string;
+  uid: string
 }
 
 const user: Module<IUser, RootState> = {
   namespaced: true,
   state: {
-    uid: ""
+    uid: ''
   },
   mutations: {
     setUid(state, { uid }: { uid: string }) {
@@ -21,11 +21,11 @@ const user: Module<IUser, RootState> = {
 }
 
 interface ISample {
-  count: number;
+  count: number
 }
 
 interface RootState {
-  version: string;
+  version: string
 }
 
 const sample: Module<ISample, RootState> = {
@@ -42,7 +42,7 @@ const sample: Module<ISample, RootState> = {
 
 export default new Vuex.Store<RootState>({
   state: {
-    version: "0.1.0"
+    version: '0.1.0'
   },
   modules: {
     user,

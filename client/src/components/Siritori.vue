@@ -10,31 +10,33 @@
       </div>
       <ul>
         <!-- FIXME: word.id を keyにするのダメそう -->
-        <li v-for="word in siritoriWords" v-bind:key="word.id">{{ word.id }}: {{ word.uid }}: {{ word.message }}</li>
+        <li v-for="word in siritoriWords" :key="word.id">
+          {{ word.id }}: {{ word.uid }}: {{ word.message }}
+        </li>
       </ul>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Vue } from "vue-property-decorator"
-import { WordWarPromiseClient } from "@/pb/word_war_grpc_web_pb"
-import { SayRequest, GameRequest } from "@/pb/word_war_pb"
+import { Component, Vue } from 'vue-property-decorator'
+import { WordWarPromiseClient } from '@/pb/word_war_grpc_web_pb'
+import { SayRequest, GameRequest } from '@/pb/word_war_pb'
 
 @Component
 export default class Siritori extends Vue {
   private wordWarPromiseClient: WordWarPromiseClient
   private message: string
-  private siritoriWords: {uid: string, message: string}[]
+  private siritoriWords: { uid: string; message: string }[]
   constructor() {
     super()
     // TODO: 環境変数で切り替えるようにする
     this.wordWarPromiseClient = new WordWarPromiseClient(
-      "http://localhost:8080",
+      'http://localhost:8080',
       null,
-      null,
+      null
     )
-    this.message = ""
+    this.message = ''
     this.siritoriWords = []
   }
 
@@ -42,17 +44,20 @@ export default class Siritori extends Vue {
     const req: GameRequest = new GameRequest()
     req.setUserid(this.$store.state.user.uid)
     const stream = this.wordWarPromiseClient.game(req)
-    stream.on('data', (res) => {
+    stream.on('data', res => {
       console.log(res)
-      this.siritoriWords.push({uid: res.getUserid(), message: res.getMessage()})
+      this.siritoriWords.push({
+        uid: res.getUserid(),
+        message: res.getMessage()
+      })
     })
-    stream.on('status', (status) => {
+    stream.on('status', status => {
       console.log('status', status)
       if (status.code === 0) {
         this.$router.push('/result')
       }
     })
-    stream.on('error', (res) => {
+    stream.on('error', res => {
       console.log('error', res)
     })
   }
@@ -62,11 +67,14 @@ export default class Siritori extends Vue {
     req.setUserid(this.$store.state.user.uid)
     req.setMessage(this.message)
     console.log(req)
-    this.wordWarPromiseClient.say(req).then((result) => {
-      console.log(result)
-    }).catch((err) => {
-      console.log(err)
-    })
+    this.wordWarPromiseClient
+      .say(req)
+      .then(result => {
+        console.log(result)
+      })
+      .catch(err => {
+        console.log(err)
+      })
   }
 }
 </script>

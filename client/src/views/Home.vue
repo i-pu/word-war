@@ -9,8 +9,8 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from "vue-property-decorator"
-import Hero from "@/components/Hero.vue"
+import { Component, Vue } from 'vue-property-decorator'
+import Hero from '@/components/Hero.vue'
 
 @Component({
   components: {
@@ -22,7 +22,7 @@ export default class Home extends Vue {
     return this.$store.state.sample.count
   }
   private onClick() {
-    this.$store.commit("sample/increment")
+    this.$store.commit('sample/increment')
     console.log(this.$store.state.sample.count)
   }
 }

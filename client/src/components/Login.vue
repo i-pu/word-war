@@ -21,24 +21,24 @@
     </b-field>
     <div class="buttons">
       <b-button @click="signIn">Sign in</b-button>
-      <b-button @click="signUp" type="is-dark">Sign up</b-button>
+      <b-button type="is-dark" @click="signUp">Sign up</b-button>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Vue } from "vue-property-decorator"
-import firebase from "@/config/firebase"
+import { Component, Vue } from 'vue-property-decorator'
+import firebase from '@/config/firebase'
 
 @Component
 export default class Login extends Vue {
-  private email: string;
-  private password: string;
+  private email: string
+  private password: string
 
   constructor() {
     super()
-    this.email = ""
-    this.password = ""
+    this.email = ''
+    this.password = ''
   }
 
   private async signIn() {
@@ -47,8 +47,8 @@ export default class Login extends Vue {
       .signInWithEmailAndPassword(this.email, this.password)
       .then((result: firebase.auth.UserCredential | null) => {
         if (result != null && result.user != null) {
-          this.$store.commit("user/setUid", { uid: result.user.uid })
-          this.$router.push("/home")
+          this.$store.commit('user/setUid', { uid: result.user.uid })
+          this.$router.push('/home')
         } else {
           throw new Error(`can't authorized: ${this.email}, ${this.password}`)
         }
@@ -66,8 +66,8 @@ export default class Login extends Vue {
       .createUserWithEmailAndPassword(this.email, this.password)
       .then((result: firebase.auth.UserCredential | null) => {
         if (result != null && result.user != null) {
-          this.$store.commit("user/setUid", { uid: result.user.uid })
-          this.$router.push("/home")
+          this.$store.commit('user/setUid', { uid: result.user.uid })
+          this.$router.push('/home')
         } else {
           throw new Error(`can't authorized: ${this.email}, ${this.password}`)
         }

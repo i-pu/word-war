@@ -6,9 +6,9 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from "vue-property-decorator"
-import Siritori from "@/components/Siritori.vue"
-import Hero from "@/components/Hero.vue"
+import { Component, Vue } from 'vue-property-decorator'
+import Siritori from '@/components/Siritori.vue'
+import Hero from '@/components/Hero.vue'
 
 @Component({
   components: {
