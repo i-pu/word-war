@@ -80,6 +80,7 @@ func (s *wordWarService) Say(ctx context.Context, in *pb.SayRequest) (*pb.SayRes
 		Message: in.GetMessage(),
 	}
 
+	// FIXME: redisにsendするデータにFrom属性を追加する
 	// FIXME: 部屋の機能はまだないので、部屋IDはまだ指定しないようにします
 	err := s.messageUsecase.SendMessage(&entity.Message{UserID: in.GetUserId(), Message: in.GetMessage()})
 	if err != nil {

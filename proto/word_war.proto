@@ -18,6 +18,15 @@ message SayResponse {
   string message = 2;
 }
 
+// TODO
+// message GameMatchRequest {
+//   string userId = 1;
+// 
+// 
+// message GameMatchRequest {
+// 
+// }
+
 message GameRequest {
   string userId = 1;
 }

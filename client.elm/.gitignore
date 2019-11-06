@@ -1,7 +1,0 @@
-node_modules/
-elm-stuff/
-build/
-yarn.lock
-credential.js
-.firebase/
-.cache
