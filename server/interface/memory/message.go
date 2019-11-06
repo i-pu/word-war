@@ -7,13 +7,22 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"time"
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/i-pu/word-war/server/domain/entity"
 	"github.com/i-pu/word-war/server/infra"
 	mecab "github.com/shogo82148/go-mecab"
 )
+
+const (
+	SERVER = "SERVER"
+	CLIENT = "CLIENT"
+)
+
+type messageInRedis struct {
+	from string `json:"from" validate:"required"`
+	*entity.Message
+}
 
 type messageRepository struct {
 	conn   *redis.Pool
@@ -51,7 +60,11 @@ func (r *messageRepository) IsSingleNoun(message *entity.Message) bool {
 // 将来 roomID:message になるかも
 
 func (r *messageRepository) Publish(message *entity.Message) error {
-	mesBytes, err := json.Marshal(message)
+	mesInRed := messageInRedis{
+		from:    CLIENT,
+		Message: message,
+	}
+	mesBytes, err := json.Marshal(&mesInRed)
 	if err != nil {
 		return err
 	}
