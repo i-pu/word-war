@@ -25,16 +25,15 @@ import { SayRequest, GameRequest } from '@/pb/word_war_pb'
 
 @Component
 export default class Siritori extends Vue {
-  // TODO: 環境変数で切り替えるようにする
   private wordWarPromiseClient: WordWarPromiseClient = new WordWarPromiseClient(
-    'http://localhost:8080'
+    process.env.VUE_APP_API_ENDPOINT
   )
   private message: string = ''
   private siritoriWords: Array<{ uid: string; message: string }> = []
 
   created() {
     const req: GameRequest = new GameRequest()
-    req.setUserid(this.$store.state.user.uid)
+    req.setUserid(this.$store.getters['user/uid'])
     const stream = this.wordWarPromiseClient.game(req)
 
     stream.on('data', res => {
@@ -57,19 +56,13 @@ export default class Siritori extends Vue {
     })
   }
 
-  private send() {
+  private async send() {
     const req: SayRequest = new SayRequest()
-    req.setUserid(this.$store.state.user.uid)
+    req.setUserid(this.$store.getters['user/uid'])
     req.setMessage(this.message)
     console.log(req)
-    this.wordWarPromiseClient
-      .say(req)
-      .then(result => {
-        console.log(result)
-      })
-      .catch(err => {
-        console.log(err)
-      })
+    const result = await this.wordWarPromiseClient.say(req).catch(console.error)
+    console.log(result)
   }
 }
 </script>

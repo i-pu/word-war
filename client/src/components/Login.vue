@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="container">
     <b-field label="email">
       <b-input
         v-model="email"
