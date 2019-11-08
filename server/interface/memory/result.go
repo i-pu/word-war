@@ -3,7 +3,7 @@ package memory
 import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/i-pu/word-war/server/domain/entity"
-	"github.com/i-pu/word-war/server/infra"
+	"github.com/i-pu/word-war/server/external"
 )
 
 type resultRepository struct {
@@ -13,7 +13,7 @@ type resultRepository struct {
 
 func NewResultRepository() *resultRepository {
 	return &resultRepository{
-		conn: infra.RedisPool,
+		conn: external.RedisPool,
 		// roomName:  "room1",
 		// columnKey: "result",
 	}
