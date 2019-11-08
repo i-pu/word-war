@@ -1,5 +1,4 @@
-# FROM iputus/go-mecab-neologd
-FROM golang:1.13.1-alpine
+FROM iputus/go-mecab-neologd
 
 WORKDIR /go/src/app
 
@@ -11,7 +10,12 @@ COPY . .
 
 # https://studygolang.com/topics/5954
 # enable cgo
-RUN GOOS=linux GOARCH=amd64 go build -o /go/bin/app
+RUN CGO_ENABLED=1\
+  CGO_LDFLAGS="`mecab-config --libs`"\
+  CGO_CFLAGS="-I`mecab-config --inc-dir`"\
+  GOOS=linux\
+  GOARCH=amd64\
+  go build -o /go/bin/app
 
 # [TODO] Hot reload
 # RUN go get github.com/oxequa/realize

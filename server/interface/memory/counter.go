@@ -2,7 +2,7 @@ package memory
 
 import (
 	"github.com/gomodule/redigo/redis"
-	"github.com/i-pu/word-war/server/external"
+	"github.com/i-pu/word-war/server/infra"
 )
 
 type counterRepository struct {
@@ -13,7 +13,7 @@ type counterRepository struct {
 
 func NewCounterRepository() *counterRepository {
 	return &counterRepository{
-		conn: external.RedisPool,
+		conn: infra.RedisPool,
 	}
 }
 

@@ -5,7 +5,7 @@ import (
 	"net"
 
 	"github.com/i-pu/word-war/server/domain/service"
-	"github.com/i-pu/word-war/server/external"
+	"github.com/i-pu/word-war/server/infra"
 	"github.com/i-pu/word-war/server/interface/memory"
 	"github.com/i-pu/word-war/server/interface/rpc"
 	pb "github.com/i-pu/word-war/server/interface/rpc/pb"
@@ -49,5 +49,5 @@ func setUpGrpc() *grpc.Server {
 }
 
 func setUpInfra() {
-	external.InitRedis()
+	infra.InitRedis()
 }
