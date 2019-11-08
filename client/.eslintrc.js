@@ -18,6 +18,16 @@ module.exports = {
         'singleQuote': true
       }
     ],
+    "vue/html-indent": [
+      "error", 
+      {
+        "attribute": 1,
+        "baseIndent": 1,
+        "closeBracket": 0,
+        "alignAttributesVertically": true,
+        "ignores": []
+      },
+    ]
   },
   parserOptions: {
     parser: '@typescript-eslint/parser'

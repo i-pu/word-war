@@ -1,43 +1,44 @@
 <template>
   <div class="result">
     <Hero />
-    <p>result: {{ score }}</p>
+    <Navbar />
+    <section class="section">
+      <p>result: {{ score }}</p>
+    </section>
   </div>
 </template>
 
 <script lang="ts">
 import { Component, Watch, Vue } from 'vue-property-decorator'
 import Hero from '@/components/Hero.vue'
+import Navbar from '@/components/Navbar.vue'
 import { WordWarPromiseClient } from '@/pb/word_war_grpc_web_pb'
 import { ResultRequest, ResultResponse } from '@/pb/word_war_pb'
 
 @Component({
   components: {
-    Hero
+    Hero,
+    Navbar
   }
 })
 export default class Result extends Vue {
-  // TODO: 環境変数で切り替えるようにする
   private wordWarPromiseClient: WordWarPromiseClient = new WordWarPromiseClient(
-    'http://localhost:8080'
+    process.env.VUE_APP_API_ENDPOINT
   )
   private result?: ResultResponse
   private score: string = ''
 
-  created() {
+  async created() {
     const req = new ResultRequest()
-    req.setUserid(this.$store.state.user.uid)
-    this.wordWarPromiseClient
+    req.setUserid(this.$store.getters['user.uid'])
+    const result = await this.wordWarPromiseClient
       .result(req)
-      .then(result => {
-        this.result = result
-        console.log('result', this.result)
-        this.score = result.getScore()
-        console.log('score', this.score)
-      })
-      .catch(err => {
-        console.log(err)
-      })
+      .catch(console.error)
+    if (result !== undefined) {
+      this.result = result
+      this.score = this.result.getScore()
+    }
+    console.log('score', this.score)
   }
 }
 </script>
