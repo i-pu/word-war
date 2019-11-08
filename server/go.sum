@@ -19,6 +19,9 @@ github.com/gorilla/websocket v1.4.1 h1:q7AeDBpnBk8AogcD4DSag/Ukw/KV+YhzLj2bP5HvK
 github.com/gorilla/websocket v1.4.1/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/i-pu/word-war v0.0.0-20191003020054-874cf1390887 h1:Xzx7JRrLjKTsyJfE/LjTHh5HBdpSWqicvlIXq8GyAEY=
 github.com/i-pu/word-war v0.0.0-20191103061447-11a0c7b9d31f h1:roM03DPNQZInpjiiO4oAIDeIcquns070TirxAQMq/Xs=
+github.com/i-pu/word-war v0.0.0-20191108125032-7b50d033ff69 h1:STlpeqdV0tOoJXVLtbEfYl9rVKnRE3PVEJ3cGRckr9g=
+github.com/ikawaha/kagome v1.11.1 h1:lCpczGLx/aWwXUQ0+aHd7Sq4fiHWW9hSAMtO2Rm3HBs=
+github.com/ikawaha/kagome v1.11.1/go.mod h1:lHwhkGuuWqKWTxeQMppD0EmQAfKbc39QKx9qoWqgo+A=
 github.com/improbable-eng/grpc-web v0.11.0 h1:drkI/L8GnHWtWeAZFB7bEUQz9bZqOf/X8Dhvsm2uV7Y=
 github.com/improbable-eng/grpc-web v0.11.0/go.mod h1:6hRR09jOEG81ADP5wCQju1z71g6OL4eEvELdran/3cs=
 github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f h1:KUppIJq7/+SVif2QVs3tOP0zanoHgBEVAwHxUSIzRqU=

@@ -4,14 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
-	"strings"
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/i-pu/word-war/server/domain/entity"
-	"github.com/i-pu/word-war/server/infra"
-	mecab "github.com/shogo82148/go-mecab"
+	"github.com/i-pu/word-war/server/external"
+	"github.com/ikawaha/kagome/tokenizer"
 )
 
 const (
@@ -25,33 +23,24 @@ type messageInRedis struct {
 }
 
 type messageRepository struct {
-	conn   *redis.Pool
-	tagger *mecab.MeCab
+	conn *redis.Pool
 	// roomName  string
 	// columnKey string
 }
 
 func NewMessageRepository() *messageRepository {
 	return &messageRepository{
-		conn:   infra.RedisPool,
-		tagger: infra.Tagger,
+		conn: external.RedisPool,
 		// roomName:  "room1",
 	}
 }
 
 func (r *messageRepository) IsSingleNoun(message *entity.Message) bool {
-	node, err := r.tagger.ParseToNode(message.Message)
-	if err != nil {
-		panic(err)
-	}
+	// [TODO] + neologd by NewWithDic("path/to/neologd.dic")
+	t := tokenizer.New()
+	tokens := t.Tokenize(message.Message)
 
-	node = node.Next()
-
-	features := strings.Split(node.Feature(), ",")
-
-	fmt.Println(message.Message, features[0], node.Next().Feature(), node.Next().Stat().String() == "EOS")
-
-	return features[0] == "名詞" && node.Next().Stat().String() == "EOS"
+	return tokens[0].Features()[0] == "名詞"
 }
 
 // redis message repo の命名規則
