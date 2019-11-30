@@ -9,5 +9,5 @@ import (
 type MessageRepository interface {
 	IsSingleNoun(message *entity.Message) bool
 	Publish(message *entity.Message) error
-	Subscribe(ctx context.Context) (<-chan *entity.Message, <-chan error)
+	Subscribe(ctx context.Context, roomID string) (<-chan *entity.Message, <-chan error)
 }

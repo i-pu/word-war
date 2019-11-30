@@ -25,14 +25,11 @@ type messageInRedis struct {
 
 type messageRepository struct {
 	conn *redis.Pool
-	// roomName  string
-	// columnKey string
 }
 
 func NewMessageRepository() *messageRepository {
 	return &messageRepository{
 		conn: external.RedisPool,
-		// roomName:  "room1",
 	}
 }
 
@@ -68,16 +65,19 @@ func (r *messageRepository) Publish(message *entity.Message) error {
 	}
 	conn := r.conn.Get()
 	defer conn.Close()
-	rep, err := conn.Do("PUBLISH", "message", mesBytes)
+	rep, err := conn.Do("PUBLISH", message.RoomID+":message", mesBytes)
 	if err != nil {
 		return err
 	}
+	// TODO: loggingの際にroomIDをひょうじしたい
 	log.Printf("publish reply: %+v", rep)
 	return nil
 }
 
 // Subscribeのより良いやり方あるかも
-func (r *messageRepository) Subscribe(ctx context.Context) (<-chan *entity.Message, <-chan error) {
+// ctx: 親のcontextで親のcontextが終了するとgo func()内でctx.Done()により終了する
+// roomID: どこの部屋のイベントをsubscribeするか
+func (r *messageRepository) Subscribe(ctx context.Context, roomID string) (<-chan *entity.Message, <-chan error) {
 	ch := make(chan *entity.Message)
 	errCh := make(chan error)
 	go func() {
@@ -88,15 +88,12 @@ func (r *messageRepository) Subscribe(ctx context.Context) (<-chan *entity.Messa
 		defer conn.Close()
 
 		psc := redis.PubSubConn{Conn: conn}
-		err := psc.Subscribe("message")
+		err := psc.Subscribe(roomID + ":message")
 		if err != nil {
 			errCh <- err
 		}
 
 		for {
-			// 2秒ごとにタイムアウトするのでずっと待ち続けることがなくなる
-			// timeoutしたタイミングでpublishされるとまずい
-			// そもそもtimeoutしたらConnectionが切れてしまうのか?変じゃね?
 			switch v := psc.Receive().(type) {
 			case redis.Message:
 				var message entity.Message
@@ -129,14 +126,6 @@ func (r *messageRepository) Subscribe(ctx context.Context) (<-chan *entity.Messa
 					log.Printf("parent ctx done!")
 					return
 				default:
-					// // TODO: redisのwithTimeoutのエラーとその他の接続エラーの区別がしたい
-					// // timeoutという文字列を含んでたらtimeoutと判別するとか?
-					// conn = r.conn.Get()
-					// psc = redis.PubSubConn{Conn: conn}
-					// err := psc.Subscribe("message")
-					// if err != nil {
-					// 	errCh <- err
-					// }
 					errCh <- errors.New(v.Error())
 				}
 			}

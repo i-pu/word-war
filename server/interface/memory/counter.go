@@ -7,8 +7,6 @@ import (
 
 type counterRepository struct {
 	conn *redis.Pool
-	// 部屋名固定
-	// roomName string
 }
 
 func NewCounterRepository() *counterRepository {
@@ -21,8 +19,8 @@ func NewCounterRepository() *counterRepository {
 // incr counter
 // 将来は <roomID>:counter になるかも
 
-func (r *counterRepository) IncrCounter() (int64, error) {
-	key := "counter"
+func (r *counterRepository) IncrCounter(roomID string) (int64, error) {
+	key := roomID + ":counter"
 	conn := r.conn.Get()
 
 	value, err := redis.Int64(conn.Do("Incr", key))
@@ -34,8 +32,8 @@ func (r *counterRepository) IncrCounter() (int64, error) {
 	return value, nil
 }
 
-func (r *counterRepository) SetCounter(value int64) error {
-	key := "counter"
+func (r *counterRepository) SetCounter(roomID string, value int64) error {
+	key := roomID + ":counter"
 	conn := r.conn.Get()
 
 	_, err := conn.Do("SET", key, value)
@@ -43,8 +41,8 @@ func (r *counterRepository) SetCounter(value int64) error {
 	return err
 }
 
-func (r *counterRepository) GetCounter() (int64, error) {
-	key := "counter"
+func (r *counterRepository) GetCounter(roomID string) (int64, error) {
+	key := roomID + ":counter"
 	conn := r.conn.Get()
 
 	value, err := redis.Int64(conn.Do("GET", key))

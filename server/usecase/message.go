@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"errors"
 	"github.com/i-pu/word-war/server/domain/entity"
 	"github.com/i-pu/word-war/server/domain/repository"
 	"github.com/i-pu/word-war/server/domain/service"
@@ -12,7 +11,7 @@ import (
 type MessageUsecase interface {
 	JudgeMessage(message *entity.Message) bool
 	SendMessage(message *entity.Message) error
-	GetMessage(ctx context.Context) (<-chan *entity.Message, <-chan error)
+	GetMessage(ctx context.Context, roomID string) (<-chan *entity.Message, <-chan error)
 }
 
 type messageUsecase struct {
@@ -44,7 +43,7 @@ func (u *messageUsecase) SendMessage(message *entity.Message) error {
 
 // GetMessage ctx is used to get cancel signal from parent to cancel pub/sub job
 // , so this ctx must be child context.
-func (u *messageUsecase) GetMessage(ctx context.Context) (<-chan *entity.Message, <-chan error) {
-	messageChan, errChan := u.repo.Subscribe(ctx)
+func (u *messageUsecase) GetMessage(ctx context.Context, roomID string) (<-chan *entity.Message, <-chan error) {
+	messageChan, errChan := u.repo.Subscribe(ctx, roomID)
 	return messageChan, errChan
 }

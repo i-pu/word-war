@@ -3,7 +3,6 @@ package rpc
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"strconv"
 
@@ -31,13 +30,23 @@ func NewWordWarService(
 	}
 }
 
+func (s *wordWarService) Matching(ctx context.Context, in *pb.MatchingRequest) (*pb.MatchingResponse, error) {
+	// TODO: RoomIdアルゴリズムを適応する
+	ret := &pb.MatchingResponse{RoomId: "hogehoge"}
+	return ret, nil
+}
+
 func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	// childのcontext荷関数が終了することを教えてあげる
-	defer s.counterUsecase.Init(&entity.Counter{Value: 0})
 	defer cancel()
+	// TODO: 時間制にする
+	// TODO: roomに関する情報を削除するゲームが終わったので、resultのあとでもいいかもしれない
+	defer s.counterUsecase.Init(in.RoomId, &entity.Counter{Value: 0, RoomID: in.RoomId})
+	// redisに終了をpublishする
+	// defer redis.publish(done)
 
-	messageChan, errChan := s.messageUsecase.GetMessage(ctx)
+	messageChan, errChan := s.messageUsecase.GetMessage(ctx, in.RoomId)
 	for {
 		select {
 		case message, ok := <-messageChan:
@@ -45,7 +54,7 @@ func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) err
 				// channelが先に閉じてることはないはずなので
 				return errors.New("logical error about redis channel")
 			}
-			counter, err := s.counterUsecase.Incr()
+			counter, err := s.counterUsecase.Incr(in.RoomId)
 			if err != nil {
 				log.Printf("error in incr: %+v", err)
 				return err
@@ -59,6 +68,7 @@ func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) err
 			res := &pb.GameResponse{
 				UserId:  message.UserID,
 				Message: message.Message,
+				RoomId:  message.RoomID,
 			}
 			if err := srv.Send(res); err != nil {
 				return err
@@ -70,20 +80,19 @@ func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) err
 }
 
 func (s *wordWarService) Say(ctx context.Context, in *pb.SayRequest) (*pb.SayResponse, error) {
-	message := &entity.Message{UserID: in.GetUserId(), Message: in.GetMessage()}
+	message := &entity.Message{UserID: in.UserId, Message: in.Message, RoomID: in.RoomId}
 	// TODO: validation message
-	if !u.JudgeMessage(message) {
+	if !s.messageUsecase.JudgeMessage(message) {
 		// return &pb.SayResponse{Type: "error", UserId: in.GetUserId(), Message: in.GetMessage()}
 		// TODO: pb.SayResponseに無効を通知するように変更
 		log.Printf("invalid message: %+v\n", message)
 	}
 
 	// 発言者にはそのまま返す
-	res := &pb.SayResponse{UserId: in.GetUserId(), Message: in.GetMessage()}
+	res := &pb.SayResponse{UserId: in.UserId, Message: in.Message, RoomId: in.RoomId}
 
 	// FIXME: redisにsendするデータにFrom属性を追加する
-	// FIXME: 部屋の機能はまだないので、部屋IDはまだ指定しないようにします
-	err := s.messageUsecase.SendMessage(&entity.Message{UserID: in.GetUserId(), Message: in.GetMessage()})
+	err := s.messageUsecase.SendMessage(&entity.Message{UserID: in.UserId, Message: in.Message, RoomID: in.RoomId})
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +100,7 @@ func (s *wordWarService) Say(ctx context.Context, in *pb.SayRequest) (*pb.SayRes
 	// TODO: スコア計算はどこで？
 
 	// てんすう固定
-	err = s.resultUsecase.IncrResult(in.GetUserId(), 5)
+	err = s.resultUsecase.IncrResult(in.RoomId, in.UserId, 5)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +110,7 @@ func (s *wordWarService) Say(ctx context.Context, in *pb.SayRequest) (*pb.SayRes
 
 func (s *wordWarService) Result(ctx context.Context, in *pb.ResultRequest) (*pb.ResultResponse, error) {
 	// 結果を取得する
-	result, err := s.resultUsecase.GetResult(in.GetUserId())
+	result, err := s.resultUsecase.GetResult(in.RoomId, in.UserId)
 	if err != nil {
 		return nil, err
 	}

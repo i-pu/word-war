@@ -3,6 +3,7 @@ syntax = "proto3";
 package word_war;
 
 service WordWar {
+  rpc Matching(MatchingRequest) returns (MatchingResponse) {};
   rpc Say(SayRequest) returns (SayResponse) {};
   rpc Game(GameRequest) returns (stream GameResponse) {};
   rpc Result(ResultRequest) returns (ResultResponse) {};
@@ -11,36 +12,44 @@ service WordWar {
 message SayRequest {
   string userId = 1;
   string message = 2;
+  string roomId = 3;
 }
 
 message SayResponse {
   string userId = 1;
   string message = 2;
+  string roomId = 3;
 }
 
-// TODO
-// message GameMatchRequest {
-//   string userId = 1;
-// 
-// 
-// message GameMatchRequest {
-// 
-// }
+message MatchingRequest {
+  string userId = 1;
+}
+
+// TODO: ここにへやの情報がはいる
+message MatchingResponse {
+  string roomId = 1;
+  // member
+  // repeat member []string = 2;
+}
 
 message GameRequest {
   string userId = 1;
+  string roomId = 2;
 }
 
 message GameResponse {
   string userId = 1;
   string message = 2;
+  string roomId = 3;
 }
 
 message ResultRequest {
   string userId = 1;
+  string roomId = 2;
 }
 
 message ResultResponse {
   string userId = 1;
   string score = 2;
+  string roomId = 3;
 }

@@ -27,6 +27,7 @@ const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 type SayRequest struct {
 	UserId               string   `protobuf:"bytes,1,opt,name=userId,proto3" json:"userId,omitempty"`
 	Message              string   `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	RoomId               string   `protobuf:"bytes,3,opt,name=roomId,proto3" json:"roomId,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -71,9 +72,17 @@ func (m *SayRequest) GetMessage() string {
 	return ""
 }
 
+func (m *SayRequest) GetRoomId() string {
+	if m != nil {
+		return m.RoomId
+	}
+	return ""
+}
+
 type SayResponse struct {
 	UserId               string   `protobuf:"bytes,1,opt,name=userId,proto3" json:"userId,omitempty"`
 	Message              string   `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	RoomId               string   `protobuf:"bytes,3,opt,name=roomId,proto3" json:"roomId,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -118,8 +127,95 @@ func (m *SayResponse) GetMessage() string {
 	return ""
 }
 
+func (m *SayResponse) GetRoomId() string {
+	if m != nil {
+		return m.RoomId
+	}
+	return ""
+}
+
+type MatchingRequest struct {
+	UserId               string   `protobuf:"bytes,1,opt,name=userId,proto3" json:"userId,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *MatchingRequest) Reset()         { *m = MatchingRequest{} }
+func (m *MatchingRequest) String() string { return proto.CompactTextString(m) }
+func (*MatchingRequest) ProtoMessage()    {}
+func (*MatchingRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9e6bc0bf977bdab9, []int{2}
+}
+
+func (m *MatchingRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_MatchingRequest.Unmarshal(m, b)
+}
+func (m *MatchingRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_MatchingRequest.Marshal(b, m, deterministic)
+}
+func (m *MatchingRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MatchingRequest.Merge(m, src)
+}
+func (m *MatchingRequest) XXX_Size() int {
+	return xxx_messageInfo_MatchingRequest.Size(m)
+}
+func (m *MatchingRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_MatchingRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MatchingRequest proto.InternalMessageInfo
+
+func (m *MatchingRequest) GetUserId() string {
+	if m != nil {
+		return m.UserId
+	}
+	return ""
+}
+
+// TODO: ここにへやの情報がはいる
+type MatchingResponse struct {
+	RoomId               string   `protobuf:"bytes,1,opt,name=roomId,proto3" json:"roomId,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *MatchingResponse) Reset()         { *m = MatchingResponse{} }
+func (m *MatchingResponse) String() string { return proto.CompactTextString(m) }
+func (*MatchingResponse) ProtoMessage()    {}
+func (*MatchingResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9e6bc0bf977bdab9, []int{3}
+}
+
+func (m *MatchingResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_MatchingResponse.Unmarshal(m, b)
+}
+func (m *MatchingResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_MatchingResponse.Marshal(b, m, deterministic)
+}
+func (m *MatchingResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MatchingResponse.Merge(m, src)
+}
+func (m *MatchingResponse) XXX_Size() int {
+	return xxx_messageInfo_MatchingResponse.Size(m)
+}
+func (m *MatchingResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MatchingResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MatchingResponse proto.InternalMessageInfo
+
+func (m *MatchingResponse) GetRoomId() string {
+	if m != nil {
+		return m.RoomId
+	}
+	return ""
+}
+
 type GameRequest struct {
 	UserId               string   `protobuf:"bytes,1,opt,name=userId,proto3" json:"userId,omitempty"`
+	RoomId               string   `protobuf:"bytes,2,opt,name=roomId,proto3" json:"roomId,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -129,7 +225,7 @@ func (m *GameRequest) Reset()         { *m = GameRequest{} }
 func (m *GameRequest) String() string { return proto.CompactTextString(m) }
 func (*GameRequest) ProtoMessage()    {}
 func (*GameRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9e6bc0bf977bdab9, []int{2}
+	return fileDescriptor_9e6bc0bf977bdab9, []int{4}
 }
 
 func (m *GameRequest) XXX_Unmarshal(b []byte) error {
@@ -157,9 +253,17 @@ func (m *GameRequest) GetUserId() string {
 	return ""
 }
 
+func (m *GameRequest) GetRoomId() string {
+	if m != nil {
+		return m.RoomId
+	}
+	return ""
+}
+
 type GameResponse struct {
 	UserId               string   `protobuf:"bytes,1,opt,name=userId,proto3" json:"userId,omitempty"`
 	Message              string   `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	RoomId               string   `protobuf:"bytes,3,opt,name=roomId,proto3" json:"roomId,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -169,7 +273,7 @@ func (m *GameResponse) Reset()         { *m = GameResponse{} }
 func (m *GameResponse) String() string { return proto.CompactTextString(m) }
 func (*GameResponse) ProtoMessage()    {}
 func (*GameResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9e6bc0bf977bdab9, []int{3}
+	return fileDescriptor_9e6bc0bf977bdab9, []int{5}
 }
 
 func (m *GameResponse) XXX_Unmarshal(b []byte) error {
@@ -204,8 +308,16 @@ func (m *GameResponse) GetMessage() string {
 	return ""
 }
 
+func (m *GameResponse) GetRoomId() string {
+	if m != nil {
+		return m.RoomId
+	}
+	return ""
+}
+
 type ResultRequest struct {
 	UserId               string   `protobuf:"bytes,1,opt,name=userId,proto3" json:"userId,omitempty"`
+	RoomId               string   `protobuf:"bytes,2,opt,name=roomId,proto3" json:"roomId,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -215,7 +327,7 @@ func (m *ResultRequest) Reset()         { *m = ResultRequest{} }
 func (m *ResultRequest) String() string { return proto.CompactTextString(m) }
 func (*ResultRequest) ProtoMessage()    {}
 func (*ResultRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9e6bc0bf977bdab9, []int{4}
+	return fileDescriptor_9e6bc0bf977bdab9, []int{6}
 }
 
 func (m *ResultRequest) XXX_Unmarshal(b []byte) error {
@@ -243,9 +355,17 @@ func (m *ResultRequest) GetUserId() string {
 	return ""
 }
 
+func (m *ResultRequest) GetRoomId() string {
+	if m != nil {
+		return m.RoomId
+	}
+	return ""
+}
+
 type ResultResponse struct {
 	UserId               string   `protobuf:"bytes,1,opt,name=userId,proto3" json:"userId,omitempty"`
 	Score                string   `protobuf:"bytes,2,opt,name=score,proto3" json:"score,omitempty"`
+	RoomId               string   `protobuf:"bytes,3,opt,name=roomId,proto3" json:"roomId,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -255,7 +375,7 @@ func (m *ResultResponse) Reset()         { *m = ResultResponse{} }
 func (m *ResultResponse) String() string { return proto.CompactTextString(m) }
 func (*ResultResponse) ProtoMessage()    {}
 func (*ResultResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9e6bc0bf977bdab9, []int{5}
+	return fileDescriptor_9e6bc0bf977bdab9, []int{7}
 }
 
 func (m *ResultResponse) XXX_Unmarshal(b []byte) error {
@@ -290,9 +410,18 @@ func (m *ResultResponse) GetScore() string {
 	return ""
 }
 
+func (m *ResultResponse) GetRoomId() string {
+	if m != nil {
+		return m.RoomId
+	}
+	return ""
+}
+
 func init() {
 	proto.RegisterType((*SayRequest)(nil), "word_war.SayRequest")
 	proto.RegisterType((*SayResponse)(nil), "word_war.SayResponse")
+	proto.RegisterType((*MatchingRequest)(nil), "word_war.MatchingRequest")
+	proto.RegisterType((*MatchingResponse)(nil), "word_war.MatchingResponse")
 	proto.RegisterType((*GameRequest)(nil), "word_war.GameRequest")
 	proto.RegisterType((*GameResponse)(nil), "word_war.GameResponse")
 	proto.RegisterType((*ResultRequest)(nil), "word_war.ResultRequest")
@@ -302,22 +431,26 @@ func init() {
 func init() { proto.RegisterFile("word_war.proto", fileDescriptor_9e6bc0bf977bdab9) }
 
 var fileDescriptor_9e6bc0bf977bdab9 = []byte{
-	// 234 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x2b, 0xcf, 0x2f, 0x4a,
-	0x89, 0x2f, 0x4f, 0x2c, 0xd2, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0xe2, 0x80, 0xf1, 0x95, 0xec,
-	0xb8, 0xb8, 0x82, 0x13, 0x2b, 0x83, 0x52, 0x0b, 0x4b, 0x53, 0x8b, 0x4b, 0x84, 0xc4, 0xb8, 0xd8,
-	0x4a, 0x8b, 0x53, 0x8b, 0x3c, 0x53, 0x24, 0x18, 0x15, 0x18, 0x35, 0x38, 0x83, 0xa0, 0x3c, 0x21,
-	0x09, 0x2e, 0xf6, 0xdc, 0xd4, 0xe2, 0xe2, 0xc4, 0xf4, 0x54, 0x09, 0x26, 0xb0, 0x04, 0x8c, 0xab,
-	0x64, 0xcf, 0xc5, 0x0d, 0xd6, 0x5f, 0x5c, 0x90, 0x9f, 0x57, 0x9c, 0x4a, 0x86, 0x01, 0xaa, 0x5c,
-	0xdc, 0xee, 0x89, 0xb9, 0xa9, 0x04, 0x5c, 0xa0, 0xe4, 0xc0, 0xc5, 0x03, 0x51, 0x46, 0xb6, 0x45,
-	0xea, 0x5c, 0xbc, 0x41, 0xa9, 0xc5, 0xa5, 0x39, 0x25, 0x84, 0xac, 0xb2, 0xe3, 0xe2, 0x83, 0x29,
-	0x24, 0x60, 0x99, 0x08, 0x17, 0x6b, 0x71, 0x72, 0x7e, 0x11, 0xcc, 0x2a, 0x08, 0xc7, 0x68, 0x27,
-	0x23, 0x17, 0x7b, 0x78, 0x7e, 0x51, 0x4a, 0x78, 0x62, 0x91, 0x90, 0x09, 0x17, 0x73, 0x70, 0x62,
-	0xa5, 0x90, 0x88, 0x1e, 0x3c, 0x02, 0x10, 0xa1, 0x2d, 0x25, 0x8a, 0x26, 0x0a, 0xb1, 0x4d, 0x89,
-	0x41, 0xc8, 0x92, 0x8b, 0x05, 0xe4, 0x59, 0x21, 0x24, 0x05, 0x48, 0x61, 0x24, 0x25, 0x86, 0x2e,
-	0x0c, 0xd3, 0x68, 0xc0, 0x28, 0x64, 0xcb, 0xc5, 0x06, 0x71, 0xbc, 0x90, 0x38, 0x42, 0x15, 0x8a,
-	0xbf, 0xa5, 0x24, 0x30, 0x25, 0x60, 0x06, 0x24, 0xb1, 0x81, 0xd3, 0x87, 0x31, 0x20, 0x00, 0x00,
-	0xff, 0xff, 0x69, 0xa3, 0x91, 0xcf, 0x31, 0x02, 0x00, 0x00,
+	// 300 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x53, 0x41, 0x4f, 0xc2, 0x30,
+	0x18, 0xb5, 0xa0, 0x03, 0x3f, 0x14, 0xcd, 0x17, 0xc4, 0xda, 0x93, 0xd9, 0x49, 0x3d, 0x10, 0xa3,
+	0x5e, 0x3c, 0x10, 0x0f, 0x1e, 0x0c, 0x07, 0x2f, 0x23, 0x61, 0xde, 0x4c, 0x65, 0x0d, 0x9a, 0x38,
+	0x8a, 0xed, 0x16, 0xc2, 0x9f, 0x37, 0x86, 0x95, 0x52, 0x36, 0x35, 0x4b, 0xc8, 0x8e, 0xaf, 0xdf,
+	0x7b, 0x2f, 0x6f, 0xef, 0xfb, 0x06, 0xed, 0xb9, 0x54, 0xd1, 0xeb, 0x9c, 0xab, 0xde, 0x4c, 0xc9,
+	0x44, 0x62, 0xd3, 0x62, 0x7f, 0x04, 0x30, 0xe4, 0x8b, 0x40, 0x7c, 0xa5, 0x42, 0x27, 0xd8, 0x05,
+	0x2f, 0xd5, 0x42, 0x0d, 0x22, 0x4a, 0xce, 0xc9, 0xc5, 0x7e, 0xb0, 0x42, 0x48, 0xa1, 0x11, 0x0b,
+	0xad, 0xf9, 0x44, 0xd0, 0x5a, 0x36, 0xb0, 0x70, 0xa9, 0x50, 0x52, 0xc6, 0x83, 0x88, 0xd6, 0x8d,
+	0xc2, 0x20, 0x3f, 0x84, 0x56, 0xe6, 0xab, 0x67, 0x72, 0xaa, 0x45, 0x85, 0xc6, 0x97, 0x70, 0xf4,
+	0xcc, 0x93, 0xf1, 0xfb, 0xc7, 0x74, 0x52, 0x92, 0xda, 0xbf, 0x82, 0x63, 0x47, 0x75, 0x41, 0x56,
+	0xb6, 0x24, 0x67, 0xdb, 0x87, 0xd6, 0x13, 0x8f, 0x45, 0x59, 0x11, 0x4e, 0x5e, 0xcb, 0xc9, 0x5f,
+	0xe0, 0xc0, 0xc8, 0x2b, 0xff, 0xde, 0x07, 0x38, 0x0c, 0x84, 0x4e, 0x3f, 0x93, 0x6d, 0xa3, 0x8d,
+	0xa0, 0x6d, 0x0d, 0x4a, 0xc2, 0x75, 0x60, 0x4f, 0x8f, 0xa5, 0xb2, 0xd1, 0x0c, 0xf8, 0x2f, 0xd8,
+	0xcd, 0x37, 0x81, 0x46, 0x28, 0x55, 0x14, 0x72, 0x85, 0x8f, 0xd0, 0xb4, 0x4d, 0xe3, 0x59, 0x6f,
+	0x7d, 0x6c, 0x85, 0x45, 0x31, 0xf6, 0xd7, 0xc8, 0x84, 0xf2, 0x77, 0xf0, 0x0e, 0xea, 0x43, 0xbe,
+	0xc0, 0x8e, 0x23, 0xb9, 0xcb, 0x64, 0x27, 0x85, 0xd7, 0xb5, 0xea, 0x1e, 0x76, 0x97, 0xcd, 0xe3,
+	0x06, 0x61, 0x63, 0x91, 0xac, 0x5b, 0x7c, 0xb6, 0xc2, 0x6b, 0x82, 0x7d, 0xf0, 0x4c, 0x33, 0x78,
+	0xea, 0x58, 0xb9, 0xb2, 0x19, 0xfd, 0x3d, 0xb0, 0x06, 0x6f, 0x5e, 0xf6, 0x2f, 0xdd, 0xfe, 0x04,
+	0x00, 0x00, 0xff, 0xff, 0xbb, 0x1e, 0xb2, 0xd4, 0x5d, 0x03, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -332,6 +465,7 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type WordWarClient interface {
+	Matching(ctx context.Context, in *MatchingRequest, opts ...grpc.CallOption) (*MatchingResponse, error)
 	Say(ctx context.Context, in *SayRequest, opts ...grpc.CallOption) (*SayResponse, error)
 	Game(ctx context.Context, in *GameRequest, opts ...grpc.CallOption) (WordWar_GameClient, error)
 	Result(ctx context.Context, in *ResultRequest, opts ...grpc.CallOption) (*ResultResponse, error)
@@ -343,6 +477,15 @@ type wordWarClient struct {
 
 func NewWordWarClient(cc *grpc.ClientConn) WordWarClient {
 	return &wordWarClient{cc}
+}
+
+func (c *wordWarClient) Matching(ctx context.Context, in *MatchingRequest, opts ...grpc.CallOption) (*MatchingResponse, error) {
+	out := new(MatchingResponse)
+	err := c.cc.Invoke(ctx, "/word_war.WordWar/Matching", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *wordWarClient) Say(ctx context.Context, in *SayRequest, opts ...grpc.CallOption) (*SayResponse, error) {
@@ -397,6 +540,7 @@ func (c *wordWarClient) Result(ctx context.Context, in *ResultRequest, opts ...g
 
 // WordWarServer is the server API for WordWar service.
 type WordWarServer interface {
+	Matching(context.Context, *MatchingRequest) (*MatchingResponse, error)
 	Say(context.Context, *SayRequest) (*SayResponse, error)
 	Game(*GameRequest, WordWar_GameServer) error
 	Result(context.Context, *ResultRequest) (*ResultResponse, error)
@@ -406,6 +550,9 @@ type WordWarServer interface {
 type UnimplementedWordWarServer struct {
 }
 
+func (*UnimplementedWordWarServer) Matching(ctx context.Context, req *MatchingRequest) (*MatchingResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Matching not implemented")
+}
 func (*UnimplementedWordWarServer) Say(ctx context.Context, req *SayRequest) (*SayResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Say not implemented")
 }
@@ -418,6 +565,24 @@ func (*UnimplementedWordWarServer) Result(ctx context.Context, req *ResultReques
 
 func RegisterWordWarServer(s *grpc.Server, srv WordWarServer) {
 	s.RegisterService(&_WordWar_serviceDesc, srv)
+}
+
+func _WordWar_Matching_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MatchingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WordWarServer).Matching(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/word_war.WordWar/Matching",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WordWarServer).Matching(ctx, req.(*MatchingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _WordWar_Say_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -481,6 +646,10 @@ var _WordWar_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "word_war.WordWar",
 	HandlerType: (*WordWarServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Matching",
+			Handler:    _WordWar_Matching_Handler,
+		},
 		{
 			MethodName: "Say",
 			Handler:    _WordWar_Say_Handler,

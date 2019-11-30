@@ -7,9 +7,9 @@ import (
 )
 
 type CounterUsecase interface {
-	Init(counter *entity.Counter) (*entity.Counter, error)
-	Incr() (*entity.Counter, error)
-	Get() (*entity.Counter, error)
+	Init(roomID string, counter *entity.Counter) (*entity.Counter, error)
+	Incr(roomID string) (*entity.Counter, error)
+	Get(roomID string) (*entity.Counter, error)
 }
 
 type counterUsecase struct {
@@ -24,22 +24,22 @@ func NewCounterUsecase(repo repository.CounterRepository, service *service.Count
 	}
 }
 
-func (u *counterUsecase) Init(counter *entity.Counter) (*entity.Counter, error) {
-	if err := u.repo.SetCounter(counter.Value); err != nil {
+func (u *counterUsecase) Init(roomID string, counter *entity.Counter) (*entity.Counter, error) {
+	if err := u.repo.SetCounter(roomID, counter.Value); err != nil {
 		return nil, err
 	}
 	return counter, nil
 }
 
-func (u *counterUsecase) Incr() (*entity.Counter, error) {
-	value, err := u.repo.IncrCounter()
+func (u *counterUsecase) Incr(roomID string) (*entity.Counter, error) {
+	value, err := u.repo.IncrCounter(roomID)
 	if err != nil {
 		return nil, err
 	}
 	return &entity.Counter{Value: value}, nil
 }
-func (u *counterUsecase) Get() (*entity.Counter, error) {
-	value, err := u.repo.GetCounter()
+func (u *counterUsecase) Get(roomID string) (*entity.Counter, error) {
+	value, err := u.repo.GetCounter(roomID)
 	if err != nil {
 		return nil, err
 	}

@@ -1,5 +1,6 @@
 package entity
 
 type Counter struct {
-	Value int64
+	RoomID string `json:"roomID" validate:"required"`
+	Value  int64
 }

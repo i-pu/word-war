@@ -8,8 +8,8 @@ import (
 
 type ResultUsecase interface {
 	// userIDはそのuserの結果
-	IncrResult(userID string, by int64) error
-	GetResult(userID string) (*entity.Result, error)
+	IncrResult(roomID string, userID string, by int64) error
+	GetResult(roomID string, userID string) (*entity.Result, error)
 }
 
 type resultUsecase struct {
@@ -24,10 +24,10 @@ func NewResultUsecase(repo repository.ResultRepository, service *service.ResultS
 	}
 }
 
-func (u *resultUsecase) IncrResult(userID string, by int64) error {
-	return u.repo.IncrBy(userID, by)
+func (u *resultUsecase) IncrResult(roomID string, userID string, by int64) error {
+	return u.repo.IncrBy(roomID, userID, by)
 }
 
-func (u *resultUsecase) GetResult(userID string) (*entity.Result, error) {
-	return u.repo.Get(userID)
+func (u *resultUsecase) GetResult(roomID string, userID string) (*entity.Result, error) {
+	return u.repo.Get(roomID, userID)
 }
