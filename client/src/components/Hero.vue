@@ -3,12 +3,14 @@
     <div class="hero is-primary">
       <div class="hero-body">
         <div class="container">
-          <h2 class="title has-text-left">Word War</h2>
+          <h2 class="title has-text-left">
+            Word War {{ $store.state.version }}
+          </h2>
         </div>
       </div>
       <div class="hero-footer">
         <div class="container">
-          <h2 class="subtitle">uid: {{ $store.getters['user/uid'] }}</h2>
+          <h2 class="subtitle">userId:{{ $store.getters.userId }}</h2>
         </div>
       </div>
     </div>

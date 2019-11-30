@@ -3,15 +3,12 @@
     <div class="container">
       <p>Siritori</p>
       <b-field>
-        <b-input v-model="message"></b-input>
+        <b-input v-model="message" @keyup.native.enter="send"></b-input>
       </b-field>
-      <div class="buttons">
-        <b-button @click="send">Send</b-button>
-      </div>
       <ul>
         <!-- FIXME: word.id を keyにするのダメそう -->
-        <li v-for="(word, i) in siritoriWords" :key="i">
-          {{ word.uid }}: {{ word.uid }}: {{ word.message }}
+        <li v-for="(word, i) in words" :key="i">
+          {{ word.getUserid() }}: {{ word.getMessage() }}
         </li>
       </ul>
     </div>
@@ -19,50 +16,36 @@
 </template>
 
 <script lang="ts">
+// TODO: room_idを指定してゲームが始められるように
 import { Component, Vue } from 'vue-property-decorator'
-import { WordWarPromiseClient } from '@/pb/word_war_grpc_web_pb'
-import { SayRequest, GameRequest } from '@/pb/word_war_pb'
 
 @Component
 export default class Siritori extends Vue {
-  private wordWarPromiseClient: WordWarPromiseClient = new WordWarPromiseClient(
-    process.env.VUE_APP_API_ENDPOINT
-  )
   private message: string = ''
-  private siritoriWords: Array<{ uid: string; message: string }> = []
 
-  created() {
-    const req: GameRequest = new GameRequest()
-    req.setUserid(this.$store.getters['user/uid'])
-    const stream = this.wordWarPromiseClient.game(req)
+  private get words() {
+    return this.$store.getters['game/getWords']
+  }
 
-    stream.on('data', res => {
-      console.log(res)
-      this.siritoriWords.push({
-        uid: res.getUserid(),
-        message: res.getMessage()
-      })
-    })
+  mounted() {
+    this.$store.dispatch('game/matchAndStart')
 
-    stream.on('status', status => {
-      console.log('status', status)
-      if (status.code === 0) {
-        this.$router.push('/result')
+    this.$store.watch(
+      (state, getter) => {
+        return state.game.isPlaying
+      },
+      (isPlaying, old) => {
+        console.log(`${old} => ${isPlaying}`)
+        if (!isPlaying) {
+          this.$router.push('/result')
+        }
       }
-    })
-
-    stream.on('error', res => {
-      console.log('error', res)
-    })
+    )
   }
 
   private async send() {
-    const req: SayRequest = new SayRequest()
-    req.setUserid(this.$store.getters['user/uid'])
-    req.setMessage(this.message)
-    console.log(req)
-    const result = await this.wordWarPromiseClient.say(req).catch(console.error)
-    console.log(result)
+    this.$store.dispatch('game/say', { message: this.message })
+    this.message = ''
   }
 }
 </script>

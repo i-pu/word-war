@@ -7,6 +7,9 @@ export class SayRequest extends jspb.Message {
   getMessage(): string;
   setMessage(value: string): void;
 
+  getRoomid(): string;
+  setRoomid(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): SayRequest.AsObject;
   static toObject(includeInstance: boolean, msg: SayRequest): SayRequest.AsObject;
@@ -19,6 +22,7 @@ export namespace SayRequest {
   export type AsObject = {
     userid: string,
     message: string,
+    roomid: string,
   }
 }
 
@@ -28,6 +32,9 @@ export class SayResponse extends jspb.Message {
 
   getMessage(): string;
   setMessage(value: string): void;
+
+  getRoomid(): string;
+  setRoomid(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): SayResponse.AsObject;
@@ -41,12 +48,52 @@ export namespace SayResponse {
   export type AsObject = {
     userid: string,
     message: string,
+    roomid: string,
+  }
+}
+
+export class MatchingRequest extends jspb.Message {
+  getUserid(): string;
+  setUserid(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): MatchingRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: MatchingRequest): MatchingRequest.AsObject;
+  static serializeBinaryToWriter(message: MatchingRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): MatchingRequest;
+  static deserializeBinaryFromReader(message: MatchingRequest, reader: jspb.BinaryReader): MatchingRequest;
+}
+
+export namespace MatchingRequest {
+  export type AsObject = {
+    userid: string,
+  }
+}
+
+export class MatchingResponse extends jspb.Message {
+  getRoomid(): string;
+  setRoomid(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): MatchingResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: MatchingResponse): MatchingResponse.AsObject;
+  static serializeBinaryToWriter(message: MatchingResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): MatchingResponse;
+  static deserializeBinaryFromReader(message: MatchingResponse, reader: jspb.BinaryReader): MatchingResponse;
+}
+
+export namespace MatchingResponse {
+  export type AsObject = {
+    roomid: string,
   }
 }
 
 export class GameRequest extends jspb.Message {
   getUserid(): string;
   setUserid(value: string): void;
+
+  getRoomid(): string;
+  setRoomid(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GameRequest.AsObject;
@@ -59,6 +106,7 @@ export class GameRequest extends jspb.Message {
 export namespace GameRequest {
   export type AsObject = {
     userid: string,
+    roomid: string,
   }
 }
 
@@ -68,6 +116,9 @@ export class GameResponse extends jspb.Message {
 
   getMessage(): string;
   setMessage(value: string): void;
+
+  getRoomid(): string;
+  setRoomid(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GameResponse.AsObject;
@@ -81,12 +132,16 @@ export namespace GameResponse {
   export type AsObject = {
     userid: string,
     message: string,
+    roomid: string,
   }
 }
 
 export class ResultRequest extends jspb.Message {
   getUserid(): string;
   setUserid(value: string): void;
+
+  getRoomid(): string;
+  setRoomid(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ResultRequest.AsObject;
@@ -99,6 +154,7 @@ export class ResultRequest extends jspb.Message {
 export namespace ResultRequest {
   export type AsObject = {
     userid: string,
+    roomid: string,
   }
 }
 
@@ -108,6 +164,9 @@ export class ResultResponse extends jspb.Message {
 
   getScore(): string;
   setScore(value: string): void;
+
+  getRoomid(): string;
+  setRoomid(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ResultResponse.AsObject;
@@ -121,6 +180,7 @@ export namespace ResultResponse {
   export type AsObject = {
     userid: string,
     score: string,
+    roomid: string,
   }
 }
 

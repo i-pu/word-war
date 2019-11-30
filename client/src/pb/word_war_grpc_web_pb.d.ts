@@ -3,6 +3,8 @@ import * as grpcWeb from 'grpc-web';
 import {
   GameRequest,
   GameResponse,
+  MatchingRequest,
+  MatchingResponse,
   ResultRequest,
   ResultResponse,
   SayRequest,
@@ -12,6 +14,13 @@ export class WordWarClient {
   constructor (hostname: string,
                credentials?: null | { [index: string]: string; },
                options?: null | { [index: string]: string; });
+
+  matching(
+    request: MatchingRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.Error,
+               response: MatchingResponse) => void
+  ): grpcWeb.ClientReadableStream<MatchingResponse>;
 
   say(
     request: SayRequest,
@@ -38,6 +47,11 @@ export class WordWarPromiseClient {
   constructor (hostname: string,
                credentials?: null | { [index: string]: string; },
                options?: null | { [index: string]: string; });
+
+  matching(
+    request: MatchingRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<MatchingResponse>;
 
   say(
     request: SayRequest,
