@@ -2,10 +2,11 @@ package usecase
 
 import (
 	"context"
-
+	"errors"
 	"github.com/i-pu/word-war/server/domain/entity"
 	"github.com/i-pu/word-war/server/domain/repository"
 	"github.com/i-pu/word-war/server/domain/service"
+	"regexp"
 )
 
 type MessageUsecase interface {
@@ -26,14 +27,15 @@ func NewMessageUsecase(repo repository.MessageRepository, service *service.Messa
 	}
 }
 
-// test usecase
+// ひらがな && 1単語 && 名詞
 func (u *messageUsecase) JudgeMessage(message *entity.Message) bool {
-	return u.repo.IsSingleNoun(message)
+	// TODO: 今なんの単語からはじまるのか
+	// TODO: `ん`で終わるかどうか
+	r := regexp.MustCompile(`^\p{Hiragana}+$`)
+	return r.Match([]byte(message.Message)) && u.repo.IsSingleNoun(message)
 }
 
 func (u *messageUsecase) SendMessage(message *entity.Message) error {
-	// [TODO] validation message
-
 	if err := u.repo.Publish(message); err != nil {
 		return err
 	}

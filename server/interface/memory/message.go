@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 
 	"github.com/gomodule/redigo/redis"
@@ -39,8 +40,16 @@ func (r *messageRepository) IsSingleNoun(message *entity.Message) bool {
 	// [TODO] + neologd by NewWithDic("path/to/neologd.dic")
 	t := tokenizer.New()
 	tokens := t.Tokenize(message.Message)
+	if len(tokens) != 3 {
+		return false
+	}
 
-	return tokens[0].Features()[0] == "名詞"
+	firstFeature := tokens[1].Features()
+
+	// "りんご" -> [BOS りんご EOS]
+	fmt.Printf("message: %+v\n tokens: %+v\n first: %+v\n", message, tokens, firstFeature)
+
+	return firstFeature != nil && len(firstFeature) >= 1 && firstFeature[0] == "名詞"
 }
 
 // redis message repo の命名規則

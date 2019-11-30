@@ -70,15 +70,16 @@ func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) err
 }
 
 func (s *wordWarService) Say(ctx context.Context, in *pb.SayRequest) (*pb.SayResponse, error) {
-	// mecab test
-	isSingleNoun := s.messageUsecase.JudgeMessage(&entity.Message{UserID: in.GetUserId(), Message: in.GetMessage()})
-	fmt.Printf("%v is %v", in.GetMessage(), isSingleNoun)
+	message := &entity.Message{UserID: in.GetUserId(), Message: in.GetMessage()}
+	// TODO: validation message
+	if !u.JudgeMessage(message) {
+		// return &pb.SayResponse{Type: "error", UserId: in.GetUserId(), Message: in.GetMessage()}
+		// TODO: pb.SayResponseに無効を通知するように変更
+		log.Printf("invalid message: %+v\n", message)
+	}
 
 	// 発言者にはそのまま返す
-	res := &pb.SayResponse{
-		UserId:  in.GetUserId(),
-		Message: in.GetMessage(),
-	}
+	res := &pb.SayResponse{UserId: in.GetUserId(), Message: in.GetMessage()}
 
 	// FIXME: redisにsendするデータにFrom属性を追加する
 	// FIXME: 部屋の機能はまだないので、部屋IDはまだ指定しないようにします

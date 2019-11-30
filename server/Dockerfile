@@ -1,3 +1,4 @@
+# TODO: 辞書を探して、辞書の追加
 # FROM iputus/go-mecab-neologd
 FROM golang:1.13.1-alpine
 
