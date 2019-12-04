@@ -33,45 +33,45 @@ func (m *MockCounterRepository) EXPECT() *MockCounterRepositoryMockRecorder {
 }
 
 // IncrCounter mocks base method
-func (m *MockCounterRepository) IncrCounter(roomID string) (int64, error) {
+func (m *MockCounterRepository) IncrCounter() (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IncrCounter", roomID)
+	ret := m.ctrl.Call(m, "IncrCounter")
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // IncrCounter indicates an expected call of IncrCounter
-func (mr *MockCounterRepositoryMockRecorder) IncrCounter(roomID interface{}) *gomock.Call {
+func (mr *MockCounterRepositoryMockRecorder) IncrCounter() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrCounter", reflect.TypeOf((*MockCounterRepository)(nil).IncrCounter), roomID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrCounter", reflect.TypeOf((*MockCounterRepository)(nil).IncrCounter))
 }
 
 // SetCounter mocks base method
-func (m *MockCounterRepository) SetCounter(roomID string, value int64) error {
+func (m *MockCounterRepository) SetCounter(value int64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetCounter", roomID, value)
+	ret := m.ctrl.Call(m, "SetCounter", value)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SetCounter indicates an expected call of SetCounter
-func (mr *MockCounterRepositoryMockRecorder) SetCounter(roomID, value interface{}) *gomock.Call {
+func (mr *MockCounterRepositoryMockRecorder) SetCounter(value interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetCounter", reflect.TypeOf((*MockCounterRepository)(nil).SetCounter), roomID, value)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetCounter", reflect.TypeOf((*MockCounterRepository)(nil).SetCounter), value)
 }
 
 // GetCounter mocks base method
-func (m *MockCounterRepository) GetCounter(roomID string) (int64, error) {
+func (m *MockCounterRepository) GetCounter() (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCounter", roomID)
+	ret := m.ctrl.Call(m, "GetCounter")
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetCounter indicates an expected call of GetCounter
-func (mr *MockCounterRepositoryMockRecorder) GetCounter(roomID interface{}) *gomock.Call {
+func (mr *MockCounterRepositoryMockRecorder) GetCounter() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCounter", reflect.TypeOf((*MockCounterRepository)(nil).GetCounter), roomID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCounter", reflect.TypeOf((*MockCounterRepository)(nil).GetCounter))
 }
