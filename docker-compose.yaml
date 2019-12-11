@@ -8,13 +8,18 @@ services:
       - ./server/:/go/src/app
     environment:
       REDIS_URL: redis
+      TZ: Asia/Tokyo
   redis:
     image: redis
     ports:
       - 6379:6379
+    environment:
+      TZ: Asia/Tokyo
   envoy:
     build: ./envoy
     ports:
       - "8080:8080"
       - "9901:9901"
+    environment:
+      TZ: Asia/Tokyo
 
