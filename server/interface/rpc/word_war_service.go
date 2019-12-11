@@ -13,18 +13,18 @@ import (
 
 type wordWarService struct {
 	// 個々にいろんなusecaseついかすればよさそう
-	messageUsecase usecase.MessageUsecase
+	gameUsecase    usecase.GameUsecase
 	counterUsecase usecase.CounterUsecase
 	resultUsecase  usecase.ResultUsecase
 }
 
 func NewWordWarService(
-	messageUsecase usecase.MessageUsecase,
+	gameUsecase usecase.GameUsecase,
 	counterUsecase usecase.CounterUsecase,
 	resultUsecase usecase.ResultUsecase,
 ) *wordWarService {
 	return &wordWarService{
-		messageUsecase: messageUsecase,
+		gameUsecase:    gameUsecase,
 		counterUsecase: counterUsecase,
 		resultUsecase:  resultUsecase,
 	}
@@ -36,7 +36,15 @@ func (s *wordWarService) Matching(ctx context.Context, in *pb.MatchingRequest) (
 	return ret, nil
 }
 
+// TODO: へやに途中から入った人は今の文字がわからないので教えてあげる
+// TODO: だめなメッセージも全員に送るようにしてクライアントで処理してもらう
+// TODO: 2回同じ単語はだめなので、履歴を保存して検査する
 func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) error {
+	err := s.gameUsecase.InitGameState(in.RoomId)
+	if err != nil {
+		log.Printf("init error: %+v", err)
+		return err
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	// childのcontext荷関数が終了することを教えてあげる
 	defer cancel()
@@ -46,7 +54,7 @@ func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) err
 	// redisに終了をpublishする
 	// defer redis.publish(done)
 
-	messageChan, errChan := s.messageUsecase.GetMessage(ctx, in.RoomId)
+	messageChan, errChan := s.gameUsecase.GetMessage(ctx, in.RoomId)
 	for {
 		select {
 		case message, ok := <-messageChan:
@@ -82,24 +90,30 @@ func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) err
 func (s *wordWarService) Say(ctx context.Context, in *pb.SayRequest) (*pb.SayResponse, error) {
 	message := &entity.Message{UserID: in.UserId, Message: in.Message, RoomID: in.RoomId}
 	// TODO: validation message
-	if !s.messageUsecase.JudgeMessage(message) {
-		// return &pb.SayResponse{Type: "error", UserId: in.GetUserId(), Message: in.GetMessage()}
-		// TODO: pb.SayResponseに無効を通知するように変更
-		log.Printf("invalid message: %+v\n", message)
-	}
 
-	// 発言者にはそのまま返す
-	res := &pb.SayResponse{UserId: in.UserId, Message: in.Message, RoomId: in.RoomId}
-
-	// FIXME: redisにsendするデータにFrom属性を追加する
-	err := s.messageUsecase.SendMessage(&entity.Message{UserID: in.UserId, Message: in.Message, RoomID: in.RoomId})
+	game, err := s.gameUsecase.TryUpdateWord(message)
 	if err != nil {
+		log.Println("error:", err)
+		return nil, err
+	}
+	if game == nil {
+		log.Printf("can't try to update message: %+v\n", message)
+		// なんにも周りに送らない
+		res := &pb.SayResponse{Valid: false, UserId: in.UserId, Message: in.Message, RoomId: in.RoomId}
+		return res, nil
+
+	}
+	// 有効なメッセージしか送らないようになっているので大丈夫なのでまわりに教える
+	err = s.gameUsecase.SendMessage(&entity.Message{UserID: in.UserId, Message: in.Message, RoomID: in.RoomId})
+	if err != nil {
+		log.Println("error:", err)
 		return nil, err
 	}
 
-	// TODO: スコア計算はどこで？
+	// FIXME: redisにsendするデータにFrom属性を追加する
+	res := &pb.SayResponse{Valid: true, UserId: in.UserId, Message: in.Message, RoomId: in.RoomId}
 
-	// てんすう固定
+	// FIXME: てんすう固定
 	err = s.resultUsecase.IncrResult(in.RoomId, in.UserId, 5)
 	if err != nil {
 		return nil, err

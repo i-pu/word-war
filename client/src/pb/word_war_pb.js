@@ -412,7 +412,8 @@ proto.word_war.SayResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
     userid: jspb.Message.getFieldWithDefault(msg, 1, ""),
     message: jspb.Message.getFieldWithDefault(msg, 2, ""),
-    roomid: jspb.Message.getFieldWithDefault(msg, 3, "")
+    roomid: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    valid: jspb.Message.getBooleanFieldWithDefault(msg, 4, false)
   };
 
   if (includeInstance) {
@@ -461,6 +462,10 @@ proto.word_war.SayResponse.deserializeBinaryFromReader = function(msg, reader) {
       var value = /** @type {string} */ (reader.readString());
       msg.setRoomid(value);
       break;
+    case 4:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setValid(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -508,6 +513,13 @@ proto.word_war.SayResponse.serializeBinaryToWriter = function(message, writer) {
   if (f.length > 0) {
     writer.writeString(
       3,
+      f
+    );
+  }
+  f = message.getValid();
+  if (f) {
+    writer.writeBool(
+      4,
       f
     );
   }
@@ -565,6 +577,24 @@ proto.word_war.SayResponse.prototype.getRoomid = function() {
  */
 proto.word_war.SayResponse.prototype.setRoomid = function(value) {
   return jspb.Message.setProto3StringField(this, 3, value);
+};
+
+
+/**
+ * optional bool valid = 4;
+ * @return {boolean}
+ */
+proto.word_war.SayResponse.prototype.getValid = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 4, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.word_war.SayResponse} returns this
+ */
+proto.word_war.SayResponse.prototype.setValid = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 4, value);
 };
 
 
