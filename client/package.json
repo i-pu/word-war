@@ -6,7 +6,9 @@
     "serve": "vue-cli-service serve --port 1234",
     "build": "vue-cli-service build",
     "test:unit": "vue-cli-service test:unit",
-    "lint": "vue-cli-service lint"
+    "lint": "vue-cli-service lint",
+    "firebase:serve": "yarn build && firebase serve -p 8080 -o 127.0.0.1",
+    "firebase:deploy": "yarn build && firebase deploy"
   },
   "dependencies": {
     "@mdi/font": "^4.5.95",
