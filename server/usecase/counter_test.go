@@ -1,9 +1,8 @@
 package usecase
 
 import (
-	"testing"
-
 	"github.com/golang/mock/gomock"
+	"testing"
 
 	"github.com/i-pu/word-war/server/domain/entity"
 	"github.com/i-pu/word-war/server/domain/repository/mock"
@@ -15,9 +14,9 @@ func TestCounterUsecase_Init(t *testing.T) {
 	defer ctrl.Finish()
 
 	m := mock_repository.NewMockCounterRepository(ctrl)
-	m.EXPECT().SetCounter("test_room_id", gomock.Any()).Return(nil)
+	m.EXPECT().SetCounter(gomock.Any()).Return(nil)
 	u := NewCounterUsecase(m, service.NewCounterService(m))
-	c, err := u.Init("test_room_id", &entity.Counter{Value: 0})
+	c, err := u.Init(&entity.Counter{Value: 0})
 	if err != nil {
 		t.Errorf("%v", err)
 	}

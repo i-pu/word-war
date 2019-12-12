@@ -6,12 +6,17 @@ services:
       - 50051:50051
     environment:
       REDIS_URL: redis
+      TZ: Asia/Tokyo
   redis:
     image: redis
     ports:
       - 6379:6379
+    environment:
+      TZ: Asia/Tokyo
   envoy:
     image: iputus/envoy:develop-1.0
     ports:
       - "8080:8080"
       - "9901:9901"
+    environment:
+      TZ: Asia/Tokyo
