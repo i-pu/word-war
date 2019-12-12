@@ -19,6 +19,7 @@ message SayResponse {
   string userId = 1;
   string message = 2;
   string roomId = 3;
+  bool valid = 4;
 }
 
 message MatchingRequest {

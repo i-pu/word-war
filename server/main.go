@@ -32,9 +32,12 @@ func main() {
 
 func setUpGrpc() *grpc.Server {
 	grpcServer := grpc.NewServer()
+
+	gameRepo := memory.NewGameStateRepository()
+
 	messageRepo := memory.NewMessageRepository()
 	messageService := service.NewMessageService(messageRepo)
-	messageUsecase := usecase.NewMessageUsecase(messageRepo, messageService)
+	messageUsecase := usecase.NewMessageUsecase(gameRepo, messageRepo, messageService)
 
 	counterRepo := memory.NewCounterRepository()
 	counterService := service.NewCounterService(counterRepo)
