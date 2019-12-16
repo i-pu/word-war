@@ -52,7 +52,7 @@ func (r *messageRepository) IsSingleNoun(message *entity.Message) bool {
 // redis message repo の命名規則
 // publish message '{"userID": "7141-1414-1414...", "message": "hello"}'
 // subscribe messae
-// 将来 roomID:message になるかも
+// roomID:message になるかも
 
 func (r *messageRepository) Publish(message *entity.Message) error {
 	mesInRed := messageInRedis{

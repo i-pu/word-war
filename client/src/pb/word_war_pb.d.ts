@@ -36,6 +36,9 @@ export class SayResponse extends jspb.Message {
   getRoomid(): string;
   setRoomid(value: string): void;
 
+  getValid(): boolean;
+  setValid(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): SayResponse.AsObject;
   static toObject(includeInstance: boolean, msg: SayResponse): SayResponse.AsObject;
@@ -49,6 +52,7 @@ export namespace SayResponse {
     userid: string,
     message: string,
     roomid: string,
+    valid: boolean,
   }
 }
 
