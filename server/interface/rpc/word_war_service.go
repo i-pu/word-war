@@ -59,7 +59,7 @@ func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) err
 	// redisに終了をpublishする
 	// defer redis.publish(done)
 
-	messageChan, errChan := s.gameUsecase.GetMessage(ctx, in.RoomId)
+	messageChan, errChan := s.gameUsecase.GetMessageChan(ctx, in.RoomId)
 	for {
 		select {
 		case message, ok := <-messageChan:

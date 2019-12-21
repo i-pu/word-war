@@ -13,7 +13,8 @@ type GameUsecase interface {
 	InitGameState(roomID string) error
 	TryUpdateWord(message *entity.Message) (*entity.GameState, error)
 	SendMessage(message *entity.Message) error
-	GetMessage(ctx context.Context, roomID string) (<-chan *entity.Message, <-chan error)
+	GetMessageChan(ctx context.Context, roomID string) (<-chan *entity.Message, <-chan error)
+	GetCurrentMessage(roomID string) (*entity.Message, error)
 }
 
 type gameUsecase struct {
@@ -85,9 +86,19 @@ func (u *gameUsecase) SendMessage(message *entity.Message) error {
 	return nil
 }
 
-// GetMessage ctx is used to get cancel signal from parent to cancel pub/sub job
+// GetMessageChan ctx is used to get cancel signal from parent to cancel pub/sub job
 // , so this ctx must be child context.
-func (u *gameUsecase) GetMessage(ctx context.Context, roomID string) (<-chan *entity.Message, <-chan error) {
+func (u *gameUsecase) GetMessageChan(ctx context.Context, roomID string) (<-chan *entity.Message, <-chan error) {
 	messageChan, errChan := u.messageRepo.Subscribe(ctx, roomID)
 	return messageChan, errChan
+}
+
+func (u *gameUsecase) GetCurrentMessage(roomID string) (*entity.Message, error) {
+	mes, err := u.gameStateRepo.GetCurrentWord(roomID)
+	if err != nil {
+		log.Println("in gameUsecase get currentMessage:", err)
+		return nil, err
+	}
+
+	return &entity.Message{RoomID: roomID, UserID: "unknown", Message: mes}, nil
 }
