@@ -3,7 +3,9 @@ package rpc
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
+	"math/rand"
 	"strconv"
 
 	"github.com/i-pu/word-war/server/domain/entity"
@@ -32,7 +34,10 @@ func NewWordWarService(
 
 func (s *wordWarService) Matching(ctx context.Context, in *pb.MatchingRequest) (*pb.MatchingResponse, error) {
 	// TODO: RoomIdアルゴリズムを適応する
-	ret := &pb.MatchingResponse{RoomId: "hogehoge"}
+	// roomIdで10000~99999までの間で5桁の数字を生成
+	// TODO: すでに部屋が存在した場合はもう一度作成するようにする
+	roomId := fmt.Sprintf("%d", rand.Intn(90000)+10000)
+	ret := &pb.MatchingResponse{RoomId: roomId}
 	return ret, nil
 }
 

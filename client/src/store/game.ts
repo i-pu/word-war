@@ -36,8 +36,10 @@ export const game: Module<GameState, RootState> = {
     start(commit) {
       commit.isPlaying = true
     },
-    end(commit) {
+    reset(commit) {
       commit.isPlaying = false
+      commit.words = []
+      commit.score = 0
     },
     score(commit, score: number) {
       commit.score = score
@@ -50,7 +52,7 @@ export const game: Module<GameState, RootState> = {
     }
   },
   actions: {
-    async matchAndStart({ commit, state, rootGetters }) {
+    async match({ commit, state, rootGetters }) {
       console.log(rootGetters.userId)
       const matchingReq: MatchingRequest = new MatchingRequest()
       matchingReq.setUserid(rootGetters.userId)
@@ -63,10 +65,24 @@ export const game: Module<GameState, RootState> = {
       }
 
       console.log(matchingRes.getRoomid())
-      commit('room', matchingRes.getRoomid())
+
+      return matchingRes.getRoomid()
+    },
+
+    async start({ commit, state, rootGetters }, { roomId }) {
+      commit('reset')
+
+      if (!roomId) {
+        console.error('error')
+        return
+      }
+
+      commit('room', roomId)
+
+      console.log(`roomId in store: ${state.roomId}`)
 
       const gameReq: GameRequest = new GameRequest()
-      gameReq.setRoomid(matchingRes.getRoomid())
+      gameReq.setRoomid(roomId)
       gameReq.setUserid(rootGetters.userId)
       const stream = state.client.game(gameReq)
 
@@ -78,11 +94,12 @@ export const game: Module<GameState, RootState> = {
       stream.on('status', status => {
         console.log('status', status)
         if (status.code === 0) {
-          commit('end')
+          commit('reset')
         }
       })
 
       stream.on('error', res => {
+        commit('reset')
         console.log('error', res)
       })
 

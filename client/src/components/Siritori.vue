@@ -5,6 +5,8 @@
       <b-field>
         <b-input v-model="message" @keyup.native.enter="send"></b-input>
       </b-field>
+      <p>room: {{ roomId }}</p>
+      <p>{{ currentWord }}</p>
       <ul>
         <!-- FIXME: word.id を keyにするのダメそう -->
         <li v-for="(word, i) in words" :key="i">
@@ -27,8 +29,32 @@ export default class Siritori extends Vue {
     return this.$store.getters['game/getWords']
   }
 
-  mounted() {
-    this.$store.dispatch('game/matchAndStart')
+  private get roomId() {
+    return this.$store.getters['game/roomId']
+  }
+
+  private get currentWord(): string {
+    return this.words.length === 0
+      ? 'り'
+      : this.words[this.words.length - 1].getMessage()
+  }
+
+  async mounted() {
+    try {
+      console.log(this.$route.params)
+      console.log(this.$route.query)
+      if (this.$route.query.roomid) {
+        const roomId = this.$route.query.roomid
+        await this.$store.dispatch('game/start', { roomId })
+        console.log(`joined ${roomId}`)
+      } else {
+        const roomId = await this.$store.dispatch('game/match')
+        await this.$store.dispatch('game/start', { roomId })
+        console.log(`created and joined ${roomId}`)
+      }
+    } catch (e) {
+      console.error(e)
+    }
 
     this.$store.watch(
       (state, getter) => {
