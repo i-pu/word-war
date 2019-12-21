@@ -9,7 +9,7 @@
       <p>{{ currentWord }}</p>
       <ul>
         <!-- FIXME: word.id を keyにするのダメそう -->
-        <!-- 発言ごとに固有のランダムなIDを与えたい　-->
+        <!-- 発言ごとに固有のランダムなIDを与えたい -->
         <li v-for="(word, i) in words" :key="i">
           {{ word.getUserid() }}: {{ word.getMessage() }}
         </li>

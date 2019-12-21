@@ -11,7 +11,7 @@
         へやにさんかする
       </b-button>
       <b-field>
-        <b-input placeholder="input room ID" v-model="roomIdInput"></b-input>
+        <b-input v-model="roomIdInput" placeholder="input room ID"></b-input>
       </b-field>
       <b-button type="is-dark" @click="onClick">vuex</b-button>
       <p>{{ count }}</p>
