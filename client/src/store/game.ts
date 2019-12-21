@@ -109,7 +109,6 @@ export const game: Module<GameState, RootState> = {
       { state, commit, rootGetters },
       { message }: { message: string }
     ) {
-      // TODO: uid
       const req: SayRequest = new SayRequest()
       req.setRoomid(state.roomId)
       req.setUserid(rootGetters.userId)

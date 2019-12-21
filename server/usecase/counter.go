@@ -4,6 +4,7 @@ import (
 	"github.com/i-pu/word-war/server/domain/entity"
 	"github.com/i-pu/word-war/server/domain/repository"
 	"github.com/i-pu/word-war/server/domain/service"
+	"golang.org/x/xerrors"
 )
 
 type CounterUsecase interface {
@@ -34,14 +35,22 @@ func (u *counterUsecase) Init(roomID string, counter *entity.Counter) (*entity.C
 func (u *counterUsecase) Incr(roomID string) (*entity.Counter, error) {
 	value, err := u.repo.IncrCounter(roomID)
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf(
+			"Incr can't IncrCounter. roomId: %v",
+			roomID,
+			err,
+		)
 	}
 	return &entity.Counter{Value: value}, nil
 }
 func (u *counterUsecase) Get(roomID string) (*entity.Counter, error) {
 	value, err := u.repo.GetCounter(roomID)
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf(
+			"Get can't GetCounter. roomId: %v",
+			roomID,
+			err,
+		)
 	}
 	return &entity.Counter{Value: value}, nil
 }

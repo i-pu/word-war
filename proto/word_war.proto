@@ -27,7 +27,7 @@ message MatchingRequest {
   string userId = 1;
 }
 
-// TODO: ここにへやの情報がはいる
+// TODO: ここにへやのメンバーなどの情報がはいる
 message MatchingResponse {
   string roomId = 1;
   // member

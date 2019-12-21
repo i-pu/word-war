@@ -34,7 +34,6 @@ export default class Login extends Vue {
   private email: string = ''
   private password: string = ''
 
-  // TODO: signInとsignUpをstoreに移動
   private async signIn() {
     await this.$store.dispatch('signIn', {
       email: this.email,

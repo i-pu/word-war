@@ -2,11 +2,12 @@ package usecase
 
 import (
 	"context"
+	"regexp"
+
 	"github.com/i-pu/word-war/server/domain/entity"
 	"github.com/i-pu/word-war/server/domain/repository"
 	"github.com/i-pu/word-war/server/domain/service"
-	"log"
-	"regexp"
+	"golang.org/x/xerrors"
 )
 
 type GameUsecase interface {
@@ -34,7 +35,7 @@ func NewMessageUsecase(gameRepo repository.GameStateRepository, messageRepo repo
 func (u *gameUsecase) InitGameState(roomID string) error {
 	err := u.gameStateRepo.InitWord(roomID, "しりとり")
 	if err != nil {
-		return err
+		return xerrors.Errorf("InitGameState can't InitWord. %w", err)
 	}
 	return nil
 }
@@ -46,15 +47,18 @@ func isSiritori(left string, right string) bool {
 	if len(leftRunes) == 0 || len(rightRunes) == 0 {
 		return false
 	}
-	log.Println(leftRunes, rightRunes)
 	return leftRunes[len(leftRunes)-1] == rightRunes[0]
 }
 
 // ひらがな && 1単語 && 名詞
 func (u *gameUsecase) TryUpdateWord(message *entity.Message) (*entity.GameState, error) {
 	if err := u.gameStateRepo.LockCurrentWord(message.RoomID); err != nil {
-		log.Println("lock error:", err)
-		return nil, err
+		return nil, xerrors.Errorf(
+			"TryUpdateWord can't LockCurrentWord. roomId: %v, userId: %v. %w",
+			message.RoomID,
+			message.UserID,
+			err,
+		)
 	}
 	defer u.gameStateRepo.UnlockCurrentWord(message.RoomID)
 
@@ -62,7 +66,12 @@ func (u *gameUsecase) TryUpdateWord(message *entity.Message) (*entity.GameState,
 
 	currentWord, err := u.gameStateRepo.GetCurrentWord(message.RoomID)
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf(
+			"TryUpdateWord can't GetCurrentWord. roomId: %v, userId: %v. %w",
+			message.RoomID,
+			message.UserID,
+			err,
+		)
 	}
 
 	if !(isSiritori(currentWord, message.Message) && r.Match([]byte(message.Message)) && u.messageRepo.IsSingleNoun(message)) {
@@ -71,8 +80,12 @@ func (u *gameUsecase) TryUpdateWord(message *entity.Message) (*entity.GameState,
 	}
 
 	if err := u.gameStateRepo.UpdateCurrentWord(message.RoomID, message.Message); err != nil {
-		log.Println("update error:", err)
-		return nil, err
+		return nil, xerrors.Errorf(
+			"TryUpdateWord can't UpdateCurrentWord. roomId: %v, userId: %v. %w",
+			message.RoomID,
+			message.UserID,
+			err,
+		)
 	}
 
 	return &entity.GameState{RoomID: message.RoomID, CurrentWord: message.Message}, nil
@@ -81,7 +94,12 @@ func (u *gameUsecase) TryUpdateWord(message *entity.Message) (*entity.GameState,
 // SendMessageは周りにメッセージを送る関数
 func (u *gameUsecase) SendMessage(message *entity.Message) error {
 	if err := u.messageRepo.Publish(message); err != nil {
-		return err
+		return xerrors.Errorf(
+			"SendMessage can't Publish. roomId: %v, userId: %v. %w",
+			message.RoomID,
+			message.UserID,
+			err,
+		)
 	}
 	return nil
 }
@@ -96,8 +114,11 @@ func (u *gameUsecase) GetMessageChan(ctx context.Context, roomID string) (<-chan
 func (u *gameUsecase) GetCurrentMessage(roomID string) (*entity.Message, error) {
 	mes, err := u.gameStateRepo.GetCurrentWord(roomID)
 	if err != nil {
-		log.Println("in gameUsecase get currentMessage:", err)
-		return nil, err
+		return nil, xerrors.Errorf(
+			"GetCurrentMessage can't GetCurrentWord. roomId: %v. %w",
+			roomID,
+			err,
+		)
 	}
 
 	return &entity.Message{RoomID: roomID, UserID: "unknown", Message: mes}, nil

@@ -3,22 +3,34 @@ package memory
 import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/i-pu/word-war/server/external"
-	"log"
+	"golang.org/x/xerrors"
+	"time"
 )
 
 type gameStateRepository struct {
 	conn *redis.Pool
+	keyTTL time.Duration
 }
 
 func NewGameStateRepository() *gameStateRepository {
 	return &gameStateRepository{
 		conn: external.RedisPool,
+		keyTTL: time.Minute * 10,
 	}
 }
 func (r *gameStateRepository) InitWord(roomID string, word string) error {
 	key := roomID + ":currentWord"
 	conn := r.conn.Get()
 	_, err := conn.Do("SETNX", key, word)
+	if err != nil {
+		return xerrors.Errorf("error in InitWord setnx: %w", err)
+	}
+
+	_, err = conn.Do("EXPIRE", key, r.keyTTL)
+	if err != nil {
+		return xerrors.Errorf("error in InitWord expire: %w", err)
+	}
+
 	return err
 }
 
@@ -29,9 +41,14 @@ func (r *gameStateRepository) LockCurrentWord(roomID string) error {
 	for {
 		res, err := conn.Do("SETNX", key, "locking")
 		if err != nil {
-			log.Println("lockCurrentWord error:", err)
-			return err
+			return xerrors.Errorf("error in lockCurrentWord: %w", err)
 		}
+
+		_, err = conn.Do("EXPIRE", key, r.keyTTL)
+		if err != nil {
+			return xerrors.Errorf("error in lockCurrentWord expire: %w", err)
+		}
+
 		if res != 0 {
 			break
 		}
@@ -45,8 +62,7 @@ func (r *gameStateRepository) UnlockCurrentWord(roomID string) error {
 	conn := r.conn.Get()
 	_, err := conn.Do("DEL", key)
 	if err != nil {
-		log.Println("UnlockCurrentWord error:", err)
-		return err
+		return xerrors.Errorf("error in UnlockCurrentWord: %w", err)
 	}
 	return nil
 }
@@ -57,10 +73,13 @@ func (r *gameStateRepository) UpdateCurrentWord(roomID string, word string) erro
 	conn := r.conn.Get()
 
 	_, err := conn.Do("SET", key, word)
-
 	if err != nil {
-		log.Println("UpdateCurrentWord error:", err)
-		return err
+		return xerrors.Errorf("error in UpdateCurrentWord: %w", err)
+	}
+
+	_, err = conn.Do("EXPIRE", key, r.keyTTL)
+	if err != nil {
+		return xerrors.Errorf("error in UpdateCurrentWord expire: %w", err)
 	}
 
 	return nil
@@ -74,8 +93,12 @@ func (r *gameStateRepository) GetCurrentWord(roomID string) (string, error) {
 
 	value, err := redis.String(conn.Do("GET", key))
 	if err != nil {
-		log.Println("GetCurrentWord error")
-		return "", err
+		return "", xerrors.Errorf("error in getCurrentWord: %w", err)
+	}
+
+	_, err = conn.Do("EXPIRE", key, r.keyTTL)
+	if err != nil {
+		return "", xerrors.Errorf("error in getCurrentWord expire: %w", err)
 	}
 
 	return value, nil

@@ -3,9 +3,9 @@ package memory
 import (
 	"context"
 	"encoding/json"
-	"errors"
-	"fmt"
-	"log"
+	log "github.com/sirupsen/logrus"
+	"golang.org/x/xerrors"
+	"time"
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/i-pu/word-war/server/domain/entity"
@@ -24,17 +24,20 @@ type messageInRedis struct {
 }
 
 type messageRepository struct {
-	conn *redis.Pool
+	conn   *redis.Pool
+	keyTTL time.Duration
 }
 
 func NewMessageRepository() *messageRepository {
 	return &messageRepository{
-		conn: external.RedisPool,
+		conn:   external.RedisPool,
+		keyTTL: time.Minute * 10,
 	}
 }
 
 func (r *messageRepository) IsSingleNoun(message *entity.Message) bool {
-	// [TODO] + neologd by NewWithDic("path/to/neologd.dic")
+	// TODO: +neologd by NewWithDic("path/to/neologd.dic")
+	// neologdの辞書のパスの調査
 	t := tokenizer.New()
 	tokens := t.Tokenize(message.Message)
 	if len(tokens) != 3 {
@@ -44,7 +47,11 @@ func (r *messageRepository) IsSingleNoun(message *entity.Message) bool {
 	firstFeature := tokens[1].Features()
 
 	// "りんご" -> [BOS りんご EOS]
-	fmt.Printf("message: %+v\n tokens: %+v\n first: %+v\n", message, tokens, firstFeature)
+	log.WithFields(log.Fields{
+		"message": message.Message,
+		"tokens":  tokens,
+		"first":   firstFeature,
+	}).Info("IsSingleNoun")
 
 	return firstFeature != nil && len(firstFeature) >= 1 && firstFeature[0] == "名詞"
 }
@@ -61,16 +68,27 @@ func (r *messageRepository) Publish(message *entity.Message) error {
 	}
 	mesBytes, err := json.Marshal(&mesInRed)
 	if err != nil {
-		return err
+		return xerrors.Errorf("error in json.Marshal: %w", err)
 	}
+
 	conn := r.conn.Get()
 	defer conn.Close()
+
 	rep, err := conn.Do("PUBLISH", message.RoomID+":message", mesBytes)
 	if err != nil {
-		return err
+		return xerrors.Errorf("error in redis publish: %w", err)
 	}
-	// TODO: loggingの際にroomIDをひょうじしたい
-	log.Printf("publish reply: %+v", rep)
+
+	_, err = conn.Do("EXPIRE", message.RoomID+":message", r.keyTTL)
+	if err != nil {
+		return xerrors.Errorf("error in Publish expire: %w", err)
+	}
+
+	log.WithFields(log.Fields{
+		"rep":    rep,
+		"roomId": message.RoomID,
+	}).Info("publish reply")
+
 	return nil
 }
 
@@ -90,32 +108,38 @@ func (r *messageRepository) Subscribe(ctx context.Context, roomID string) (<-cha
 		psc := redis.PubSubConn{Conn: conn}
 		err := psc.Subscribe(roomID + ":message")
 		if err != nil {
-			errCh <- err
+			errCh <- xerrors.Errorf("error in subscribe: %w", err)
 		}
 
 		for {
 			switch v := psc.Receive().(type) {
 			case redis.Message:
 				var message entity.Message
-				log.Printf("%s", string(v.Data))
+
 				if err := json.Unmarshal(v.Data, &message); err != nil {
-					errCh <- err
+					errCh <- xerrors.Errorf("error in json.Unmarshal: %w", err)
 				}
-				// TODO: ctxが終了したことをチェックしてから送信する
-				// こんな適当でいいのだろうか?
 				select {
 				case <-ctx.Done():
-					log.Printf("parent ctx done!")
+					log.Info("parent ctx done!")
 					return
 				default:
-					log.Printf("send message: %v", message)
+					log.WithFields(log.Fields{
+						"roomId":  message.RoomID,
+						"userId":  message.UserID,
+						"message": message.Message,
+					}).Info("send message:")
 					ch <- &message
 				}
 			case redis.Subscription:
-				log.Printf("%s: %s %d\n", v.Channel, v.Kind, v.Count)
+				log.WithFields(log.Fields{
+					"channel": v.Channel,
+					"kind":    v.Kind,
+					"count":   v.Count,
+				}).Info("redis subscription:")
 				select {
 				case <-ctx.Done():
-					log.Printf("parent ctx done!")
+					log.Info("parent ctx done!")
 					return
 				default:
 					continue
@@ -123,10 +147,10 @@ func (r *messageRepository) Subscribe(ctx context.Context, roomID string) (<-cha
 			case error:
 				select {
 				case <-ctx.Done():
-					log.Printf("parent ctx done!")
+					log.Info("parent ctx done!")
 					return
 				default:
-					errCh <- errors.New(v.Error())
+					errCh <- xerrors.Errorf("error in subscribe: %w", v.Error())
 				}
 			}
 		}

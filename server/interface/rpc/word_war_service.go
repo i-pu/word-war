@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"math/rand"
 	"strconv"
 
 	"github.com/i-pu/word-war/server/domain/entity"
 	pb "github.com/i-pu/word-war/server/interface/rpc/pb"
 	"github.com/i-pu/word-war/server/usecase"
+	log "github.com/sirupsen/logrus"
+	"golang.org/x/xerrors"
 )
 
 type wordWarService struct {
@@ -33,7 +34,7 @@ func NewWordWarService(
 }
 
 func (s *wordWarService) Matching(ctx context.Context, in *pb.MatchingRequest) (*pb.MatchingResponse, error) {
-	// TODO: RoomIdアルゴリズムを適応する
+	// TODO: マッチングアルゴリズムを適応する
 	// roomIdで10000~99999までの間で5桁の数字を生成
 	// TODO: すでに部屋が存在した場合はもう一度作成するようにする
 	roomId := fmt.Sprintf("%d", rand.Intn(90000)+10000)
@@ -47,14 +48,12 @@ func (s *wordWarService) Matching(ctx context.Context, in *pb.MatchingRequest) (
 func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) error {
 	err := s.gameUsecase.InitGameState(in.RoomId)
 	if err != nil {
-		log.Printf("init error: %+v", err)
-		return err
+		return xerrors.Errorf("init error: %w", err)
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	// childのcontext荷関数が終了することを教えてあげる
 	defer cancel()
 	// TODO: 時間制にする
-	// TODO: roomに関する情報を削除するゲームが終わったので、resultのあとでもいいかもしれない
 	defer s.counterUsecase.Init(in.RoomId, &entity.Counter{Value: 0, RoomID: in.RoomId})
 	// redisに終了をpublishする
 	// defer redis.publish(done)
@@ -69,13 +68,14 @@ func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) err
 			}
 			counter, err := s.counterUsecase.Incr(in.RoomId)
 			if err != nil {
-				log.Printf("error in incr: %+v", err)
-				return err
+				return xerrors.Errorf("error in incr: %w", err)
 			}
 			// ! 10件にしましょう
 			if counter.Value > 10 {
 				// 終了処理
-				log.Printf("finish game")
+				log.WithFields(log.Fields{
+					"roomId": in.RoomId,
+				}).Info("finish game")
 				return nil
 			}
 			res := &pb.GameResponse{
@@ -84,44 +84,44 @@ func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) err
 				RoomId:  message.RoomID,
 			}
 			if err := srv.Send(res); err != nil {
-				return err
+				return xerrors.Errorf("Game rpc can't Send. roomId: %v, userId: %v. %w", in.RoomId, in.UserId, err)
 			}
 		case err := <-errChan:
-			log.Printf("error in game: %+v", err)
+			return xerrors.Errorf("error in game: %w", err)
 		}
 	}
 }
 
 func (s *wordWarService) Say(ctx context.Context, in *pb.SayRequest) (*pb.SayResponse, error) {
 	message := &entity.Message{UserID: in.UserId, Message: in.Message, RoomID: in.RoomId}
-	// TODO: validation message
-
 	game, err := s.gameUsecase.TryUpdateWord(message)
 	if err != nil {
-		log.Println("error:", err)
-		return nil, err
+		return nil, xerrors.Errorf("Say rpc can't TryUpdateWord. roomId: %v, userId: %v. %w", in.RoomId, in.UserId, err)
 	}
 	if game == nil {
-		log.Printf("can't try to update message: %+v\n", message)
+		log.WithFields(log.Fields{
+			"roomID":  in.RoomId,
+			"userId":  in.UserId,
+			"message": in.Message,
+		}).Info("Can't update word.")
 		// なんにも周りに送らない
 		res := &pb.SayResponse{Valid: false, UserId: in.UserId, Message: in.Message, RoomId: in.RoomId}
 		return res, nil
 
 	}
-	// 有効なメッセージしか送らないようになっているので大丈夫なのでまわりに教える
+
+	// 有効なメッセージしか送らないようになっているから大丈夫なのでまわりに教える
 	err = s.gameUsecase.SendMessage(&entity.Message{UserID: in.UserId, Message: in.Message, RoomID: in.RoomId})
 	if err != nil {
-		log.Println("error:", err)
-		return nil, err
+		return nil, xerrors.Errorf("Say rpc can't SendMessage. roomId: %v, userId: %v. %w", in.RoomId, in.UserId, err)
 	}
 
-	// FIXME: redisにsendするデータにFrom属性を追加する
 	res := &pb.SayResponse{Valid: true, UserId: in.UserId, Message: in.Message, RoomId: in.RoomId}
 
-	// FIXME: てんすう固定
+	// TODO: 文字の長さが長かったら得点大にしたい、思考時間とかも考慮して点数を変えたい
 	err = s.resultUsecase.IncrResult(in.RoomId, in.UserId, 5)
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("Say rpc can't IncrResult. roomId: %v, userId: %v. %w", in.RoomId, in.UserId, err)
 	}
 
 	return res, nil
@@ -131,7 +131,7 @@ func (s *wordWarService) Result(ctx context.Context, in *pb.ResultRequest) (*pb.
 	// 結果を取得する
 	result, err := s.resultUsecase.GetResult(in.RoomId, in.UserId)
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("Result rpc can't GetResult. roomId: %v, userId: %v. %w", in.RoomId, in.UserId, err)
 	}
 
 	num := strconv.FormatInt(result.Score, 10)

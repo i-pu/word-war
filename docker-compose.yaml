@@ -9,6 +9,7 @@ services:
     environment:
       REDIS_URL: redis
       TZ: Asia/Tokyo
+    tty: true
   redis:
     image: redis
     ports:

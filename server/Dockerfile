@@ -1,6 +1,8 @@
 # TODO: 辞書を探して、辞書の追加
+# TODO: k8sに移行したい
+# TODO: CI/CDを完全に自動化したい
 # FROM iputus/go-mecab-neologd
-FROM golang:1.13.1-alpine
+FROM golang:1.13.4-alpine
 
 WORKDIR /go/src/app
 

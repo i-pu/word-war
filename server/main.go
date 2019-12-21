@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"net"
 
 	"github.com/i-pu/word-war/server/domain/service"
@@ -10,7 +9,7 @@ import (
 	"github.com/i-pu/word-war/server/interface/rpc"
 	pb "github.com/i-pu/word-war/server/interface/rpc/pb"
 	"github.com/i-pu/word-war/server/usecase"
-
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -24,6 +23,7 @@ func main() {
 	setUpInfra()
 	grpcServer := setUpGrpc()
 	reflection.Register(grpcServer)
+	log.Info("Start server")
 
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)

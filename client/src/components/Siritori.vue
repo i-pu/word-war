@@ -9,6 +9,7 @@
       <p>{{ currentWord }}</p>
       <ul>
         <!-- FIXME: word.id を keyにするのダメそう -->
+        <!-- 発言ごとに固有のランダムなIDを与えたい　-->
         <li v-for="(word, i) in words" :key="i">
           {{ word.getUserid() }}: {{ word.getMessage() }}
         </li>
@@ -18,7 +19,6 @@
 </template>
 
 <script lang="ts">
-// TODO: room_idを指定してゲームが始められるように
 import { Component, Vue } from 'vue-property-decorator'
 
 @Component
