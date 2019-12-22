@@ -79,7 +79,7 @@ func (r *messageRepository) Publish(message *entity.Message) error {
 		return xerrors.Errorf("error in redis publish: %w", err)
 	}
 
-	_, err = conn.Do("EXPIRE", message.RoomID+":message", r.keyTTL)
+	_, err = conn.Do("EXPIRE", message.RoomID+":message", int64(r.keyTTL.Seconds()))
 	if err != nil {
 		return xerrors.Errorf("error in Publish expire: %w", err)
 	}

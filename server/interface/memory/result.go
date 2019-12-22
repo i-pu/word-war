@@ -31,7 +31,7 @@ func (r *resultRepository) Get(roomID string, userID string) (*entity.Result, er
 		return nil, err
 	}
 
-	_, err = conn.Do("EXPIRE", key, r.keyTTL)
+	_, err = conn.Do("EXPIRE", key, int64(r.keyTTL.Seconds()))
 	if err != nil {
 		return nil, xerrors.Errorf("error in Get expire: %w", err)
 	}
@@ -46,7 +46,7 @@ func (r *resultRepository) Set(result *entity.Result) error {
 		return err
 	}
 
-	_, err = conn.Do("EXPIRE", key, r.keyTTL)
+	_, err = conn.Do("EXPIRE", key, int64(r.keyTTL.Seconds()))
 	if err != nil {
 		return xerrors.Errorf("error in Set expire: %w", err)
 	}
@@ -60,7 +60,7 @@ func (r *resultRepository) IncrBy(roomID string, userID string, by int64) error 
 		return err
 	}
 
-	_, err = conn.Do("EXPIRE", key, r.keyTTL)
+	_, err = conn.Do("EXPIRE", key, int64(r.keyTTL.Seconds()))
 	if err != nil {
 		return xerrors.Errorf("error in Incr expire: %w", err)
 	}
