@@ -26,11 +26,14 @@ jobs:
     - name: Publish envoy image
       id: publish-envoy-image
       uses: elgohr/Publish-Docker-Github-Action@master
+      env:
+        ENVOY_FILE: ./envoy.prd.yaml
       with:
         name: iputus/envoy
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
         workdir: envoy
+        buildargs: ENVOY_FILE
         snapshot: true
 
     - name: echo outputs

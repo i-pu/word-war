@@ -39,6 +39,14 @@ static_resources:
                 - name: envoy.cors
                 - name: envoy.router
 
+          tls_context:
+            common_tls_context:
+              tls_certificates:
+                - certificate_chain:
+                    filename: "/etc/envoy/https-portal/api.word-war.i-pu.dns-cloud.net/production/signed.crt"
+                  private_key:
+                    filename: "/etc/envoy/https-portal/api.word-war.i-pu.dns-cloud.net/production/domain.key"
+
   clusters:
     - name: word_war_service
       connect_timeout: 0.25s

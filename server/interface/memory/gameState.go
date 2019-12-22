@@ -26,7 +26,7 @@ func (r *gameStateRepository) InitWord(roomID string, word string) error {
 		return xerrors.Errorf("error in InitWord setnx: %w", err)
 	}
 
-	_, err = conn.Do("EXPIRE", key, r.keyTTL)
+	_, err = conn.Do("EXPIRE", key, int64(r.keyTTL.Seconds()))
 	if err != nil {
 		return xerrors.Errorf("error in InitWord expire: %w", err)
 	}
@@ -44,7 +44,7 @@ func (r *gameStateRepository) LockCurrentWord(roomID string) error {
 			return xerrors.Errorf("error in lockCurrentWord: %w", err)
 		}
 
-		_, err = conn.Do("EXPIRE", key, r.keyTTL)
+		_, err = conn.Do("EXPIRE", key, int64(r.keyTTL.Seconds()))
 		if err != nil {
 			return xerrors.Errorf("error in lockCurrentWord expire: %w", err)
 		}
@@ -77,7 +77,7 @@ func (r *gameStateRepository) UpdateCurrentWord(roomID string, word string) erro
 		return xerrors.Errorf("error in UpdateCurrentWord: %w", err)
 	}
 
-	_, err = conn.Do("EXPIRE", key, r.keyTTL)
+	_, err = conn.Do("EXPIRE", key, int64(r.keyTTL.Seconds()))
 	if err != nil {
 		return xerrors.Errorf("error in UpdateCurrentWord expire: %w", err)
 	}
@@ -96,7 +96,7 @@ func (r *gameStateRepository) GetCurrentWord(roomID string) (string, error) {
 		return "", xerrors.Errorf("error in getCurrentWord: %w", err)
 	}
 
-	_, err = conn.Do("EXPIRE", key, r.keyTTL)
+	_, err = conn.Do("EXPIRE", key, int64(r.keyTTL.Seconds()))
 	if err != nil {
 		return "", xerrors.Errorf("error in getCurrentWord expire: %w", err)
 	}

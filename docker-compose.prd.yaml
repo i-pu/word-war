@@ -1,5 +1,20 @@
 version: '3.7'
 services:
+  # 証明書発行コンテナ
+  https-portal:
+    image: steveltn/https-portal:1
+    restart: always
+    ports:
+      - '80:80'
+      - '443:443'
+    environment:
+      DOMAINS: 'api.word-war.i-pu.dns-cloud.net'
+      # STAGE: local
+      STAGE: production
+      TZ: Asia/Tokyo
+    volumes:
+      - ./https-portal/:/var/lib/https-portal
+
   server:
     image: iputus/server:develop-1.1
     ports:
@@ -10,14 +25,19 @@ services:
     tty: true
   redis:
     image: redis
-    ports:
-      - 6379:6379
     environment:
       TZ: Asia/Tokyo
+    ports:
+      - '6379:6379'
   envoy:
     image: iputus/envoy:develop-1.1
+    # 証明書が未発行でvolume mountされていないとき落ちるので、
+    # 証明書が生成されるまで再起動を繰り返す
+    restart: always
     ports:
-      - "80:8080"
-      - "9901:9901"
+      - '8080:8080'
+      - '9901:9901'
     environment:
       TZ: Asia/Tokyo
+    volumes:
+      - ./https-portal/:/etc/envoy/https-portal

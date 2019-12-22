@@ -32,7 +32,7 @@ func (r *counterRepository) IncrCounter(roomID string) (int64, error) {
 		return -1, xerrors.Errorf("error in incr counter: %w", err)
 	}
 
-	_, err = conn.Do("EXPIRE", key, r.keyTTL)
+	_, err = conn.Do("EXPIRE", key, int64(r.keyTTL.Seconds()))
 	if err != nil {
 		return -1, xerrors.Errorf("error in IncrCounter expire: %w", err)
 	}
@@ -48,7 +48,7 @@ func (r *counterRepository) SetCounter(roomID string, value int64) error {
 		return xerrors.Errorf("error in set counter: %w", err)
 	}
 
-	_, err = conn.Do("EXPIRE", key, r.keyTTL)
+	_, err = conn.Do("EXPIRE", key, int64(r.keyTTL.Seconds()))
 	if err != nil {
 		return xerrors.Errorf("error in set counter expire: %w", err)
 	}
@@ -64,7 +64,7 @@ func (r *counterRepository) GetCounter(roomID string) (int64, error) {
 	if err != nil {
 		return -1, xerrors.Errorf("error in main method: %w", err)
 	}
-	_, err = conn.Do("EXPIRE", key, r.keyTTL)
+	_, err = conn.Do("EXPIRE", key, int64(r.keyTTL.Seconds()))
 	if err != nil {
 		return -1, xerrors.Errorf("error in GetCounter expire: %w", err)
 	}
