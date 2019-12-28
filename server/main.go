@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
+// TODO: client用のステータス用のhealthcheckのrcpの作成
 func main() {
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {

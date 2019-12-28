@@ -24,34 +24,47 @@ type messageInRedis struct {
 }
 
 type messageRepository struct {
-	conn   *redis.Pool
-	keyTTL time.Duration
+	conn      *redis.Pool
+	keyTTL    time.Duration
+	tokenizer *tokenizer.Tokenizer
 }
 
 func NewMessageRepository() *messageRepository {
+	dic, err := tokenizer.NewDic("/ipa.dic")
+	if err != nil {
+		log.WithError(xerrors.Errorf("NewMessageRepository cant NewDic: %w", err)).Fatal("")
+	}
+	tokenizer := tokenizer.New()
+	tokenizer.SetDic(dic)
+
 	return &messageRepository{
-		conn:   external.RedisPool,
-		keyTTL: time.Minute * 10,
+		conn:      external.RedisPool,
+		keyTTL:    time.Minute * 10,
+		tokenizer: &tokenizer,
 	}
 }
 
 func (r *messageRepository) IsSingleNoun(message *entity.Message) bool {
-	// TODO: +neologd by NewWithDic("path/to/neologd.dic")
-	// neologdの辞書のパスの調査
-	t := tokenizer.New()
-	tokens := t.Tokenize(message.Message)
+	tokens := r.tokenizer.Tokenize(message.Message)
+	// "りんご" -> [BOS りんご EOS]
+	log.WithFields(log.Fields{
+		"message": message.Message,
+		"tokens":  tokens,
+	}).Info("IsSingleNoun")
+
 	if len(tokens) != 3 {
 		return false
 	}
 
 	firstFeature := tokens[1].Features()
+	// debug
+	for i, v := range tokens {
+		log.WithFields(log.Fields{
+			"index": i,
+			"value": v,
+		}).Info("tokens")
+	}
 
-	// "りんご" -> [BOS りんご EOS]
-	log.WithFields(log.Fields{
-		"message": message.Message,
-		"tokens":  tokens,
-		"first":   firstFeature,
-	}).Info("IsSingleNoun")
 
 	return firstFeature != nil && len(firstFeature) >= 1 && firstFeature[0] == "名詞"
 }

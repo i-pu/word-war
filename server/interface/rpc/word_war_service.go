@@ -84,7 +84,7 @@ func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) err
 				RoomId:  message.RoomID,
 			}
 			if err := srv.Send(res); err != nil {
-				return xerrors.Errorf("Game rpc can't Send. roomId: %v, userId: %v. %w", in.RoomId, in.UserId, err)
+				return xerrors.Errorf("Game rpc can't Send. roomId: %v, userId: %v. : %w", in.RoomId, in.UserId, err)
 			}
 		case err := <-errChan:
 			return xerrors.Errorf("error in game: %w", err)
@@ -96,7 +96,7 @@ func (s *wordWarService) Say(ctx context.Context, in *pb.SayRequest) (*pb.SayRes
 	message := &entity.Message{UserID: in.UserId, Message: in.Message, RoomID: in.RoomId}
 	game, err := s.gameUsecase.TryUpdateWord(message)
 	if err != nil {
-		return nil, xerrors.Errorf("Say rpc can't TryUpdateWord. roomId: %v, userId: %v. %w", in.RoomId, in.UserId, err)
+		return nil, xerrors.Errorf("Say rpc can't TryUpdateWord. roomId: %v, userId: %v. : %w", in.RoomId, in.UserId, err)
 	}
 	if game == nil {
 		log.WithFields(log.Fields{
@@ -113,7 +113,7 @@ func (s *wordWarService) Say(ctx context.Context, in *pb.SayRequest) (*pb.SayRes
 	// 有効なメッセージしか送らないようになっているから大丈夫なのでまわりに教える
 	err = s.gameUsecase.SendMessage(&entity.Message{UserID: in.UserId, Message: in.Message, RoomID: in.RoomId})
 	if err != nil {
-		return nil, xerrors.Errorf("Say rpc can't SendMessage. roomId: %v, userId: %v. %w", in.RoomId, in.UserId, err)
+		return nil, xerrors.Errorf("Say rpc can't SendMessage. roomId: %v, userId: %v. : %w", in.RoomId, in.UserId, err)
 	}
 
 	res := &pb.SayResponse{Valid: true, UserId: in.UserId, Message: in.Message, RoomId: in.RoomId}
@@ -121,7 +121,7 @@ func (s *wordWarService) Say(ctx context.Context, in *pb.SayRequest) (*pb.SayRes
 	// TODO: 文字の長さが長かったら得点大にしたい、思考時間とかも考慮して点数を変えたい
 	err = s.resultUsecase.IncrResult(in.RoomId, in.UserId, 5)
 	if err != nil {
-		return nil, xerrors.Errorf("Say rpc can't IncrResult. roomId: %v, userId: %v. %w", in.RoomId, in.UserId, err)
+		return nil, xerrors.Errorf("Say rpc can't IncrResult. roomId: %v, userId: %v. : %w", in.RoomId, in.UserId, err)
 	}
 
 	return res, nil
@@ -131,7 +131,7 @@ func (s *wordWarService) Result(ctx context.Context, in *pb.ResultRequest) (*pb.
 	// 結果を取得する
 	result, err := s.resultUsecase.GetResult(in.RoomId, in.UserId)
 	if err != nil {
-		return nil, xerrors.Errorf("Result rpc can't GetResult. roomId: %v, userId: %v. %w", in.RoomId, in.UserId, err)
+		return nil, xerrors.Errorf("Result rpc can't GetResult. roomId: %v, userId: %v. : %w", in.RoomId, in.UserId, err)
 	}
 
 	num := strconv.FormatInt(result.Score, 10)

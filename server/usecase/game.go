@@ -2,12 +2,12 @@ package usecase
 
 import (
 	"context"
-	"regexp"
-
 	"github.com/i-pu/word-war/server/domain/entity"
 	"github.com/i-pu/word-war/server/domain/repository"
 	"github.com/i-pu/word-war/server/domain/service"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/xerrors"
+	"regexp"
 )
 
 type GameUsecase interface {
@@ -35,7 +35,7 @@ func NewMessageUsecase(gameRepo repository.GameStateRepository, messageRepo repo
 func (u *gameUsecase) InitGameState(roomID string) error {
 	err := u.gameStateRepo.InitWord(roomID, "しりとり")
 	if err != nil {
-		return xerrors.Errorf("InitGameState can't InitWord. %w", err)
+		return xerrors.Errorf("InitGameState can't InitWord: %w", err)
 	}
 	return nil
 }
@@ -54,7 +54,7 @@ func isSiritori(left string, right string) bool {
 func (u *gameUsecase) TryUpdateWord(message *entity.Message) (*entity.GameState, error) {
 	if err := u.gameStateRepo.LockCurrentWord(message.RoomID); err != nil {
 		return nil, xerrors.Errorf(
-			"TryUpdateWord can't LockCurrentWord. roomId: %v, userId: %v. %w",
+			"TryUpdateWord can't LockCurrentWord. roomId: %v, userId: %v.: %w",
 			message.RoomID,
 			message.UserID,
 			err,
@@ -62,26 +62,53 @@ func (u *gameUsecase) TryUpdateWord(message *entity.Message) (*entity.GameState,
 	}
 	defer u.gameStateRepo.UnlockCurrentWord(message.RoomID)
 
-	r := regexp.MustCompile(`^\p{Hiragana}+$`)
-
 	currentWord, err := u.gameStateRepo.GetCurrentWord(message.RoomID)
 	if err != nil {
 		return nil, xerrors.Errorf(
-			"TryUpdateWord can't GetCurrentWord. roomId: %v, userId: %v. %w",
+			"TryUpdateWord can't GetCurrentWord. roomId: %v, userId: %v.: %w",
 			message.RoomID,
 			message.UserID,
 			err,
 		)
 	}
 
-	if !(isSiritori(currentWord, message.Message) && r.Match([]byte(message.Message)) && u.messageRepo.IsSingleNoun(message)) {
-		// 無効なメッセージ
+	/// TODO: りんしゃんかいほうが"りんし"と"ゃんかいほう"に分割されるなど問題があるので
+	/// 嶺上開花などの漢字をokにしてリンシャンカイホウとして表現されたカタカナの部分でしりとりの判定をするほうが良さそう
+	/// コーヒーは最後の1文字を削除して"ひ"から始まるようにする。
+	r := regexp.MustCompile(`^\p{Hiragana}+$`)
+	if !r.Match([]byte(message.Message)) {
+		log.WithFields(log.Fields{
+			"reason": "ひらがなでない",
+			"currentWord": currentWord,
+			"newMessage": message.Message,
+		}).Info("")
+		//ひらがなじゃない
+		return nil, nil
+	}
+
+	if !u.messageRepo.IsSingleNoun(message) {
+		log.WithFields(log.Fields{
+			"reason": "一つの名詞じゃない",
+			"currentWord": currentWord,
+			"newMessage": message.Message,
+		}).Info("")
+
+		return nil, nil
+	}
+
+	if !isSiritori(currentWord, message.Message) {
+		log.WithFields(log.Fields{
+			"reason": "しりとりでない",
+			"currentWord": currentWord,
+			"newMessage": message.Message,
+		}).Info("")
+
 		return nil, nil
 	}
 
 	if err := u.gameStateRepo.UpdateCurrentWord(message.RoomID, message.Message); err != nil {
 		return nil, xerrors.Errorf(
-			"TryUpdateWord can't UpdateCurrentWord. roomId: %v, userId: %v. %w",
+			"TryUpdateWord can't UpdateCurrentWord. roomId: %v, userId: %v.: %w",
 			message.RoomID,
 			message.UserID,
 			err,
@@ -95,7 +122,7 @@ func (u *gameUsecase) TryUpdateWord(message *entity.Message) (*entity.GameState,
 func (u *gameUsecase) SendMessage(message *entity.Message) error {
 	if err := u.messageRepo.Publish(message); err != nil {
 		return xerrors.Errorf(
-			"SendMessage can't Publish. roomId: %v, userId: %v. %w",
+			"SendMessage can't Publish. roomId: %v, userId: %v.: %w",
 			message.RoomID,
 			message.UserID,
 			err,
@@ -115,7 +142,7 @@ func (u *gameUsecase) GetCurrentMessage(roomID string) (*entity.Message, error) 
 	mes, err := u.gameStateRepo.GetCurrentWord(roomID)
 	if err != nil {
 		return nil, xerrors.Errorf(
-			"GetCurrentMessage can't GetCurrentWord. roomId: %v. %w",
+			"GetCurrentMessage can't GetCurrentWord. roomId: %v.: %w",
 			roomID,
 			err,
 		)
