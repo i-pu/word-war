@@ -50,8 +50,13 @@ cd client && yarn && yarn start
 > want to practice scrum development
 
 - v1.0 : minimum viable product
-- v1.1 : siritori, rating
-- v1.2 : tbd ...
+- v1.1 : siritori
+- v1.2 : rating, ホーム画面からserverのHealth状態を知りたい。userが見るためのHealth Checkをしたい。
+- v1.3 : マッチングアルゴリズムの作成。待機画面の作成。
+- v1.4 : 爽快なエフェクトで表示(UI強化), twitterでツイートをさせる, tbd ...
+  - しりとりの表示の仕方。
+  - userがだれがいるのか
+- v9.9 : マイページの作成。レーティングの履歴をAtCoder風に。k8s上げたい。
 
 ## ❓ 参考文献
 <https://github.com/improbable-eng/grpc-web/tree/master/go/grpcweb>
