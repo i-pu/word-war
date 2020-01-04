@@ -1,16 +1,18 @@
 package memory
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
-	log "github.com/sirupsen/logrus"
-	"golang.org/x/xerrors"
+	"os"
 	"time"
+	"unicode/utf8"
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/i-pu/word-war/server/domain/entity"
 	"github.com/i-pu/word-war/server/external"
-	"github.com/ikawaha/kagome/tokenizer"
+	log "github.com/sirupsen/logrus"
+	"golang.org/x/xerrors"
 )
 
 const (
@@ -24,49 +26,41 @@ type messageInRedis struct {
 }
 
 type messageRepository struct {
-	conn      *redis.Pool
-	keyTTL    time.Duration
-	tokenizer *tokenizer.Tokenizer
+	conn       *redis.Pool
+	keyTTL     time.Duration
+	dictionary *map[string]struct{}
 }
 
 func NewMessageRepository() *messageRepository {
-	dic, err := tokenizer.NewDic("/ipa.dic")
+	var dicPath string
+	var ok bool
+	if dicPath, ok = os.LookupEnv("DIC_PATH"); !ok {
+		log.WithError(xerrors.Errorf("NewMessageRepository LookupEnv(DIC_PATH) is false : %w")).Fatal()
+	}
+	fp, err := os.Open(dicPath)
 	if err != nil {
-		log.WithError(xerrors.Errorf("NewMessageRepository cant NewDic: %w", err)).Fatal("")
+		panic(err)
 	}
-	tokenizer := tokenizer.New()
-	tokenizer.SetDic(dic)
+	defer fp.Close()
 
+	dictionary := map[string]struct{}{}
+
+	scanner := bufio.NewScanner(fp)
+	for scanner.Scan() {
+		line := scanner.Text()
+		dictionary[line] = struct{}{}
+		if !utf8.ValidString(line) {
+			log.WithError(xerrors.Errorf("NewMessageRepository utf8.ValidString is false : %w", err)).Fatal("line: %s", line)
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		log.WithError(xerrors.Errorf("NewMessageRepository scanner error: %w", err)).Fatal("")
+	}
 	return &messageRepository{
-		conn:      external.RedisPool,
-		keyTTL:    time.Minute * 10,
-		tokenizer: &tokenizer,
+		conn:       external.RedisPool,
+		keyTTL:     time.Minute * 10,
+		dictionary: &dictionary,
 	}
-}
-
-func (r *messageRepository) IsSingleNoun(message *entity.Message) bool {
-	tokens := r.tokenizer.Tokenize(message.Message)
-	// "りんご" -> [BOS りんご EOS]
-	log.WithFields(log.Fields{
-		"message": message.Message,
-		"tokens":  tokens,
-	}).Info("IsSingleNoun")
-
-	if len(tokens) != 3 {
-		return false
-	}
-
-	firstFeature := tokens[1].Features()
-	// debug
-	for i, v := range tokens {
-		log.WithFields(log.Fields{
-			"index": i,
-			"value": v,
-		}).Info("tokens")
-	}
-
-
-	return firstFeature != nil && len(firstFeature) >= 1 && firstFeature[0] == "名詞"
 }
 
 // redis message repo の命名規則
@@ -169,4 +163,9 @@ func (r *messageRepository) Subscribe(ctx context.Context, roomID string) (<-cha
 		}
 	}()
 	return ch, errCh
+}
+
+func (r *messageRepository) ContainWord(word string) bool {
+	_, ok := (*r.dictionary)[word]
+	return ok
 }

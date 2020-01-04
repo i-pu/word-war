@@ -66,11 +66,11 @@ func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) err
 				// channelが先に閉じてることはないはずなので
 				return errors.New("logical error about redis channel")
 			}
-			counter, err := s.counterUsecase.Incr(in.RoomId)
-			if err != nil {
-				return xerrors.Errorf("error in incr: %w", err)
-			}
 			// ! 10件にしましょう
+			counter, err :=  s.counterUsecase.Get(in.RoomId)
+			if err != nil {
+				return errors.New("error in counterUsecase.Get")
+			}
 			if counter.Value > 10 {
 				// 終了処理
 				log.WithFields(log.Fields{

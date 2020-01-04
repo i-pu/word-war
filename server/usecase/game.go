@@ -22,13 +22,15 @@ type gameUsecase struct {
 	gameStateRepo  repository.GameStateRepository
 	messageRepo    repository.MessageRepository
 	messageService *service.MessageService
+	counterRepo repository.CounterRepository
 }
 
-func NewMessageUsecase(gameRepo repository.GameStateRepository, messageRepo repository.MessageRepository, messageService *service.MessageService) *gameUsecase {
+func NewGameUsecase(gameRepo repository.GameStateRepository, messageRepo repository.MessageRepository, messageService *service.MessageService, counterRepo repository.CounterRepository) *gameUsecase {
 	return &gameUsecase{
 		gameStateRepo:  gameRepo,
 		messageRepo:    messageRepo,
 		messageService: messageService,
+		counterRepo: counterRepo,
 	}
 }
 
@@ -72,10 +74,7 @@ func (u *gameUsecase) TryUpdateWord(message *entity.Message) (*entity.GameState,
 		)
 	}
 
-	/// TODO: りんしゃんかいほうが"りんし"と"ゃんかいほう"に分割されるなど問題があるので
-	/// 嶺上開花などの漢字をokにしてリンシャンカイホウとして表現されたカタカナの部分でしりとりの判定をするほうが良さそう
-	/// コーヒーは最後の1文字を削除して"ひ"から始まるようにする。
-	r := regexp.MustCompile(`^\p{Hiragana}+$`)
+	r := regexp.MustCompile(`^[\p{Hiragana}ー]+$`)
 	if !r.Match([]byte(message.Message)) {
 		log.WithFields(log.Fields{
 			"reason": "ひらがなでない",
@@ -86,13 +85,12 @@ func (u *gameUsecase) TryUpdateWord(message *entity.Message) (*entity.GameState,
 		return nil, nil
 	}
 
-	if !u.messageRepo.IsSingleNoun(message) {
+	if !u.messageRepo.ContainWord(message.Message) {
 		log.WithFields(log.Fields{
-			"reason": "一つの名詞じゃない",
+			"reason": "存在しない単語",
 			"currentWord": currentWord,
 			"newMessage": message.Message,
-		}).Info("")
-
+		}).Info()
 		return nil, nil
 	}
 
@@ -109,6 +107,14 @@ func (u *gameUsecase) TryUpdateWord(message *entity.Message) (*entity.GameState,
 	if err := u.gameStateRepo.UpdateCurrentWord(message.RoomID, message.Message); err != nil {
 		return nil, xerrors.Errorf(
 			"TryUpdateWord can't UpdateCurrentWord. roomId: %v, userId: %v.: %w",
+			message.RoomID,
+			message.UserID,
+			err,
+		)
+	}
+
+	if _, err := u.counterRepo.IncrCounter(message.RoomID); err != nil {
+		return nil, xerrors.Errorf("TryUpdateWord can't IncrCounter. roomId: %v, userId: %v.: %w",
 			message.RoomID,
 			message.UserID,
 			err,

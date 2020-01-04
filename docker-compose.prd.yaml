@@ -22,6 +22,7 @@ services:
     environment:
       REDIS_URL: redis
       TZ: Asia/Tokyo
+      DIC_PATH: /word.txt
     tty: true
   redis:
     image: redis

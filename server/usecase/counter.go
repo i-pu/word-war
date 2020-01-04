@@ -9,7 +9,6 @@ import (
 
 type CounterUsecase interface {
 	Init(roomID string, counter *entity.Counter) (*entity.Counter, error)
-	Incr(roomID string) (*entity.Counter, error)
 	Get(roomID string) (*entity.Counter, error)
 }
 
@@ -32,17 +31,6 @@ func (u *counterUsecase) Init(roomID string, counter *entity.Counter) (*entity.C
 	return counter, nil
 }
 
-func (u *counterUsecase) Incr(roomID string) (*entity.Counter, error) {
-	value, err := u.repo.IncrCounter(roomID)
-	if err != nil {
-		return nil, xerrors.Errorf(
-			"Incr can't IncrCounter. roomId: %v",
-			roomID,
-			err,
-		)
-	}
-	return &entity.Counter{Value: value}, nil
-}
 func (u *counterUsecase) Get(roomID string) (*entity.Counter, error) {
 	value, err := u.repo.GetCounter(roomID)
 	if err != nil {

@@ -34,21 +34,21 @@ func main() {
 func setUpGrpc() *grpc.Server {
 	grpcServer := grpc.NewServer()
 
-	gameRepo := memory.NewGameStateRepository()
-
 	messageRepo := memory.NewMessageRepository()
 	messageService := service.NewMessageService(messageRepo)
-	messageUsecase := usecase.NewMessageUsecase(gameRepo, messageRepo, messageService)
 
 	counterRepo := memory.NewCounterRepository()
 	counterService := service.NewCounterService(counterRepo)
 	counterUsecase := usecase.NewCounterUsecase(counterRepo, counterService)
 
+	gameRepo := memory.NewGameStateRepository()
+	gameUsecase := usecase.NewGameUsecase(gameRepo, messageRepo, messageService, counterRepo)
+
 	resultRepo := memory.NewResultRepository()
 	resultService := service.NewResultService(resultRepo)
 	resultUsecase := usecase.NewResultUsecase(resultRepo, resultService)
 
-	pb.RegisterWordWarServer(grpcServer, rpc.NewWordWarService(messageUsecase, counterUsecase, resultUsecase))
+	pb.RegisterWordWarServer(grpcServer, rpc.NewWordWarService(gameUsecase, counterUsecase, resultUsecase))
 	return grpcServer
 }
 
