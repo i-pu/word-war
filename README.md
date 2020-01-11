@@ -18,9 +18,36 @@
 ![grpc](https://img.shields.io/badge/-gRPC-47848F.svg?logo=&style=flat-square)
 ![docker](https://img.shields.io/badge/-Docker-48bcfa.svg?logo=docker&style=flat-square)
 #### Frontend
-![elm](https://img.shields.io/badge/-Elm-3DBB3D.svg?logo=&style=flat-square)
 ![js](https://img.shields.io/badge/-Javascript-FAEB7F.svg?logo=javascript&style=flat-square)
 ![bulma](https://img.shields.io/badge/-Bulma-FCEA0.svg?logo=&style=flat-square)
+
+## 🚧 Roadmap
+> want to practice scrum development
+
+- v1.0
+  - [x] minimum viable product
+- v1.1
+  - [x] siritori
+- v1.2
+  - [x] rating
+  - [x] Health Check
+  - [x] routingのガード
+- v1.3
+  - [ ] ジョブワーカーみたいなのでルーム毎に
+    - [ ] redisの初期化といらないキーの掃除のワーカの作成
+  - [ ] k8s上げたい
+  - [ ] マッチングシステムの実装
+- v1.4
+  - [ ] twitterでツイートをさせる(OGP)
+  - [ ] Game画面ブラッシュアップ
+- v1.5
+  - [ ] マイページの作成(履歴)
+  - [ ] 爽快なエフェクトで表示(UI強化)
+- v?.?
+  - [ ] リファクタリング大会
+  - [ ] ちゃんとAPI
+  - [ ] テスト
+  - [ ] 監視、メトリクス
 
 ## 📖 Document
 <https://i-pu.github.io/word-war/>
@@ -45,18 +72,6 @@ cd server && go run main.go
 ```
 cd client && yarn && yarn start
 ```
-
-## 🚧 Roadmap
-> want to practice scrum development
-
-- v1.0 : minimum viable product
-- v1.1 : siritori
-- v1.2 : rating, ホーム画面からserverのHealth状態を知りたい。userが見るためのHealth Checkをしたい。
-- v1.3 : マッチングアルゴリズムの作成。待機画面の作成。
-- v1.4 : 爽快なエフェクトで表示(UI強化), twitterでツイートをさせる, tbd ...
-  - しりとりの表示の仕方。
-  - userがだれがいるのか
-- v9.9 : マイページの作成。レーティングの履歴をAtCoder風に。k8s上げたい。
 
 ## ❓ 参考文献
 <https://github.com/improbable-eng/grpc-web/tree/master/go/grpcweb>

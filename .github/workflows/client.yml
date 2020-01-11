@@ -2,9 +2,8 @@ name: Client Firebase Hosting
 
 on:
   push:
-    branches: 
-      # if 'develop/**', all versions are targetted.
-      - 'develop/1.1'
+    branches:
+      - 'develop/**'
 
 jobs:
   build:
@@ -31,4 +30,4 @@ jobs:
         echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > credential.js
         yarn global add firebase-tools
         yarn firebase:deploy --only=hosting --token=${{ secrets.FIREBASE_TOKEN }}
-      
+
