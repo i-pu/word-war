@@ -3,8 +3,7 @@ package rpc
 import (
 	"context"
 	"errors"
-	"fmt"
-	"math/rand"
+	"os"
 	"strconv"
 
 	"github.com/i-pu/word-war/server/domain/entity"
@@ -16,26 +15,31 @@ import (
 
 type wordWarService struct {
 	// 個々にいろんなusecaseついかすればよさそう
-	gameUsecase    usecase.GameUsecase
-	counterUsecase usecase.CounterUsecase
-	resultUsecase  usecase.ResultUsecase
+	gameUsecase     usecase.GameUsecase
+	counterUsecase  usecase.CounterUsecase
+	resultUsecase   usecase.ResultUsecase
+	matchingUsecase usecase.MatchingUsecase
 }
 
 func NewWordWarService(
 	gameUsecase usecase.GameUsecase,
 	counterUsecase usecase.CounterUsecase,
 	resultUsecase usecase.ResultUsecase,
+	matchingUsecase usecase.MatchingUsecase,
 ) *wordWarService {
 	return &wordWarService{
-		gameUsecase:    gameUsecase,
-		counterUsecase: counterUsecase,
-		resultUsecase:  resultUsecase,
+		gameUsecase:     gameUsecase,
+		counterUsecase:  counterUsecase,
+		resultUsecase:   resultUsecase,
+		matchingUsecase: matchingUsecase,
 	}
 }
 
-const serverVersion = "v1.2"
-
 func (s *wordWarService) HealthCheck(ctx context.Context, in *pb.HealthCheckRequest) (*pb.HealthCheckResponse, error) {
+	serverVersion, ok := os.LookupEnv("SERVER_VERSION")
+	if !ok {
+		return nil, xerrors.New("Not Found SERVER_VERSION")
+	}
 	ret := &pb.HealthCheckResponse{
 		Active:        true,
 		ServerVersion: serverVersion,
@@ -48,36 +52,55 @@ func (s *wordWarService) HealthCheck(ctx context.Context, in *pb.HealthCheckRequ
 }
 
 func (s *wordWarService) Matching(ctx context.Context, in *pb.MatchingRequest) (*pb.MatchingResponse, error) {
-	// TODO: マッチングアルゴリズムを適応する
-	// roomIdで10000~99999までの間で5桁の数字を生成
-	// TODO: すでに部屋が存在した場合はもう一度作成するようにする
-	roomId := fmt.Sprintf("%d", rand.Intn(90000)+10000)
-	ret := &pb.MatchingResponse{RoomId: roomId}
-	return ret, nil
+	if roomID, err := s.matchingUsecase.Matching(in.UserId); err != nil {
+		return nil, xerrors.Errorf("Matching error: %w", err)
+	} else {
+		ret := &pb.MatchingResponse{RoomId: roomID}
+		return ret, nil
+	}
 }
 
-// TODO: へやに途中から入った人は今の文字がわからないので教えてあげる
 // TODO: だめなメッセージも全員に送るようにしてクライアントで処理してもらう
 // TODO: 2回同じ単語はだめなので、履歴を保存して検査する
 func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) error {
-	err := s.gameUsecase.InitGameState(in.RoomId)
+	// TODO: 部屋ごとに呼ばれるべきなのかユーザごとに呼ばれるべきなのか不明瞭なのでworkerみたいなのを作って管理したい
+	err := s.gameUsecase.InitGameState(in.RoomId, in.UserId)
 	if err != nil {
 		return xerrors.Errorf("init error: %w", err)
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	// childのcontext荷関数が終了することを教えてあげる
-	defer cancel()
-	// TODO: 時間制にする
-	defer s.counterUsecase.Init(in.RoomId, &entity.Counter{Value: 0, RoomID: in.RoomId})
-	// redisに終了をpublishする
-	// defer redis.publish(done)
+	defer func() {
+		if err := s.resultUsecase.UpdateRating(in.RoomId, in.UserId); err != nil {
+			log.WithFields(log.Fields{
+				"roomId": in.RoomId,
+				"userId": in.UserId,
+			}).Fatal("error in resultUsecase.UpdateRating: %w", err)
+		}
+		if _, err := s.counterUsecase.Init(in.RoomId, &entity.Counter{Value: 0, RoomID: in.RoomId}); err != nil {
+			log.WithFields(log.Fields{
+				"roomId": in.RoomId,
+				"userId": in.UserId,
+			}).Fatalf("error in counterUsecase.Init: %w", err)
+		}
+		cancel()
+	}()
+
+	// 今の単語を教えてあげる
+	mes, err := s.gameUsecase.GetCurrentMessage(in.RoomId)
+	if err != nil {
+		return xerrors.Errorf("Game rpc can't GetCurrentMessage. roomId: %v, userId: %v.: %w", in.RoomId, in.UserId, err)
+	}
+	if err := srv.Send(&pb.GameResponse{UserId: mes.UserID, RoomId: mes.RoomID, Message: mes.Message}); err != nil {
+		return xerrors.Errorf("Game rpc can't Send. roomId: %v, userId: %v.: %w", in.RoomId, in.UserId, err)
+	}
 
 	messageChan, errChan := s.gameUsecase.GetMessageChan(ctx, in.RoomId)
 	for {
 		select {
 		case message, ok := <-messageChan:
 			if !ok {
-				// channelが先に閉じてることはないはずなので
+				// channelは作成した関数が削除するので、channelが先に閉じてることはない
 				return errors.New("logical error about redis channel")
 			}
 

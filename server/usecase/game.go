@@ -3,16 +3,17 @@ package usecase
 import (
 	"context"
 	"errors"
+	"regexp"
+
 	"github.com/i-pu/word-war/server/domain/entity"
 	"github.com/i-pu/word-war/server/domain/repository"
 	"github.com/i-pu/word-war/server/domain/service"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/xerrors"
-	"regexp"
 )
 
 type GameUsecase interface {
-	InitGameState(roomID string) error
+	InitGameState(roomID string, userID string) error
 	TryUpdateWord(message *entity.Message) (*entity.GameState, error)
 	SendMessage(message *entity.Message) error
 	GetMessageChan(ctx context.Context, roomID string) (<-chan *entity.Message, <-chan error)
@@ -35,10 +36,13 @@ func NewGameUsecase(gameRepo repository.GameStateRepository, messageRepo reposit
 	}
 }
 
-func (u *gameUsecase) InitGameState(roomID string) error {
+func (u *gameUsecase) InitGameState(roomID string, userID string) error {
 	err := u.gameStateRepo.InitWord(roomID, "しりとり")
 	if err != nil {
 		return xerrors.Errorf("InitGameState can't InitWord: %w", err)
+	}
+	if err := u.gameStateRepo.AddUser(roomID, userID); err != nil {
+		return xerrors.Errorf("InitGameState can't AddUser(%s, %s): %w", roomID, userID, err)
 	}
 	return nil
 }
@@ -142,6 +146,7 @@ func (u *gameUsecase) SendMessage(message *entity.Message) error {
 // , so this ctx must be child context.
 // repositoryからきたchannelの中身を確認して、
 func (u *gameUsecase) GetMessageChan(ctx context.Context, roomID string) (<-chan *entity.Message, <-chan error) {
+	// TODO: 時間制にする
 	messageRepoChan, errRepoChan := u.messageRepo.Subscribe(ctx, roomID)
 
 	messageChan := make(chan *entity.Message)

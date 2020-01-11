@@ -16,6 +16,8 @@
       <b-button type="is-dark" @click="onClick">vuex</b-button>
       <p>{{ count }}</p>
     </section>
+
+    <b-button class="is-danger" @click="signOut">ログアウト</b-button>
   </div>
 </template>
 
@@ -45,6 +47,10 @@ export default class Home extends Vue {
   private joinRoom() {
     console.log(`roomId: ${this.roomIdInput}`)
     this.$router.push(`/game?roomid=${this.roomIdInput}`)
+  }
+
+  private signOut() {
+    this.$store.dispatch('signOut')
   }
 }
 </script>

@@ -22,6 +22,7 @@ export default new Vuex.Store<RootState>({
   },
   mutations: {
     setUserId(state, { userId }: { userId: string }) {
+      console.log(`${state.user.userId} -> ${userId}`)
       state.user.userId = userId
     },
     serverHealth(state, res: HealthCheckResponse) {
@@ -78,9 +79,17 @@ export default new Vuex.Store<RootState>({
         throw new Error(`can't authorized: ${email}, ${password}`)
       }
 
-      commit('user/setUserId', { userId: result.user.uid })
+      commit('setUserId', { userId: result.user.uid })
 
       console.log(`signUp: ${email}, ${password}`)
+    },
+
+    async signOut({ commit }) {
+      commit('setUserId', { userId: '' })
+      await firebase
+        .auth()
+        .signOut()
+        .catch(console.error)
     }
   },
   modules: {

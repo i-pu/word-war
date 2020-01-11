@@ -5,9 +5,6 @@
         <b-navbar-item tag="router-link" :to="{ path: '/' }">
           Top
         </b-navbar-item>
-        <b-navbar-item tag="router-link" :to="{ path: '/about' }">
-          About
-        </b-navbar-item>
         <b-navbar-item tag="router-link" :to="{ path: '/home' }">
           Home
         </b-navbar-item>

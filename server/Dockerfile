@@ -26,6 +26,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
+
 COPY --from=dic /word.txt /
 
 # https://studygolang.com/topics/5954

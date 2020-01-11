@@ -1,20 +1,22 @@
 package memory
 
 import (
+	log "github.com/sirupsen/logrus"
+	"time"
+
 	"github.com/gomodule/redigo/redis"
 	"github.com/i-pu/word-war/server/external"
 	"golang.org/x/xerrors"
-	"time"
 )
 
 type gameStateRepository struct {
-	conn *redis.Pool
+	conn   *redis.Pool
 	keyTTL time.Duration
 }
 
 func NewGameStateRepository() *gameStateRepository {
 	return &gameStateRepository{
-		conn: external.RedisPool,
+		conn:   external.RedisPool,
 		keyTTL: time.Minute * 10,
 	}
 }
@@ -102,4 +104,30 @@ func (r *gameStateRepository) GetCurrentWord(roomID string) (string, error) {
 	}
 
 	return value, nil
+}
+
+func (r *gameStateRepository) AddUser(roomID string, userID string) error {
+	key := roomID + ":users"
+	conn := r.conn.Get()
+
+	_, err := conn.Do("HSET", key, userID, 0)
+	log.WithFields(log.Fields{
+		roomID: roomID,
+		userID: userID,
+	}).Debug()
+	if err != nil {
+		return xerrors.Errorf("error in AddUser HSET %s %s %d: %w", key, userID, 0, err)
+	}
+	return nil
+}
+
+func (r *gameStateRepository) GetUsers(roomID string) ([]string, error) {
+	key := roomID + ":users"
+	conn := r.conn.Get()
+
+	users, err := redis.Strings(conn.Do("HKEYS", key))
+	if err != nil {
+		return nil, xerrors.Errorf("error in GetUsers HKEYS %s, 0, -1: %w", key, err)
+	}
+	return users, nil
 }

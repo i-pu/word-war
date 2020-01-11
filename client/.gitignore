@@ -4,6 +4,9 @@ elm-stuff
 .firebase
 /dist
 
+# credential
+credential.js
+
 # local env files
 .env.local
 .env.*.local

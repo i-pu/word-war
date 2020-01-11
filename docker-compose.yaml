@@ -10,6 +10,9 @@ services:
       REDIS_URL: redis
       TZ: Asia/Tokyo
       DIC_PATH: /word.txt
+      FIREBASE_CREDENTIALS: /go/src/app/serviceAccount.json
+      SERVER_VERSION: 1.2.1
+      LOG_LEVEL: 'DEBUG'
     tty: true
   redis:
     image: redis

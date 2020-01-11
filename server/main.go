@@ -2,6 +2,7 @@ package main
 
 import (
 	"net"
+	"os"
 
 	"github.com/i-pu/word-war/server/domain/service"
 	"github.com/i-pu/word-war/server/external"
@@ -14,14 +15,24 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
-// TODO: client用のステータス用のhealthcheckのrcpの作成
+// TODO: OAuthとかの認証を真面目にやってみたい
+
 func main() {
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	setUpInfra()
+	logLevel := os.Getenv("LOG_LEVEL")
+	switch logLevel {
+	case "DEBUG":
+		log.SetLevel(log.DebugLevel)
+	default:
+		log.SetLevel(log.InfoLevel)
+	}
+
+	setUpExternal()
+
 	grpcServer := setUpGrpc()
 	reflection.Register(grpcServer)
 	log.Info("Start server")
@@ -46,14 +57,18 @@ func setUpGrpc() *grpc.Server {
 
 	resultRepo := memory.NewResultRepository()
 	resultService := service.NewResultService(resultRepo)
-	resultUsecase := usecase.NewResultUsecase(resultRepo, resultService)
+	resultUsecase := usecase.NewResultUsecase(resultRepo, gameRepo, resultService)
 
-	pb.RegisterWordWarServer(grpcServer, rpc.NewWordWarService(gameUsecase, counterUsecase, resultUsecase))
+	matchingUsecase := usecase.NewMatchingUsecase(gameRepo)
+
+	pb.RegisterWordWarServer(grpcServer, rpc.NewWordWarService(gameUsecase, counterUsecase, resultUsecase, matchingUsecase))
+
 	return grpcServer
 }
 
-func setUpInfra() {
+func setUpExternal() {
 	external.InitRedis()
+	external.InitFirebase()
 }
 
 // TODO: goleakでgoroutineの数を計測する
