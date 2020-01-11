@@ -5,4 +5,5 @@ export interface User {
 export interface RootState {
   version: string
   user: User
+  serverHealth: boolean
 }

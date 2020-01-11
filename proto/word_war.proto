@@ -7,6 +7,7 @@ service WordWar {
   rpc Say(SayRequest) returns (SayResponse) {};
   rpc Game(GameRequest) returns (stream GameResponse) {};
   rpc Result(ResultRequest) returns (ResultResponse) {};
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse) {};
 }
 
 message SayRequest {
@@ -56,4 +57,11 @@ message ResultResponse {
   string userId = 1;
   string score = 2;
   string roomId = 3;
+}
+
+message HealthCheckRequest {}
+message HealthCheckResponse {
+  bool active = 1;
+  // v1.1
+  string serverVersion = 2;
 }

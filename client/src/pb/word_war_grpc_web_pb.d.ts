@@ -3,6 +3,8 @@ import * as grpcWeb from 'grpc-web';
 import {
   GameRequest,
   GameResponse,
+  HealthCheckRequest,
+  HealthCheckResponse,
   MatchingRequest,
   MatchingResponse,
   ResultRequest,
@@ -41,6 +43,13 @@ export class WordWarClient {
                response: ResultResponse) => void
   ): grpcWeb.ClientReadableStream<ResultResponse>;
 
+  healthCheck(
+    request: HealthCheckRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.Error,
+               response: HealthCheckResponse) => void
+  ): grpcWeb.ClientReadableStream<HealthCheckResponse>;
+
 }
 
 export class WordWarPromiseClient {
@@ -67,6 +76,11 @@ export class WordWarPromiseClient {
     request: ResultRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<ResultResponse>;
+
+  healthCheck(
+    request: HealthCheckRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<HealthCheckResponse>;
 
 }
 

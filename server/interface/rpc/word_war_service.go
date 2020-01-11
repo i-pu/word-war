@@ -33,6 +33,20 @@ func NewWordWarService(
 	}
 }
 
+const serverVersion = "v1.2"
+
+func (s *wordWarService) HealthCheck(ctx context.Context, in *pb.HealthCheckRequest) (*pb.HealthCheckResponse, error) {
+	ret := &pb.HealthCheckResponse{
+		Active:        true,
+		ServerVersion: serverVersion,
+	}
+	log.WithFields(log.Fields{
+		"Active": true,
+		"ServerVersion": serverVersion,
+	}).Info("Health Checked")
+	return ret, nil
+}
+
 func (s *wordWarService) Matching(ctx context.Context, in *pb.MatchingRequest) (*pb.MatchingResponse, error) {
 	// TODO: マッチングアルゴリズムを適応する
 	// roomIdで10000~99999までの間で5桁の数字を生成
@@ -67,7 +81,7 @@ func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) err
 				return errors.New("logical error about redis channel")
 			}
 			// ! 10件にしましょう
-			counter, err :=  s.counterUsecase.Get(in.RoomId)
+			counter, err := s.counterUsecase.Get(in.RoomId)
 			if err != nil {
 				return errors.New("error in counterUsecase.Get")
 			}

@@ -13,5 +13,9 @@ import Hero from '@/components/Hero.vue'
 @Component({
   components: { Hero, Login }
 })
-export default class Top extends Vue {}
+export default class Top extends Vue {
+  mounted() {
+    this.$store.dispatch('healthCheck')
+  }
+}
 </script>

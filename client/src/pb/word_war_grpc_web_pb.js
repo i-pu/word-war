@@ -377,5 +377,79 @@ proto.word_war.WordWarPromiseClient.prototype.result =
 };
 
 
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.word_war.HealthCheckRequest,
+ *   !proto.word_war.HealthCheckResponse>}
+ */
+const methodDescriptor_WordWar_HealthCheck = new grpc.web.MethodDescriptor(
+  '/word_war.WordWar/HealthCheck',
+  grpc.web.MethodType.UNARY,
+  proto.word_war.HealthCheckRequest,
+  proto.word_war.HealthCheckResponse,
+  /** @param {!proto.word_war.HealthCheckRequest} request */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.word_war.HealthCheckResponse.deserializeBinary
+);
+
+
+/**
+ * @const
+ * @type {!grpc.web.AbstractClientBase.MethodInfo<
+ *   !proto.word_war.HealthCheckRequest,
+ *   !proto.word_war.HealthCheckResponse>}
+ */
+const methodInfo_WordWar_HealthCheck = new grpc.web.AbstractClientBase.MethodInfo(
+  proto.word_war.HealthCheckResponse,
+  /** @param {!proto.word_war.HealthCheckRequest} request */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.word_war.HealthCheckResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.word_war.HealthCheckRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.Error, ?proto.word_war.HealthCheckResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.word_war.HealthCheckResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.word_war.WordWarClient.prototype.healthCheck =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/word_war.WordWar/HealthCheck',
+      request,
+      metadata || {},
+      methodDescriptor_WordWar_HealthCheck,
+      callback);
+};
+
+
+/**
+ * @param {!proto.word_war.HealthCheckRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.word_war.HealthCheckResponse>}
+ *     A native promise that resolves to the response
+ */
+proto.word_war.WordWarPromiseClient.prototype.healthCheck =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/word_war.WordWar/HealthCheck',
+      request,
+      metadata || {},
+      methodDescriptor_WordWar_HealthCheck);
+};
+
+
 module.exports = proto.word_war;
 
