@@ -35,7 +35,7 @@ func (u *counterUsecase) Get(roomID string) (*entity.Counter, error) {
 	value, err := u.repo.GetCounter(roomID)
 	if err != nil {
 		return nil, xerrors.Errorf(
-			"Get can't GetCounter. roomId: %v",
+			"GetScore can't GetCounter. roomId: %v",
 			roomID,
 			err,
 		)

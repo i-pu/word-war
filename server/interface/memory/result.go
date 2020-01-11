@@ -20,10 +20,19 @@ func NewResultRepository() *resultRepository {
 	}
 }
 
+// redis
+// GetScore
+// SetScore
+// IncrScoreBy
+
+// firestore
+// GetLatestRating
+// SetRating
+
 // redis result repo のkeyの命名規則
 // <roomID>:<userID>:score
 
-func (r *resultRepository) Get(roomID string, userID string) (*entity.Result, error) {
+func (r *resultRepository) GetScore(roomID string, userID string) (*entity.Result, error) {
 	conn := r.conn.Get()
 	key := roomID + ":" + userID + ":" + "score"
 	score, err := redis.Int64(conn.Do("GET", key))
@@ -33,12 +42,13 @@ func (r *resultRepository) Get(roomID string, userID string) (*entity.Result, er
 
 	_, err = conn.Do("EXPIRE", key, int64(r.keyTTL.Seconds()))
 	if err != nil {
-		return nil, xerrors.Errorf("error in Get expire: %w", err)
+		return nil, xerrors.Errorf("error in GetScore expire: %w", err)
 	}
 
 	return &entity.Result{UserID: userID, Score: score}, nil
 }
-func (r *resultRepository) Set(result *entity.Result) error {
+
+func (r *resultRepository) SetScore(result *entity.Result) error {
 	conn := r.conn.Get()
 	key := result.RoomID + ":" + result.UserID + ":" + "score"
 	_, err := conn.Do("SET", key, result.Score)
@@ -48,11 +58,12 @@ func (r *resultRepository) Set(result *entity.Result) error {
 
 	_, err = conn.Do("EXPIRE", key, int64(r.keyTTL.Seconds()))
 	if err != nil {
-		return xerrors.Errorf("error in Set expire: %w", err)
+		return xerrors.Errorf("error in SetScore expire: %w", err)
 	}
 	return nil
 }
-func (r *resultRepository) IncrBy(roomID string, userID string, by int64) error {
+
+func (r *resultRepository) IncrScoreBy(roomID string, userID string, by int64) error {
 	conn := r.conn.Get()
 	key := roomID + ":" + userID + ":" + "score"
 	_, err := conn.Do("INCRBY", key, by)
@@ -66,3 +77,13 @@ func (r *resultRepository) IncrBy(roomID string, userID string, by int64) error 
 	}
 	return nil
 }
+
+
+func (r *resultRepository) GetLatestRating(userID string) (int64, error) {
+	return 0, xerrors.New("not implemented")
+}
+
+func (r *resultRepository) SetRating(userID string, rating int64) error {
+	return xerrors.New("not implemented")
+}
+

@@ -41,7 +41,7 @@ func (s *wordWarService) HealthCheck(ctx context.Context, in *pb.HealthCheckRequ
 		ServerVersion: serverVersion,
 	}
 	log.WithFields(log.Fields{
-		"Active": true,
+		"Active":        true,
 		"ServerVersion": serverVersion,
 	}).Info("Health Checked")
 	return ret, nil
@@ -80,13 +80,8 @@ func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) err
 				// channelが先に閉じてることはないはずなので
 				return errors.New("logical error about redis channel")
 			}
-			// ! 10件にしましょう
-			counter, err := s.counterUsecase.Get(in.RoomId)
-			if err != nil {
-				return errors.New("error in counterUsecase.Get")
-			}
-			if counter.Value > 10 {
-				// 終了処理
+
+			if message == nil {
 				log.WithFields(log.Fields{
 					"roomId": in.RoomId,
 				}).Info("finish game")
@@ -100,6 +95,7 @@ func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) err
 			if err := srv.Send(res); err != nil {
 				return xerrors.Errorf("Game rpc can't Send. roomId: %v, userId: %v. : %w", in.RoomId, in.UserId, err)
 			}
+
 		case err := <-errChan:
 			return xerrors.Errorf("error in game: %w", err)
 		}
@@ -133,9 +129,9 @@ func (s *wordWarService) Say(ctx context.Context, in *pb.SayRequest) (*pb.SayRes
 	res := &pb.SayResponse{Valid: true, UserId: in.UserId, Message: in.Message, RoomId: in.RoomId}
 
 	// TODO: 文字の長さが長かったら得点大にしたい、思考時間とかも考慮して点数を変えたい
-	err = s.resultUsecase.IncrResult(in.RoomId, in.UserId, 5)
+	err = s.resultUsecase.IncrScore(in.RoomId, in.UserId, 5)
 	if err != nil {
-		return nil, xerrors.Errorf("Say rpc can't IncrResult. roomId: %v, userId: %v. : %w", in.RoomId, in.UserId, err)
+		return nil, xerrors.Errorf("Say rpc can't IncrScore. roomId: %v, userId: %v. : %w", in.RoomId, in.UserId, err)
 	}
 
 	return res, nil
@@ -143,9 +139,9 @@ func (s *wordWarService) Say(ctx context.Context, in *pb.SayRequest) (*pb.SayRes
 
 func (s *wordWarService) Result(ctx context.Context, in *pb.ResultRequest) (*pb.ResultResponse, error) {
 	// 結果を取得する
-	result, err := s.resultUsecase.GetResult(in.RoomId, in.UserId)
+	result, err := s.resultUsecase.GetScore(in.RoomId, in.UserId)
 	if err != nil {
-		return nil, xerrors.Errorf("Result rpc can't GetResult. roomId: %v, userId: %v. : %w", in.RoomId, in.UserId, err)
+		return nil, xerrors.Errorf("Result rpc can't GetScore. roomId: %v, userId: %v. : %w", in.RoomId, in.UserId, err)
 	}
 
 	num := strconv.FormatInt(result.Score, 10)

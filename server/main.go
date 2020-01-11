@@ -55,3 +55,5 @@ func setUpGrpc() *grpc.Server {
 func setUpInfra() {
 	external.InitRedis()
 }
+
+// TODO: goleakでgoroutineの数を計測する

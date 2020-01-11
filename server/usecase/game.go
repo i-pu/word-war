@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"github.com/i-pu/word-war/server/domain/entity"
 	"github.com/i-pu/word-war/server/domain/repository"
 	"github.com/i-pu/word-war/server/domain/service"
@@ -22,7 +23,7 @@ type gameUsecase struct {
 	gameStateRepo  repository.GameStateRepository
 	messageRepo    repository.MessageRepository
 	messageService *service.MessageService
-	counterRepo repository.CounterRepository
+	counterRepo    repository.CounterRepository
 }
 
 func NewGameUsecase(gameRepo repository.GameStateRepository, messageRepo repository.MessageRepository, messageService *service.MessageService, counterRepo repository.CounterRepository) *gameUsecase {
@@ -30,7 +31,7 @@ func NewGameUsecase(gameRepo repository.GameStateRepository, messageRepo reposit
 		gameStateRepo:  gameRepo,
 		messageRepo:    messageRepo,
 		messageService: messageService,
-		counterRepo: counterRepo,
+		counterRepo:    counterRepo,
 	}
 }
 
@@ -77,9 +78,9 @@ func (u *gameUsecase) TryUpdateWord(message *entity.Message) (*entity.GameState,
 	r := regexp.MustCompile(`^[\p{Hiragana}ー]+$`)
 	if !r.Match([]byte(message.Message)) {
 		log.WithFields(log.Fields{
-			"reason": "ひらがなでない",
+			"reason":      "ひらがなでない",
 			"currentWord": currentWord,
-			"newMessage": message.Message,
+			"newMessage":  message.Message,
 		}).Info("")
 		//ひらがなじゃない
 		return nil, nil
@@ -87,18 +88,18 @@ func (u *gameUsecase) TryUpdateWord(message *entity.Message) (*entity.GameState,
 
 	if !u.messageRepo.ContainWord(message.Message) {
 		log.WithFields(log.Fields{
-			"reason": "存在しない単語",
+			"reason":      "存在しない単語",
 			"currentWord": currentWord,
-			"newMessage": message.Message,
+			"newMessage":  message.Message,
 		}).Info()
 		return nil, nil
 	}
 
 	if !isSiritori(currentWord, message.Message) {
 		log.WithFields(log.Fields{
-			"reason": "しりとりでない",
+			"reason":      "しりとりでない",
 			"currentWord": currentWord,
-			"newMessage": message.Message,
+			"newMessage":  message.Message,
 		}).Info("")
 
 		return nil, nil
@@ -139,8 +140,42 @@ func (u *gameUsecase) SendMessage(message *entity.Message) error {
 
 // GetMessageChan ctx is used to get cancel signal from parent to cancel pub/sub job
 // , so this ctx must be child context.
+// repositoryからきたchannelの中身を確認して、
 func (u *gameUsecase) GetMessageChan(ctx context.Context, roomID string) (<-chan *entity.Message, <-chan error) {
-	messageChan, errChan := u.messageRepo.Subscribe(ctx, roomID)
+	messageRepoChan, errRepoChan := u.messageRepo.Subscribe(ctx, roomID)
+
+	messageChan := make(chan *entity.Message)
+	errChan := make(chan error)
+	go func() {
+		defer close(messageChan)
+		defer close(errChan)
+		for {
+			select {
+			case message, ok := <-messageRepoChan:
+				if !ok {
+					errChan <- errors.New("logical error about redis channel")
+				}
+
+				// ! 10件にしましょう
+				counter, err := u.counterRepo.GetCounter(roomID)
+				if err != nil {
+					errChan <- errors.New("error in counterUsecase.GetScore")
+				}
+				if counter > 10 {
+					// 終了処理
+					log.WithFields(log.Fields{
+						"roomId": roomID,
+					}).Info("Finish game in GetMessageChan.")
+					messageChan <- nil
+					return
+				}
+				messageChan <- message
+
+			case err := <-errRepoChan:
+				errChan <- xerrors.Errorf("error in game: %w", err)
+			}
+		}
+	}()
 	return messageChan, errChan
 }
 
