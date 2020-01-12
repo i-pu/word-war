@@ -3,6 +3,9 @@ package rpc
 import (
 	"context"
 	"errors"
+	"github.com/i-pu/word-war/server/domain/service"
+	"github.com/i-pu/word-war/server/interface/memory"
+	"google.golang.org/grpc"
 	"os"
 	"strconv"
 
@@ -21,7 +24,7 @@ type wordWarService struct {
 	matchingUsecase usecase.MatchingUsecase
 }
 
-func NewWordWarService(
+func newWordWarService(
 	gameUsecase usecase.GameUsecase,
 	counterUsecase usecase.CounterUsecase,
 	resultUsecase usecase.ResultUsecase,
@@ -33,6 +36,30 @@ func NewWordWarService(
 		resultUsecase:   resultUsecase,
 		matchingUsecase: matchingUsecase,
 	}
+}
+
+func NewGRPCServer() *grpc.Server {
+	grpcServer := grpc.NewServer()
+
+	messageRepo := memory.NewMessageRepository()
+	messageService := service.NewMessageService(messageRepo)
+
+	counterRepo := memory.NewCounterRepository()
+	counterService := service.NewCounterService(counterRepo)
+	counterUsecase := usecase.NewCounterUsecase(counterRepo, counterService)
+
+	gameRepo := memory.NewGameStateRepository()
+	gameUsecase := usecase.NewGameUsecase(gameRepo, messageRepo, messageService, counterRepo)
+
+	resultRepo := memory.NewResultRepository()
+	resultService := service.NewResultService(resultRepo)
+	resultUsecase := usecase.NewResultUsecase(resultRepo, gameRepo, resultService)
+
+	matchingUsecase := usecase.NewMatchingUsecase(gameRepo)
+
+	pb.RegisterWordWarServer(grpcServer, newWordWarService(gameUsecase, counterUsecase, resultUsecase, matchingUsecase))
+
+	return grpcServer
 }
 
 func (s *wordWarService) HealthCheck(ctx context.Context, in *pb.HealthCheckRequest) (*pb.HealthCheckResponse, error) {

@@ -11,7 +11,9 @@ require (
 	github.com/google/martian v2.1.0+incompatible
 	github.com/kortemy/elo-go v0.0.0-20190919090953-f9d3a99fd7b7
 	github.com/sirupsen/logrus v1.4.2
+	github.com/stretchr/testify v1.4.0
 	go.opencensus.io v0.22.2 // indirect
+	go.uber.org/goleak v1.0.0
 	golang.org/x/net v0.0.0-20191021124707-24d2ffbea1e8 // indirect
 	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543
 	google.golang.org/api v0.15.0
