@@ -32,30 +32,33 @@ type messageRepository struct {
 }
 
 func NewMessageRepository() *messageRepository {
-	var dicPath string
-	var ok bool
-	if dicPath, ok = os.LookupEnv("DIC_PATH"); !ok {
-		log.WithError(xerrors.Errorf("NewMessageRepository LookupEnv(DIC_PATH) is false : %w")).Fatal()
-	}
-	fp, err := os.Open(dicPath)
-	if err != nil {
-		panic(err)
-	}
-	defer fp.Close()
-
 	dictionary := map[string]struct{}{}
 
-	scanner := bufio.NewScanner(fp)
-	for scanner.Scan() {
-		line := scanner.Text()
-		dictionary[line] = struct{}{}
-		if !utf8.ValidString(line) {
-			log.WithError(xerrors.Errorf("NewMessageRepository utf8.ValidString is false : %w", err)).Fatal("line: %s", line)
+	if dicPath, ok := os.LookupEnv("DIC_PATH"); !ok {
+		log.WithError(xerrors.Errorf("NewMessageRepository LookupEnv(DIC_PATH) is false.")).Warn()
+		dictionary["りんご"] = struct{}{}
+		dictionary["ごま"] = struct{}{}
+		dictionary["まり"] = struct{}{}
+	} else {
+		fp, err := os.Open(dicPath)
+		if err != nil {
+			panic(err)
+		}
+		defer fp.Close()
+
+		scanner := bufio.NewScanner(fp)
+		for scanner.Scan() {
+			line := scanner.Text()
+			dictionary[line] = struct{}{}
+			if !utf8.ValidString(line) {
+				log.WithError(xerrors.Errorf("NewMessageRepository utf8.ValidString is false : %w", err)).Fatalf("line: %s", line)
+			}
+		}
+		if err := scanner.Err(); err != nil {
+			log.WithError(xerrors.Errorf("NewMessageRepository scanner error: %w", err)).Fatal("")
 		}
 	}
-	if err := scanner.Err(); err != nil {
-		log.WithError(xerrors.Errorf("NewMessageRepository scanner error: %w", err)).Fatal("")
-	}
+
 	return &messageRepository{
 		conn:       external.RedisPool,
 		keyTTL:     time.Minute * 10,

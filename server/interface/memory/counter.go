@@ -8,13 +8,13 @@ import (
 )
 
 type counterRepository struct {
-	conn *redis.Pool
+	conn   *redis.Pool
 	keyTTL time.Duration
 }
 
 func NewCounterRepository() *counterRepository {
 	return &counterRepository{
-		conn: external.RedisPool,
+		conn:   external.RedisPool,
 		keyTTL: time.Minute * 10, // 10m
 	}
 }
