@@ -8,4 +8,7 @@ type GameStateRepository interface {
 	GetCurrentWord(roomID string) (string, error)
 	AddUser(roomID string, userID string) error
 	GetUsers(roomID string) ([]string, error)
+	DeleteUser(roomID string, userID string) error
+	LockRoomUsers(roomID string) error
+	UnlockRoomUsers(roomID string) error
 }

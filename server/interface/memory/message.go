@@ -82,7 +82,11 @@ func (r *messageRepository) Publish(message *entity.Message) error {
 	}
 
 	conn := r.conn.Get()
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			panic(xerrors.Errorf("error client.Close: %w", err))
+		}
+	}()
 
 	rep, err := conn.Do("PUBLISH", message.RoomID+":message", mesBytes)
 	if err != nil {
@@ -113,7 +117,11 @@ func (r *messageRepository) Subscribe(ctx context.Context, roomID string) (<-cha
 		defer close(errCh)
 
 		conn := r.conn.Get()
-		defer conn.Close()
+		defer func() {
+			if err := conn.Close(); err != nil {
+				panic(xerrors.Errorf("error client.Close: %w", err))
+			}
+		}()
 
 		psc := redis.PubSubConn{Conn: conn}
 		err := psc.Subscribe(roomID + ":message")

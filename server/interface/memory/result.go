@@ -22,6 +22,7 @@ type firestoreUser struct {
 	Rating  int64                  `firestore:"rating"`
 }
 
+// TODO: gameの一時的なスコアをresultリポジトリが管理しており、gameStateが管理すべきな気がするのでrefactorの対象かも
 type resultRepository struct {
 	firestore *firebase.App
 	conn      *redis.Pool
@@ -64,10 +65,10 @@ func (r *resultRepository) GetScore(roomID string, userID string) (*entity.Resul
 	return &entity.Result{UserID: userID, Score: score}, nil
 }
 
-func (r *resultRepository) SetScore(result *entity.Result) error {
+func (r *resultRepository) SetScore(roomID string, userID string, score int64) error {
 	conn := r.conn.Get()
-	key := result.RoomID + ":" + result.UserID + ":" + "score"
-	_, err := conn.Do("SET", key, result.Score)
+	key := roomID + ":" + userID + ":" + "score"
+	_, err := conn.Do("SET", key, score)
 	if err != nil {
 		return err
 	}
@@ -98,7 +99,11 @@ func (r *resultRepository) GetLatestRating(userID string) (int64, error) {
 	// TODO get only users.<id>.rating
 	ctx := context.Background()
 	client := external.GetFirestore()
-	defer client.Close()
+	defer func() {
+		if err := client.Close(); err != nil {
+			panic(xerrors.Errorf("error client.Close: %w", err))
+		}
+	}()
 	snapshot, err := client.Collection("users").Doc(userID).Get(ctx)
 	if err != nil {
 		return 0, xerrors.Errorf("GetLatestRating: %w", err)
@@ -114,7 +119,11 @@ func (r *resultRepository) GetLatestRating(userID string) (int64, error) {
 func (r *resultRepository) SetRating(userID string, rating int64) error {
 	ctx := context.Background()
 	client := external.GetFirestore()
-	defer client.Close()
+	defer func() {
+		if err := client.Close(); err != nil {
+			panic(xerrors.Errorf("error client.Close: %w", err))
+		}
+	}()
 	_, err := client.Collection("users").Doc(userID).Set(ctx, map[string]interface{}{
 		"rating": rating,
 	}, firestore.MergeAll)
@@ -127,24 +136,39 @@ func (r *resultRepository) SetRating(userID string, rating int64) error {
 func (r *resultRepository) AddRatingHistory(userID string, rating int64) error {
 	ctx := context.Background()
 	client := external.GetFirestore()
-	defer client.Close()
-	// :thinking_face:
-	snapshot, err := client.Collection("users").Doc(userID).Get(ctx)
-	if err != nil {
-		return xerrors.Errorf("AddRatingHistory: %w", err)
-	}
-	var user firestoreUser
-	if err = snapshot.DataTo(&user); err != nil {
-		return xerrors.Errorf("error in AddRatingHistory DataTo: %w", err)
-	}
-	h := firestoreUserHistory{Date: time.Now(), Rating: rating}
-	user.History = append(user.History, h)
+	defer func() {
+		if err := client.Close(); err != nil {
+			panic(xerrors.Errorf("error client.Close: %w", err))
+		}
+	}()
 
-	_, err = client.Collection("users").Doc(userID).Set(ctx, map[string]interface{}{
-		"history": user.History,
-	}, firestore.MergeAll)
+	user := client.Collection("users").Doc(userID)
+	err := client.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
+		snapshot, err := user.Get(ctx)
+		if err != nil {
+			return xerrors.Errorf("AddRatingHistory: %w", err)
+		}
+		var data firestoreUser
+		if err = snapshot.DataTo(&data); err != nil {
+			return xerrors.Errorf("error in AddRatingHistory DataTo: %w", err)
+		}
+
+		h := firestoreUserHistory{Date: time.Now(), Rating: rating}
+		data.History = append(data.History, h)
+
+		_, err = user.Set(ctx, map[string]interface{}{
+			"history": data.History,
+		}, firestore.MergeAll)
+
+		if err != nil {
+			return xerrors.Errorf("AddRatingHistory: %w", err)
+		}
+
+		return nil
+	})
+
 	if err != nil {
-		return xerrors.Errorf("AddRatingHistory: %w", err)
+		return xerrors.Errorf("RunTransaction: %w", err)
 	}
 
 	return nil

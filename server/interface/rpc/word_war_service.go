@@ -42,20 +42,20 @@ func NewGRPCServer() *grpc.Server {
 	grpcServer := grpc.NewServer()
 
 	messageRepo := memory.NewMessageRepository()
-	messageService := service.NewMessageService(messageRepo)
-
 	counterRepo := memory.NewCounterRepository()
-	counterService := service.NewCounterService(counterRepo)
-	counterUsecase := usecase.NewCounterUsecase(counterRepo, counterService)
-
-	gameRepo := memory.NewGameStateRepository()
-	gameUsecase := usecase.NewGameUsecase(gameRepo, messageRepo, messageService, counterRepo)
-
 	resultRepo := memory.NewResultRepository()
-	resultService := service.NewResultService(resultRepo)
-	resultUsecase := usecase.NewResultUsecase(resultRepo, gameRepo, resultService)
+	gameRepo := memory.NewGameStateRepository()
+	roomRepo := memory.NewRoomRepository()
 
-	matchingUsecase := usecase.NewMatchingUsecase(gameRepo)
+	messageService := service.NewMessageService(messageRepo)
+	counterService := service.NewCounterService(counterRepo)
+	resultService := service.NewResultService(resultRepo)
+
+	counterUsecase := usecase.NewCounterUsecase(counterRepo, counterService)
+	gameUsecase := usecase.NewGameUsecase(gameRepo, messageRepo, messageService, counterRepo, resultRepo, roomRepo)
+	resultUsecase := usecase.NewResultUsecase(resultRepo, gameRepo, resultService)
+	// TODO: 🤔🤔🤔ユースケースとか色々名前がきもい
+	matchingUsecase := usecase.NewMatchingUsecase(gameRepo, roomRepo)
 
 	pb.RegisterWordWarServer(grpcServer, newWordWarService(gameUsecase, counterUsecase, resultUsecase, matchingUsecase))
 
@@ -78,23 +78,27 @@ func (s *wordWarService) HealthCheck(ctx context.Context, in *pb.HealthCheckRequ
 	return ret, nil
 }
 
+// RoomIDを発行するかもしれないし、すでにあるRoomIDを返すかもしれない
 func (s *wordWarService) Matching(ctx context.Context, in *pb.MatchingRequest) (*pb.MatchingResponse, error) {
-	if roomID, err := s.matchingUsecase.Matching(in.UserId); err != nil {
+	roomID, err := s.matchingUsecase.Matching(in.UserId)
+	if err != nil {
 		return nil, xerrors.Errorf("Matching error: %w", err)
-	} else {
-		ret := &pb.MatchingResponse{RoomId: roomID}
-		return ret, nil
 	}
+	ret := &pb.MatchingResponse{RoomId: roomID}
+	return ret, nil
 }
 
 // TODO: だめなメッセージも全員に送るようにしてクライアントで処理してもらう
 // TODO: 2回同じ単語はだめなので、履歴を保存して検査する
 func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) error {
-	// TODO: 部屋ごとに呼ばれるべきなのかユーザごとに呼ばれるべきなのか不明瞭なのでworkerみたいなのを作って管理したい
-	err := s.gameUsecase.InitGameState(in.RoomId, in.UserId)
+	err := s.gameUsecase.InitUser(in.RoomId, in.UserId)
 	if err != nil {
-		return xerrors.Errorf("init error: %w", err)
+		log.WithFields(log.Fields{
+			"roomId": in.RoomId,
+			"userId": in.UserId,
+		}).Fatal(xerrors.Errorf("error in Game(): %w", err))
 	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	// childのcontext荷関数が終了することを教えてあげる
 	defer func() {
@@ -102,13 +106,7 @@ func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) err
 			log.WithFields(log.Fields{
 				"roomId": in.RoomId,
 				"userId": in.UserId,
-			}).Fatal("error in resultUsecase.UpdateRating: %w", err)
-		}
-		if _, err := s.counterUsecase.Init(in.RoomId, &entity.Counter{Value: 0, RoomID: in.RoomId}); err != nil {
-			log.WithFields(log.Fields{
-				"roomId": in.RoomId,
-				"userId": in.UserId,
-			}).Fatalf("error in counterUsecase.Init: %w", err)
+			}).Fatal(xerrors.Errorf("error in resultUsecase.UpdateRating: %w", err))
 		}
 		cancel()
 	}()
@@ -187,8 +185,14 @@ func (s *wordWarService) Say(ctx context.Context, in *pb.SayRequest) (*pb.SayRes
 	return res, nil
 }
 
+// 結果を取得する
 func (s *wordWarService) Result(ctx context.Context, in *pb.ResultRequest) (*pb.ResultResponse, error) {
-	// 結果を取得する
+	defer func() {
+		if err := s.gameUsecase.CleanGameState(in.RoomId, in.UserId); err != nil {
+			panic(xerrors.Errorf("error CleanGameState(%s, %s): %w", in.RoomId, in.UserId, err))
+		}
+	}()
+
 	result, err := s.resultUsecase.GetScore(in.RoomId, in.UserId)
 	if err != nil {
 		return nil, xerrors.Errorf("Result rpc can't GetScore. roomId: %v, userId: %v. : %w", in.RoomId, in.UserId, err)

@@ -4,17 +4,21 @@
     <Navbar />
     <section class="section">
       <b-button type="is-link" tag="router-link" to="/game">
+        ランダムマッチ
+      </b-button>
+
+      <!-- <b-button disabled type="is-link" tag="router-link" to="/game">
         へやをつくる
       </b-button>
 
-      <b-button @click="joinRoom">
+      <b-button disabled @click="joinRoom">
         へやにさんかする
-      </b-button>
-      <b-field>
+      </b-button> -->
+      <!-- <b-field>
         <b-input v-model="roomIdInput" placeholder="input room ID"></b-input>
       </b-field>
       <b-button type="is-dark" @click="onClick">vuex</b-button>
-      <p>{{ count }}</p>
+      <p>{{ count }}</p> -->
     </section>
 
     <b-button class="is-danger" @click="signOut">ログアウト</b-button>

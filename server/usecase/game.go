@@ -13,7 +13,8 @@ import (
 )
 
 type GameUsecase interface {
-	InitGameState(roomID string, userID string) error
+	InitUser(roomID string, userID string) error
+	CleanGameState(roomID string, userID string) error
 	TryUpdateWord(message *entity.Message) (*entity.GameState, error)
 	SendMessage(message *entity.Message) error
 	GetMessageChan(ctx context.Context, roomID string) (<-chan *entity.Message, <-chan error)
@@ -25,24 +26,48 @@ type gameUsecase struct {
 	messageRepo    repository.MessageRepository
 	messageService *service.MessageService
 	counterRepo    repository.CounterRepository
+	resultRepo     repository.ResultRepository
+	roomRepo       repository.RoomRepository
 }
 
-func NewGameUsecase(gameRepo repository.GameStateRepository, messageRepo repository.MessageRepository, messageService *service.MessageService, counterRepo repository.CounterRepository) *gameUsecase {
+func NewGameUsecase(gameRepo repository.GameStateRepository, messageRepo repository.MessageRepository, messageService *service.MessageService, counterRepo repository.CounterRepository, resultRepo repository.ResultRepository, roomRepo repository.RoomRepository) *gameUsecase {
 	return &gameUsecase{
 		gameStateRepo:  gameRepo,
 		messageRepo:    messageRepo,
 		messageService: messageService,
 		counterRepo:    counterRepo,
+		resultRepo:     resultRepo,
+		roomRepo:       roomRepo,
 	}
 }
 
-func (u *gameUsecase) InitGameState(roomID string, userID string) error {
-	err := u.gameStateRepo.InitWord(roomID, "しりとり")
-	if err != nil {
-		return xerrors.Errorf("InitGameState can't InitWord: %w", err)
+// ユーザのゲーム中のデータを削除する。
+// 最後のユーザは部屋をきれいにする。複数回読んでも問題ない。resultから呼ばれる
+// TODO: 実はリポジトリ1つにすべき説: 今細分化されているが、複数に分けるのが頭おかしいのでrefactoringする
+func (u *gameUsecase) CleanGameState(roomID string, userID string) error {
+	if err := u.gameStateRepo.LockRoomUsers(roomID); err != nil {
+		return xerrors.Errorf("error LockRoomUsers(%s): %w", roomID, err)
 	}
-	if err := u.gameStateRepo.AddUser(roomID, userID); err != nil {
-		return xerrors.Errorf("InitGameState can't AddUser(%s, %s): %w", roomID, userID, err)
+	defer func() {
+		if err := u.gameStateRepo.UnlockRoomUsers(roomID); err != nil {
+			panic(xerrors.Errorf("error UnlockRoomUser(%s): %w", roomID, err))
+		}
+	}()
+
+	if err := u.gameStateRepo.DeleteUser(roomID, userID); err != nil {
+		return xerrors.Errorf("error DeleteUser(%s, %s): %w", roomID, userID, err)
+	}
+	users, err := u.gameStateRepo.GetUsers(roomID)
+	if err != nil {
+		return xerrors.Errorf("error GetUsers(%s): %w", roomID, err)
+	}
+	if len(users) == 0 {
+		if err := u.roomRepo.DeleteRoom(roomID); err != nil {
+			return xerrors.Errorf("error DeleteRoom(%s): %w", roomID, err)
+		}
+		if err := u.roomRepo.DeleteRoomCandidate(roomID); err != nil {
+			return xerrors.Errorf("error DeleteRoomCandidate(%s): %w", roomID, err)
+		}
 	}
 	return nil
 }
@@ -57,6 +82,13 @@ func isSiritori(left string, right string) bool {
 	return leftRunes[len(leftRunes)-1] == rightRunes[0]
 }
 
+func (u *gameUsecase) InitUser(roomID string, userID string) error {
+	if err := u.resultRepo.SetScore(roomID, userID, 0); err != nil {
+		return xerrors.Errorf("SetScore(%s, %s) error: %w", roomID, userID, err)
+	}
+	return nil
+}
+
 // ひらがな && 1単語 && 名詞
 func (u *gameUsecase) TryUpdateWord(message *entity.Message) (*entity.GameState, error) {
 	if err := u.gameStateRepo.LockCurrentWord(message.RoomID); err != nil {
@@ -67,7 +99,11 @@ func (u *gameUsecase) TryUpdateWord(message *entity.Message) (*entity.GameState,
 			err,
 		)
 	}
-	defer u.gameStateRepo.UnlockCurrentWord(message.RoomID)
+	defer func() {
+		if err := u.gameStateRepo.UnlockCurrentWord(message.RoomID); err != nil {
+			panic(xerrors.Errorf("UnlockCurrentWord(%s): %w", message.RoomID, err))
+		}
+	}()
 
 	currentWord, err := u.gameStateRepo.GetCurrentWord(message.RoomID)
 	if err != nil {

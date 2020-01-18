@@ -26,7 +26,7 @@ services:
       TZ: Asia/Tokyo
       DIC_PATH: /word.txt
       FIREBASE_CREDENTIALS: /go/src/app/serviceAccount.json
-      SERVER_VERSION: 1.2.1
+      SERVER_VERSION: 1.3.0
     tty: true
   redis:
     image: redis

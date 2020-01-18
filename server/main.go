@@ -10,8 +10,6 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
-// TODO: OAuthとかの認証を真面目にやってみたい
-
 func main() {
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
@@ -28,19 +26,25 @@ func main() {
 
 	setUpExternal()
 
-	grpcServer :=  rpc.NewGRPCServer()
+	grpcServer := rpc.NewGRPCServer()
 	reflection.Register(grpcServer)
 	log.Info("Start server")
+
+	go func() {
+		for {
+			// redis の特定のキーを監視し続ける
+			// lock
+			// [roomid]:endgame
+			// unlock
+		}
+	}()
 
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
 }
 
-
 func setUpExternal() {
 	external.InitRedis()
 	external.InitFirebase()
 }
-
-// TODO: goleakでgoroutineの数を計測する

@@ -26,8 +26,6 @@ func (suite *GRPCTestHealthCheckSuite) SetupTest() {
 	if err := os.Setenv("SERVER_VERSION", serverVersion); err != nil {
 		suite.Error(err)
 	}
-	// TODO: testでfirebase余り叩きに行きたくないので、モックを作成してテストしたい
-	// TODO: rpcのテストからではなくmemoryとかusecaseのテストから始めるべきかもしれない
 	messageRepo := memory.NewMessageRepository()
 	messageService := service.NewMessageService(messageRepo)
 

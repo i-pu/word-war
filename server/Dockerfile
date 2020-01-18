@@ -1,5 +1,3 @@
-# TODO: k8sに移行したい
-# TODO: CI/CDを完全に自動化したい
 # FROM iputus/go-mecab-neologd
 FROM iputus/kagome-neologd-dic AS csv
 

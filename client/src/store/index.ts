@@ -11,6 +11,18 @@ import { HealthCheckRequest, HealthCheckResponse } from '@/pb/word_war_pb'
 Vue.use(Vuex)
 // TODO: linterの細かい調整
 
+const setInitialUserdata = (uid: string) => {
+  return firebase
+    .firestore()
+    .collection('users')
+    .doc(uid)
+    .set({
+      history: [{ date: new Date(), rating: 1500 }],
+      name: 'AAA',
+      rating: 1500
+    })
+}
+
 export default new Vuex.Store<RootState>({
   state: {
     // server info
@@ -78,6 +90,10 @@ export default new Vuex.Store<RootState>({
       if (!result || !result.user) {
         throw new Error(`can't authorized: ${email}, ${password}`)
       }
+
+      await setInitialUserdata(result.user.uid).catch(console.error)
+
+      console.log('initialized userdata in firestore')
 
       commit('setUserId', { userId: result.user.uid })
 

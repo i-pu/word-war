@@ -49,6 +49,13 @@ export default class Siritori extends Vue {
         console.log(`joined ${roomId}`)
       } else {
         const roomId = await this.$store.dispatch('game/match')
+        console.log(`match ${roomId}`)
+
+        if (!roomId) {
+          console.error('invalid roomid')
+          return
+        }
+
         await this.$store.dispatch('game/start', { roomId })
         console.log(`created and joined ${roomId}`)
       }

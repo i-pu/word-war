@@ -20,10 +20,11 @@ func NewGameStateRepository() *gameStateRepository {
 		keyTTL: time.Minute * 10,
 	}
 }
+
 func (r *gameStateRepository) InitWord(roomID string, word string) error {
 	key := roomID + ":currentWord"
 	conn := r.conn.Get()
-	_, err := conn.Do("SETNX", key, word)
+	_, err := conn.Do("SET", key, word)
 	if err != nil {
 		return xerrors.Errorf("error in InitWord setnx: %w", err)
 	}
@@ -130,4 +131,42 @@ func (r *gameStateRepository) GetUsers(roomID string) ([]string, error) {
 		return nil, xerrors.Errorf("error in GetUsers HKEYS %s, 0, -1: %w", key, err)
 	}
 	return users, nil
+}
+
+func (r *gameStateRepository) DeleteUser(roomID string, userID string) error {
+	key := roomID + ":users"
+	conn := r.conn.Get()
+
+	if _, err := conn.Do("HDEL", key, userID); err != nil {
+		return xerrors.Errorf("error in GetUsers HDEL %s, %s: %w", key, userID)
+	}
+	return nil
+}
+
+func (r *gameStateRepository) LockRoomUsers(roomID string) error {
+	// prevent for removing <roomID>:**
+	key := "lock:" + roomID
+	conn := r.conn.Get()
+	_, err := conn.Do("SET", key, 0)
+	if err != nil {
+		return xerrors.Errorf("error in InitWord setnx: %w", err)
+	}
+
+	_, err = conn.Do("EXPIRE", key, int64(r.keyTTL.Seconds()))
+	if err != nil {
+		return xerrors.Errorf("error in LockRoomUsers() expire: %w", err)
+	}
+
+	return err
+}
+
+func (r *gameStateRepository) UnlockRoomUsers(roomID string) error {
+	// prevent for removing <roomID>:**
+	key := "lock:" + roomID
+	conn := r.conn.Get()
+	_, err := conn.Do("DEL", key)
+	if err != nil {
+		return xerrors.Errorf("error in UnlockCurrentWord: %w", err)
+	}
+	return nil
 }
