@@ -16,7 +16,7 @@ services:
       - ./https-portal/:/var/lib/https-portal
 
   server:
-    image: iputus/server:develop-1.2
+    image: iputus/server:develop-1
     ports:
       - 50051:50051
     volumes:
@@ -35,7 +35,7 @@ services:
     ports:
       - '6379:6379'
   envoy:
-    image: iputus/envoy:develop-1.2
+    image: iputus/envoy:develop-1
     # 証明書が未発行でvolume mountされていないとき落ちるので、
     # 証明書が生成されるまで再起動を繰り返す
     restart: always
