@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"errors"
 	"regexp"
 
 	"github.com/i-pu/word-war/server/domain/entity"
@@ -12,52 +11,32 @@ import (
 )
 
 type GameUsecase interface {
-	InitUser(roomID string, userID string) error
-	CleanGameState(roomID string, userID string) error
+	InitUser(player *entity.Player) error
+	CleanGameState(player *entity.Player) error
 	TryUpdateWord(message *entity.Message) (*entity.GameState, error)
 	SendMessage(message *entity.Message) error
 	GetMessageChan(ctx context.Context, roomID string) (<-chan *entity.Message, <-chan error)
 	GetCurrentMessage(roomID string) (*entity.Message, error)
+	GetCounter(roomID string) (int64, error)
 }
 
 type gameUsecase struct {
-	gameRepo    repository.GameRepository
+	gameRepo repository.GameRepository
 }
 
 func NewGameUsecase(gameRepo repository.GameRepository) *gameUsecase {
 	return &gameUsecase{
-		gameRepo:    gameRepo,
+		gameRepo: gameRepo,
 	}
 }
 
 // ユーザのゲーム中のデータを削除する。
 // 最後のユーザは部屋をきれいにする。複数回読んでも問題ない。resultから呼ばれる
-// TODO: 実はリポジトリ1つにすべき説: 今細分化されているが、複数に分けるのが頭おかしいのでrefactoringする
-func (u *gameUsecase) CleanGameState(roomID string, userID string) error {
-	if err := u.gameRepo.LockRoomUsers(roomID); err != nil {
-		return xerrors.Errorf("error gameRepo.LockRoomUsers(%s): %w", roomID, err)
+func (u *gameUsecase) CleanGameState(player *entity.Player) error {
+	if err := u.gameRepo.CleanGame(player); err != nil {
+		return xerrors.Errorf("error gameRepo.CleanGame(%+v): %w", player, err)
 	}
-	defer func() {
-		if err := u.gameRepo.UnlockRoomUsers(roomID); err != nil {
-			panic(xerrors.Errorf("error gameRepo.UnlockRoomUser(%s): %w", roomID, err))
-		}
-	}()
 
-	if err := u.gameRepo.DeleteUser(roomID, userID); err != nil {
-		return xerrors.Errorf("error gameRepo.DeleteUser(%s, %s): %w", roomID, userID, err)
-	}
-	users, err := u.gameRepo.GetUsers(roomID)
-	if err != nil {
-		return xerrors.Errorf("error gameRepo.GetUsers(%s): %w", roomID, err)
-	}
-	if len(users) == 0 {
-		if err := u.gameRepo.DeleteRoom(roomID); err != nil {
-			return xerrors.Errorf("error DeleteRoom(%s): %w", roomID, err)
-		}
-		if err := u.gameRepo.DeleteRoomCandidate(roomID); err != nil {
-			return xerrors.Errorf("error DeleteRoomCandidate(%s): %w", roomID, err)
-		}
-	}
 	return nil
 }
 
@@ -71,82 +50,81 @@ func isSiritori(left string, right string) bool {
 	return leftRunes[len(leftRunes)-1] == rightRunes[0]
 }
 
-func (u *gameUsecase) InitUser(roomID string, userID string) error {
-	if err := u.gameRepo.SetScore(roomID, userID, 0); err != nil {
-		return xerrors.Errorf("SetScore(%s, %s) error: %w", roomID, userID, err)
+func (u *gameUsecase) InitUser(player *entity.Player) error {
+	if err := u.gameRepo.SetScore(player, 0); err != nil {
+		return xerrors.Errorf("SetScore(%+v, 0) error: %w", player, err)
 	}
 	return nil
 }
 
 // ひらがな && 1単語 && 名詞
 func (u *gameUsecase) TryUpdateWord(message *entity.Message) (*entity.GameState, error) {
-	if err := u.gameRepo.LockCurrentWord(message.RoomID); err != nil {
+	lockKey := message.RoomID + ":TryUpdateWord"
+	if err := u.gameRepo.Lock(lockKey); err != nil {
 		return nil, xerrors.Errorf(
-			"TryUpdateWord can't LockCurrentWord. roomId: %v, userId: %v.: %w",
-			message.RoomID,
-			message.UserID,
+			"TryUpdateWord can't Lock(%s): message: %+v: %w",
+			lockKey,
+			message,
 			err,
 		)
 	}
 	defer func() {
-		if err := u.gameRepo.UnlockCurrentWord(message.RoomID); err != nil {
-			panic(xerrors.Errorf("UnlockCurrentWord(%s): %w", message.RoomID, err))
+		if err := u.gameRepo.Unlock(lockKey); err != nil {
+			panic(xerrors.Errorf("UnlockCurrentWord(%s): %w", lockKey, err))
 		}
 	}()
 
-	currentWord, err := u.gameRepo.GetCurrentWord(message.RoomID)
+	currentMessage, err := u.gameRepo.GetCurrentMessage(message.RoomID)
 	if err != nil {
 		return nil, xerrors.Errorf(
-			"TryUpdateWord can't GetCurrentWord. roomId: %v, userId: %v.: %w",
+			"TryUpdateWord can't GetCurrentWord(%s): message: %+v: %w",
 			message.RoomID,
-			message.UserID,
+			message,
 			err,
 		)
 	}
 
+	// TODO: 伸ばし棒終わったらそのまえの文字を最後の文字とする
 	r := regexp.MustCompile(`^[\p{Hiragana}ー]+$`)
 	if !r.Match([]byte(message.Message)) {
 		log.WithFields(log.Fields{
 			"reason":      "ひらがなでない",
-			"currentWord": currentWord,
+			"currentWord": currentMessage.Message,
 			"newMessage":  message.Message,
-		}).Info("")
-		//ひらがなじゃない
+		}).Debug()
 		return nil, nil
 	}
 
 	if !u.gameRepo.ContainWord(message.Message) {
 		log.WithFields(log.Fields{
 			"reason":      "存在しない単語",
-			"currentWord": currentWord,
+			"currentWord": currentMessage.Message,
 			"newMessage":  message.Message,
-		}).Info()
+		}).Debug()
 		return nil, nil
 	}
 
-	if !isSiritori(currentWord, message.Message) {
+	if !isSiritori(currentMessage.Message, message.Message) {
 		log.WithFields(log.Fields{
 			"reason":      "しりとりでない",
-			"currentWord": currentWord,
+			"currentWord": currentMessage.Message,
 			"newMessage":  message.Message,
-		}).Info("")
+		}).Debug()
 
 		return nil, nil
 	}
 
-	if err := u.gameRepo.UpdateCurrentWord(message.RoomID, message.Message); err != nil {
+	if err := u.gameRepo.UpdateCurrentMessage(message); err != nil {
 		return nil, xerrors.Errorf(
-			"TryUpdateWord can't UpdateCurrentWord. roomId: %v, userId: %v.: %w",
-			message.RoomID,
-			message.UserID,
+			"TryUpdateWord can't UpdateCurrentWord(%+v): %w",
+			message,
 			err,
 		)
 	}
 
 	if _, err := u.gameRepo.IncrCounter(message.RoomID); err != nil {
-		return nil, xerrors.Errorf("TryUpdateWord can't IncrCounter. roomId: %v, userId: %v.: %w",
+		return nil, xerrors.Errorf("TryUpdateWord can't IncrCounter(%s): %w",
 			message.RoomID,
-			message.UserID,
 			err,
 		)
 	}
@@ -171,46 +149,11 @@ func (u *gameUsecase) SendMessage(message *entity.Message) error {
 // , so this ctx must be child context.
 // repositoryからきたchannelの中身を確認して、
 func (u *gameUsecase) GetMessageChan(ctx context.Context, roomID string) (<-chan *entity.Message, <-chan error) {
-	// TODO: 時間制にする
-	messageRepoChan, errRepoChan := u.gameRepo.Subscribe(ctx, roomID)
-
-	messageChan := make(chan *entity.Message)
-	errChan := make(chan error)
-	go func() {
-		defer close(messageChan)
-		defer close(errChan)
-		for {
-			select {
-			case message, ok := <-messageRepoChan:
-				if !ok {
-					errChan <- errors.New("logical error about redis channel")
-				}
-
-				// ! 10件にしましょう
-				counter, err := u.gameRepo.GetCounter(roomID)
-				if err != nil {
-					errChan <- errors.New("error in gameRepo.GetScore")
-				}
-				if counter > 10 {
-					// 終了処理
-					log.WithFields(log.Fields{
-						"roomId": roomID,
-					}).Info("Finish game in GetMessageChan.")
-					messageChan <- nil
-					return
-				}
-				messageChan <- message
-
-			case err := <-errRepoChan:
-				errChan <- xerrors.Errorf("error in game: %w", err)
-			}
-		}
-	}()
-	return messageChan, errChan
+	return u.gameRepo.Subscribe(ctx, roomID)
 }
 
 func (u *gameUsecase) GetCurrentMessage(roomID string) (*entity.Message, error) {
-	mes, err := u.gameRepo.GetCurrentWord(roomID)
+	mes, err := u.gameRepo.GetCurrentMessage(roomID)
 	if err != nil {
 		return nil, xerrors.Errorf(
 			"GetCurrentMessage can't GetCurrentWord. roomId: %v.: %w",
@@ -219,5 +162,9 @@ func (u *gameUsecase) GetCurrentMessage(roomID string) (*entity.Message, error) 
 		)
 	}
 
-	return &entity.Message{RoomID: roomID, UserID: "unknown", Message: mes}, nil
+	return mes, nil
+}
+
+func (u *gameUsecase) GetCounter(roomID string) (int64, error) {
+	return u.gameRepo.GetCounter(roomID)
 }

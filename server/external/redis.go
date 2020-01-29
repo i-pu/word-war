@@ -3,23 +3,25 @@ package external
 import (
 	"os"
 
-	"github.com/gomodule/redigo/redis"
-	log "github.com/sirupsen/logrus"
+	"github.com/go-redis/redis"
+	"golang.org/x/xerrors"
 )
 
-var RedisPool *redis.Pool
+var RedisClient *redis.Client
 
 // redis のセッティング
 func InitRedis() {
-	RedisPool = &redis.Pool{
-		MaxIdle:   80,
-		MaxActive: 12000,
-		Dial: func() (redis.Conn, error) {
-			conn, err := redis.Dial("tcp", os.Getenv("REDIS_URL")+":6379")
-			if err != nil {
-				log.Fatalf("failed init redis %v", err)
-			}
-			return conn, err
-		},
+	RedisClient = redis.NewClient(&redis.Options{
+		Addr:        os.Getenv("REDIS_URL") + ":6379",
+		MaxConnAge:  12000,
+		IdleTimeout: 80,
+	})
+}
+
+func HealthCheck() error {
+	_, err := RedisClient.Ping().Result()
+	if err != nil {
+		return xerrors.Errorf("Redis init error: %w", err)
 	}
+	return nil
 }

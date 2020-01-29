@@ -10,7 +10,7 @@ import (
 
 	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go"
-	"github.com/gomodule/redigo/redis"
+	"github.com/go-redis/redis"
 	"github.com/i-pu/word-war/server/domain/entity"
 	"github.com/i-pu/word-war/server/external"
 	log "github.com/sirupsen/logrus"
@@ -18,16 +18,20 @@ import (
 )
 
 type GameRepository interface {
+	// util
+	Lock(key string) error
+	Unlock(key string) error
+
+	// word
 	InitWord(roomID string, word string) error
-	LockCurrentWord(roomID string) error
-	UnlockCurrentWord(roomID string) error
-	UpdateCurrentWord(roomID string, word string) error
-	GetCurrentWord(roomID string) (string, error)
-	AddUser(roomID string, userID string) error
-	GetUsers(roomID string) ([]string, error)
-	DeleteUser(roomID string, userID string) error
-	LockRoomUsers(roomID string) error
-	UnlockRoomUsers(roomID string) error
+	UpdateCurrentMessage(message *entity.Message) error
+	GetCurrentMessage(roomID string) (*entity.Message, error)
+	ContainWord(word string) bool
+
+	// user
+	AddPlayer(player *entity.Player) error
+	GetUserIDs(roomID string) ([]string, error)
+	DeletePlayer(player *entity.Player) error
 
 	// counter
 	IncrCounter(roomID string) (int64, error)
@@ -37,20 +41,22 @@ type GameRepository interface {
 	// message
 	Publish(message *entity.Message) error
 	Subscribe(ctx context.Context, roomID string) (<-chan *entity.Message, <-chan error)
-	ContainWord(word string) bool
 
-	// room
-	Lock() error
-	Unlock() error
+	// room candidates
 	GetRoomCandidates() ([]string, error)
 	AddRoomCandidate(roomID string) error
 	DeleteRoomCandidate(roomID string) error
-	DeleteRoom(roomID string) error
 
-	// result
-	GetScore(roomID string, userID string) (*entity.Result, error)
-	SetScore(roomID string, userID string, score int64) error
-	IncrScoreBy(roomID string, userID string, by int64) error
+	// room
+	DeleteRoom(roomID string) error
+	CleanGame(player *entity.Player) error
+
+	// score
+	GetScore(player *entity.Player) (*entity.Result, error)
+	SetScore(player *entity.Player, score int64) error
+	IncrScoreBy(player *entity.Player, by int64) error
+
+	// rating
 	GetLatestRating(userID string) (int64, error)
 	SetRating(userID string, rating int64) error
 	AddRatingHistory(userID string, rating int64) error
@@ -58,7 +64,7 @@ type GameRepository interface {
 
 type gameRepository struct {
 	firestore  *firebase.App
-	conn       *redis.Pool
+	conn       *redis.Client
 	keyTTL     time.Duration
 	dictionary *map[string]struct{}
 }
@@ -103,7 +109,7 @@ func NewGameRepository() *gameRepository {
 
 	return &gameRepository{
 		firestore:  external.FirebaseApp,
-		conn:       external.RedisPool,
+		conn:       external.RedisClient,
 		keyTTL:     time.Minute * 10,
 		dictionary: &dictionary,
 	}
@@ -111,36 +117,22 @@ func NewGameRepository() *gameRepository {
 
 func (r *gameRepository) InitWord(roomID string, word string) error {
 	key := roomID + ":currentWord"
-	conn := r.conn.Get()
-	_, err := conn.Do("SET", key, word)
+	err := r.conn.Set(key, word, r.keyTTL).Err()
 	if err != nil {
 		return xerrors.Errorf("error in InitWord setnx: %w", err)
 	}
-
-	_, err = conn.Do("EXPIRE", key, int64(r.keyTTL.Seconds()))
-	if err != nil {
-		return xerrors.Errorf("error in InitWord expire: %w", err)
-	}
-
 	return err
 }
 
 func (r *gameRepository) LockCurrentWord(roomID string) error {
 	key := roomID + ":currentWord:lock"
-	conn := r.conn.Get()
-	// while lockできなかったらloop
+
 	for {
-		res, err := conn.Do("SETNX", key, "locking")
+		ok, err := r.conn.SetNX(key, "locking", r.keyTTL).Result()
 		if err != nil {
 			return xerrors.Errorf("error in lockCurrentWord: %w", err)
 		}
-
-		_, err = conn.Do("EXPIRE", key, int64(r.keyTTL.Seconds()))
-		if err != nil {
-			return xerrors.Errorf("error in lockCurrentWord expire: %w", err)
-		}
-
-		if res != 0 {
+		if ok {
 			break
 		}
 	}
@@ -150,8 +142,7 @@ func (r *gameRepository) LockCurrentWord(roomID string) error {
 // updateして r.conn.Do("delete roomID+"currentWord:lock")
 func (r *gameRepository) UnlockCurrentWord(roomID string) error {
 	key := roomID + ":currentWord:lock"
-	conn := r.conn.Get()
-	_, err := conn.Do("DEL", key)
+	err := r.conn.Del(key).Err()
 	if err != nil {
 		return xerrors.Errorf("error in UnlockCurrentWord: %w", err)
 	}
@@ -159,120 +150,95 @@ func (r *gameRepository) UnlockCurrentWord(roomID string) error {
 }
 
 // <roomID>:currentWord
-func (r *gameRepository) UpdateCurrentWord(roomID string, word string) error {
-	key := roomID + ":currentWord"
-	conn := r.conn.Get()
-
-	_, err := conn.Do("SET", key, word)
+func (r *gameRepository) UpdateCurrentMessage(message *entity.Message) error {
+	key := message.RoomID + ":currentWord"
+	err := r.conn.Set(key, message.Message, r.keyTTL).Err()
 	if err != nil {
-		return xerrors.Errorf("error in UpdateCurrentWord: %w", err)
-	}
-
-	_, err = conn.Do("EXPIRE", key, int64(r.keyTTL.Seconds()))
-	if err != nil {
-		return xerrors.Errorf("error in UpdateCurrentWord expire: %w", err)
-	}
-
-	return nil
-}
-
-func (r *gameRepository) GetCurrentWord(roomID string) (string, error) {
-	// lock()
-	// defer unlock()
-	key := roomID + ":currentWord"
-	conn := r.conn.Get()
-
-	value, err := redis.String(conn.Do("GET", key))
-	if err != nil {
-		return "", xerrors.Errorf("error in getCurrentWord: %w", err)
-	}
-
-	_, err = conn.Do("EXPIRE", key, int64(r.keyTTL.Seconds()))
-	if err != nil {
-		return "", xerrors.Errorf("error in getCurrentWord expire: %w", err)
-	}
-
-	return value, nil
-}
-
-func (r *gameRepository) AddUser(roomID string, userID string) error {
-	key := roomID + ":users"
-	conn := r.conn.Get()
-
-	_, err := conn.Do("HSET", key, userID, 0)
-	log.WithFields(log.Fields{
-		roomID: roomID,
-		userID: userID,
-	}).Debug()
-	if err != nil {
-		return xerrors.Errorf("error in AddUser HSET %s %s %d: %w", key, userID, 0, err)
+		return xerrors.Errorf("error in Set(%s, %s, %d): %w", key, message.Message, r.keyTTL, err)
 	}
 	return nil
 }
 
-func (r *gameRepository) GetUsers(roomID string) ([]string, error) {
-	key := roomID + ":users"
-	conn := r.conn.Get()
-
-	users, err := redis.Strings(conn.Do("HKEYS", key))
+func (r *gameRepository) GetCurrentMessage(roomID string) (*entity.Message, error) {
+	key := roomID + ":currentWord"
+	word, err := r.conn.Get(key).Result()
 	if err != nil {
-		return nil, xerrors.Errorf("error in GetUsers HKEYS %s, 0, -1: %w", key, err)
+		return nil, xerrors.Errorf("error in Get(%s): %w", key, err)
+	}
+	return &entity.Message{RoomID: roomID, UserID: "fixme", Message: word}, nil
+}
+
+func (r *gameRepository) AddPlayer(player *entity.Player) error {
+	key := player.RoomID + ":users"
+	err := r.conn.HSet(key, player.UserID, 0).Err()
+	log.Debugf("%+v", player)
+
+	if err != nil {
+		return xerrors.Errorf("error in AddPlayer %+v: %w", player, err)
+	}
+	return nil
+}
+
+func (r *gameRepository) GetUserIDs(roomID string) ([]string, error) {
+	key := roomID + ":users"
+	users, err := r.conn.HKeys(key).Result()
+	if err != nil {
+		return nil, xerrors.Errorf("error in GetPlayerIDs(%s): %w", roomID, err)
 	}
 	return users, nil
 }
 
-func (r *gameRepository) DeleteUser(roomID string, userID string) error {
-	key := roomID + ":users"
-	conn := r.conn.Get()
-
-	if _, err := conn.Do("HDEL", key, userID); err != nil {
-		return xerrors.Errorf("error in GetUsers HDEL %s, %s: %w", key, userID)
+func (r *gameRepository) DeletePlayer(player *entity.Player) error {
+	key := player.RoomID + ":users"
+	err := r.conn.HDel(key, player.UserID).Err()
+	if err != nil {
+		return xerrors.Errorf("error in DeletePlayer %+v: %w", player, err)
 	}
 	return nil
 }
 
-func (r *gameRepository) LockRoomUsers(roomID string) error {
-	// prevent for removing <roomID>:**
-	key := "lock:" + roomID
-	conn := r.conn.Get()
-	_, err := conn.Do("SET", key, 0)
-	if err != nil {
-		return xerrors.Errorf("error in InitWord setnx: %w", err)
+func (r *gameRepository) CleanGame(player *entity.Player) error {
+	p := r.conn.TxPipeline()
+
+	key := player.RoomID + ":users"
+	if err := p.HDel(key, player.UserID).Err(); err != nil {
+		return err
 	}
 
-	_, err = conn.Do("EXPIRE", key, int64(r.keyTTL.Seconds()))
+	users, err := p.HKeys(player.RoomID).Result()
 	if err != nil {
-		return xerrors.Errorf("error in LockRoomUsers() expire: %w", err)
+		return err
 	}
 
-	return err
-}
+	if len(users) == 0 {
+		// delete wildcard
+		for _, k := range p.Keys(player.RoomID + ":*").Val() {
+			if err := p.Del(k).Err(); err != nil {
+				return err
+			}
+		}
 
-func (r *gameRepository) UnlockRoomUsers(roomID string) error {
-	// prevent for removing <roomID>:**
-	key := "lock:" + roomID
-	conn := r.conn.Get()
-	_, err := conn.Do("DEL", key)
+		if err := p.HDel(roomLockKey, player.RoomID).Err(); err != nil {
+			return err
+		}
+	}
+
+	_, err = p.Exec()
+
 	if err != nil {
-		return xerrors.Errorf("error in UnlockCurrentWord: %w", err)
+		return xerrors.Errorf("error in CleanGame: %w", err)
 	}
 	return nil
 }
-
-// redis counter repo の命名規則
-// incr counter
-// 将来は <roomID>:counter になるかも
 
 func (r *gameRepository) IncrCounter(roomID string) (int64, error) {
 	key := roomID + ":counter"
-	conn := r.conn.Get()
-
-	value, err := redis.Int64(conn.Do("Incr", key))
+	value, err := r.conn.Incr(key).Result()
 	if err != nil {
 		return -1, xerrors.Errorf("error in incr counter: %w", err)
 	}
 
-	_, err = conn.Do("EXPIRE", key, int64(r.keyTTL.Seconds()))
+	err = r.conn.Expire(key, r.keyTTL).Err()
 	if err != nil {
 		return -1, xerrors.Errorf("error in IncrCounter expire: %w", err)
 	}
@@ -281,34 +247,23 @@ func (r *gameRepository) IncrCounter(roomID string) (int64, error) {
 
 func (r *gameRepository) SetCounter(roomID string, value int64) error {
 	key := roomID + ":counter"
-	conn := r.conn.Get()
-
-	_, err := conn.Do("SET", key, value)
+	err := r.conn.Set(key, value, r.keyTTL).Err()
 	if err != nil {
 		return xerrors.Errorf("error in set counter: %w", err)
 	}
-
-	_, err = conn.Do("EXPIRE", key, int64(r.keyTTL.Seconds()))
-	if err != nil {
-		return xerrors.Errorf("error in set counter expire: %w", err)
-	}
-
 	return nil
 }
 
 func (r *gameRepository) GetCounter(roomID string) (int64, error) {
 	key := roomID + ":counter"
-	conn := r.conn.Get()
-
-	value, err := redis.Int64(conn.Do("GET", key))
+	value, err := r.conn.Get(key).Int64()
 	if err != nil {
 		return -1, xerrors.Errorf("error in main method: %w", err)
 	}
-	_, err = conn.Do("EXPIRE", key, int64(r.keyTTL.Seconds()))
+	err = r.conn.Expire(key, r.keyTTL).Err()
 	if err != nil {
 		return -1, xerrors.Errorf("error in GetCounter expire: %w", err)
 	}
-
 	return value, nil
 }
 
@@ -327,19 +282,13 @@ func (r *gameRepository) Publish(message *entity.Message) error {
 		return xerrors.Errorf("error in json.Marshal: %w", err)
 	}
 
-	conn := r.conn.Get()
-	defer func() {
-		if err := conn.Close(); err != nil {
-			panic(xerrors.Errorf("error client.Close: %w", err))
-		}
-	}()
+	rep, err := r.conn.Publish(message.RoomID+":message", mesBytes).Result()
 
-	rep, err := conn.Do("PUBLISH", message.RoomID+":message", mesBytes)
 	if err != nil {
 		return xerrors.Errorf("error in redis publish: %w", err)
 	}
 
-	_, err = conn.Do("EXPIRE", message.RoomID+":message", int64(r.keyTTL.Seconds()))
+	err = r.conn.Expire(message.RoomID+":message", r.keyTTL).Err()
 	if err != nil {
 		return xerrors.Errorf("error in Publish expire: %w", err)
 	}
@@ -356,70 +305,60 @@ func (r *gameRepository) Publish(message *entity.Message) error {
 // ctx: 親のcontextで親のcontextが終了するとgo func()内でctx.Done()により終了する
 // roomID: どこの部屋のイベントをsubscribeするか
 func (r *gameRepository) Subscribe(ctx context.Context, roomID string) (<-chan *entity.Message, <-chan error) {
-	ch := make(chan *entity.Message)
-	errCh := make(chan error)
-	go func() {
-		defer close(ch)
-		defer close(errCh)
+	pubSub := r.conn.Subscribe(roomID + ":message")
+	_, err := pubSub.Receive()
+	if err != nil {
+		panic(err)
+	}
 
-		conn := r.conn.Get()
+	pubSubChan := pubSub.Channel()
+	messageChan := make(chan *entity.Message)
+	errChan := make(chan error)
+	go func() {
 		defer func() {
-			if err := conn.Close(); err != nil {
-				panic(xerrors.Errorf("error client.Close: %w", err))
+			if err := pubSub.Close(); err != nil {
+				panic(xerrors.Errorf("error in subscribe: %w", err))
 			}
+			close(messageChan)
+			close(errChan)
 		}()
 
-		psc := redis.PubSubConn{Conn: conn}
-		err := psc.Subscribe(roomID + ":message")
-		if err != nil {
-			errCh <- xerrors.Errorf("error in subscribe: %w", err)
-		}
-
 		for {
-			switch v := psc.Receive().(type) {
-			case redis.Message:
-				var message entity.Message
-
-				if err := json.Unmarshal(v.Data, &message); err != nil {
-					errCh <- xerrors.Errorf("error in json.Unmarshal: %w", err)
-				}
-				select {
-				case <-ctx.Done():
-					log.Info("parent ctx done!")
-					return
-				default:
-					log.WithFields(log.Fields{
-						"roomId":  message.RoomID,
-						"userId":  message.UserID,
-						"message": message.Message,
-					}).Info("send message:")
-					ch <- &message
-				}
-			case redis.Subscription:
+			select {
+			case <-ctx.Done():
 				log.WithFields(log.Fields{
-					"channel": v.Channel,
-					"kind":    v.Kind,
-					"count":   v.Count,
-				}).Info("redis subscription:")
-				select {
-				case <-ctx.Done():
-					log.Info("parent ctx done!")
+					"roomId": roomID,
+				}).Infof("game finish")
+				return
+			case v, ok := <-pubSubChan:
+				if !ok {
 					return
-				default:
-					continue
 				}
-			case error:
-				select {
-				case <-ctx.Done():
-					log.Info("parent ctx done!")
-					return
-				default:
-					errCh <- xerrors.Errorf("error in subscribe: %w", v.Error())
+				if v != nil {
+					log.WithFields(log.Fields{
+						"v.String()": v.String(),
+						"v.Payload":  v.Payload,
+						"v.Channel":  v.Channel,
+						"v.Pattern":  v.Pattern,
+					}).Debug("value of pubSub message:")
+				} else {
+					log.Debug("value of pubSub message is nil!!!")
 				}
+				var message entity.Message
+				if err := json.Unmarshal([]byte(v.Payload), &message); err != nil {
+					errChan <- xerrors.Errorf("error in json.Unmarshal(%s): %w", v.String(), err)
+				}
+				log.WithFields(log.Fields{
+					"roomId":  message.RoomID,
+					"userId":  message.UserID,
+					"message": message.Message,
+				}).Info("send message:")
+				messageChan <- &message
 			}
 		}
 	}()
-	return ch, errCh
+
+	return messageChan, errChan
 }
 
 func (r *gameRepository) ContainWord(word string) bool {
@@ -427,32 +366,22 @@ func (r *gameRepository) ContainWord(word string) bool {
 	return ok
 }
 
-func (r *gameRepository) Lock() error {
-	key := roomLockKey + ":lock"
-	conn := r.conn.Get()
+func (r *gameRepository) Lock(key string) error {
 	// while lockできなかったらloop
 	for {
-		res, err := conn.Do("SETNX", key, "locking")
+		ok, err := r.conn.SetNX(key+":lock", "locking", r.keyTTL).Result()
 		if err != nil {
 			return xerrors.Errorf("error in lockRoomCandidate: %w", err)
 		}
-
-		_, err = conn.Do("EXPIRE", key, int64(r.keyTTL.Seconds()))
-		if err != nil {
-			return xerrors.Errorf("error in lockRoomCandidate expire: %w", err)
-		}
-
-		if res != 0 {
+		if ok {
 			break
 		}
 	}
 	return nil
 }
 
-func (r *gameRepository) Unlock() error {
-	key := roomLockKey + ":lock"
-	conn := r.conn.Get()
-	_, err := conn.Do("DEL", key)
+func (r *gameRepository) Unlock(key string) error {
+	err := r.conn.Del(key + ":lock").Err()
 	if err != nil {
 		return xerrors.Errorf("error in UnlockCurrentWord: %w", err)
 	}
@@ -460,64 +389,52 @@ func (r *gameRepository) Unlock() error {
 }
 
 func (r *gameRepository) GetRoomCandidates() ([]string, error) {
-	// lock()
-	// defer unlock()
-	conn := r.conn.Get()
-
-	value, err := redis.Strings(conn.Do("HKEYS", roomLockKey))
+	value, err := r.conn.HKeys(roomLockKey).Result()
 	if err != nil {
 		return []string{}, xerrors.Errorf("error in GetRoomCandidates(): %w", err)
-	}
-
-	_, err = conn.Do("EXPIRE", roomLockKey, int64(r.keyTTL.Seconds()))
-	if err != nil {
-		return []string{}, xerrors.Errorf("error in GetRoomCandidates() expire: %w", err)
 	}
 
 	return value, nil
 }
 
 func (r *gameRepository) AddRoomCandidate(roomID string) error {
-	conn := r.conn.Get()
+	_, err := r.conn.HSet(roomLockKey, roomID, 0).Result()
+	if err != nil {
+		return xerrors.Errorf("error in AddRoomCandidate HSet(%s, %s, %d): %w", roomLockKey, roomID, 0, err)
+	}
 
-	_, err := conn.Do("HSET", roomLockKey, roomID, 0)
 	log.WithFields(log.Fields{
 		roomID: roomID,
 	}).Debug()
-	if err != nil {
-		return xerrors.Errorf("error in AddRoomCandidate HSET %s %s %d: %w", roomLockKey, roomID, 0, err)
-	}
+
 	return nil
 }
 
 func (r *gameRepository) DeleteRoomCandidate(roomID string) error {
-	conn := r.conn.Get()
-
-	_, err := conn.Do("HDEL", roomLockKey, roomID)
+	_, err := r.conn.HDel(roomLockKey, roomID).Result()
+	if err != nil {
+		return xerrors.Errorf("error in DeleteRoomCandidate HDel(%s, %s): %w", roomLockKey, roomID, err)
+	}
 
 	log.WithFields(log.Fields{
 		roomID: roomID,
 	}).Debug()
 
-	if err != nil {
-		return xerrors.Errorf("error in DeleteRoomCandidate HDEL %s %s %d: %w", roomLockKey, roomID, 0, err)
-	}
 	return nil
 }
 
 // delete <roomID>:**
 func (r *gameRepository) DeleteRoom(roomID string) error {
-	conn := r.conn.Get()
 	// https://blog.morugu.com/entry/2018/01/06/233402
-	_, err := conn.Do("EVAL", "return redis.call('DEL', unpack(redis.call('KEYS', ARGV[1])))", 0, roomID+":*")
+	_, err := r.conn.Eval("return redis.call('DEL', unpack(redis.call('KEYS', ARGV[1])))", []string{}, roomID+":*").Result()
+	if err != nil {
+		return xerrors.Errorf("error in DeleteRoom Eval: %w", err)
+	}
 
 	log.WithFields(log.Fields{
 		roomID: roomID,
 	}).Debug()
 
-	if err != nil {
-		return xerrors.Errorf("error in DeleteRoom HDEL %s %s %d: %w", roomLockKey, roomID, 0, err)
-	}
 	return nil
 }
 
@@ -535,48 +452,40 @@ type firestoreUser struct {
 // redis result repo のkeyの命名規則
 // <roomID>:<userID>:score
 
-func (r *gameRepository) GetScore(roomID string, userID string) (*entity.Result, error) {
-	conn := r.conn.Get()
-	key := roomID + ":" + userID + ":" + "score"
-	score, err := redis.Int64(conn.Do("GET", key))
+func (r *gameRepository) GetScore(player *entity.Player) (*entity.Result, error) {
+	key := player.RoomID + ":" + player.UserID + ":" + "score"
+	score, err := r.conn.Get(key).Int64()
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = conn.Do("EXPIRE", key, int64(r.keyTTL.Seconds()))
+	_, err = r.conn.Expire(key, r.keyTTL).Result()
 	if err != nil {
 		return nil, xerrors.Errorf("error in GetScore expire: %w", err)
 	}
 
-	return &entity.Result{UserID: userID, Score: score}, nil
+	return &entity.Result{UserID: player.UserID, Score: score}, nil
 }
 
-func (r *gameRepository) SetScore(roomID string, userID string, score int64) error {
-	conn := r.conn.Get()
-	key := roomID + ":" + userID + ":" + "score"
-	_, err := conn.Do("SET", key, score)
+func (r *gameRepository) SetScore(player *entity.Player, score int64) error {
+	key := player.RoomID + ":" + player.UserID + ":" + "score"
+	_, err := r.conn.Set(key, score, r.keyTTL).Result()
 	if err != nil {
-		return err
+		return xerrors.Errorf("error in Set(%s, %d, %d): %w", key, score, r.keyTTL, err)
 	}
 
-	_, err = conn.Do("EXPIRE", key, int64(r.keyTTL.Seconds()))
-	if err != nil {
-		return xerrors.Errorf("error in SetScore expire: %w", err)
-	}
 	return nil
 }
 
-func (r *gameRepository) IncrScoreBy(roomID string, userID string, by int64) error {
-	conn := r.conn.Get()
-	key := roomID + ":" + userID + ":" + "score"
-	_, err := conn.Do("INCRBY", key, by)
+func (r *gameRepository) IncrScoreBy(player *entity.Player, by int64) error {
+	key := player.RoomID + ":" + player.UserID + ":" + "score"
+	_, err := r.conn.IncrBy(key, by).Result()
 	if err != nil {
-		return err
+		return xerrors.Errorf("error in IncrBy(%s, %d): %w", key, by, err)
 	}
-
-	_, err = conn.Do("EXPIRE", key, int64(r.keyTTL.Seconds()))
+	_, err = r.conn.Expire(key, r.keyTTL).Result()
 	if err != nil {
-		return xerrors.Errorf("error in Incr expire: %w", err)
+		return xerrors.Errorf("error in Expire(%s, %d): %w", key, r.keyTTL, err)
 	}
 	return nil
 }

@@ -1,52 +1,53 @@
 package usecase
 
 import (
-	"github.com/google/martian/log"
 	"math"
 
 	"github.com/i-pu/word-war/server/domain/entity"
 	"github.com/i-pu/word-war/server/repository"
 	"github.com/kortemy/elo-go"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/xerrors"
 )
 
 type ResultUsecase interface {
 	// userIDはそのuserの結果
-	IncrScore(roomID string, userID string, by int64) error
-	GetScore(roomID string, userID string) (*entity.Result, error)
-	UpdateRating(roomID string, userID string) error
+	IncrScore(player *entity.Player, by int64) error
+	GetScore(player *entity.Player) (*entity.Result, error)
+	UpdateRating(player *entity.Player) error
 }
 
 type resultUsecase struct {
-	gameRepo   repository.GameRepository
+	gameRepo repository.GameRepository
 }
 
 func NewResultUsecase(gameRepo repository.GameRepository) *resultUsecase {
 	return &resultUsecase{
-		gameRepo:   gameRepo,
+		gameRepo: gameRepo,
 	}
 }
 
-func (u *resultUsecase) IncrScore(roomID string, userID string, by int64) error {
-	return u.gameRepo.IncrScoreBy(roomID, userID, by)
+func (u *resultUsecase) IncrScore(player *entity.Player, by int64) error {
+	return u.gameRepo.IncrScoreBy(player, by)
 }
 
-func (u *resultUsecase) GetScore(roomID string, userID string) (*entity.Result, error) {
-	return u.gameRepo.GetScore(roomID, userID)
+func (u *resultUsecase) GetScore(player *entity.Player) (*entity.Result, error) {
+	return u.gameRepo.GetScore(player)
 }
 
-func (u *resultUsecase) UpdateRating(roomID string, userID string) error {
+func (u *resultUsecase) UpdateRating(player *entity.Player) error {
 	// TODO: 部屋に100人いれば100回UpdateRatingが呼ばれるので部屋に固有のgoroutineを作成し、1回だけ呼ばれるようにしたい
-	users, err := u.gameRepo.GetUsers(roomID)
+	users, err := u.gameRepo.GetUserIDs(player.RoomID)
 	if err != nil {
-		return xerrors.Errorf("error in UpdateRating(%s, %s). can't gameRepo.GetUsers\n%v", roomID, userID, err)
+		return xerrors.Errorf("error in UpdateRating(%v). can't gameRepo.GetUsers\n%v", player, err)
 	}
 
 	scores := make([]int64, 0, len(users))
-	for _, user := range users {
-		score, err := u.gameRepo.GetScore(roomID, user)
+	for _, userID := range users {
+		p := &entity.Player{RoomID: player.RoomID, UserID: userID}
+		score, err := u.gameRepo.GetScore(p)
 		if err != nil {
-			return xerrors.Errorf("error in UpdateRating(%s, %s).\n%w", roomID, userID, err)
+			return xerrors.Errorf("error in UpdateRating(%v).\n%w", p, err)
 		}
 		scores = append(scores, score.Score)
 	}
@@ -57,10 +58,10 @@ func (u *resultUsecase) UpdateRating(roomID string, userID string) error {
 	}
 
 	ratings := make([]int64, 0, len(users))
-	for _, user := range users {
-		rating, err := u.gameRepo.GetLatestRating(user)
+	for _, userID := range users {
+		rating, err := u.gameRepo.GetLatestRating(userID)
 		if err != nil {
-			return xerrors.Errorf("error in UpdateRating(%s, %s). can't gameRepo.GetLatestRating(%s): %w", roomID, userID, user, err)
+			return xerrors.Errorf("error in UpdateRating(%v). can't gameRepo.GetLatestRating(%s): %w", player, userID, err)
 		}
 		ratings = append(ratings, rating)
 	}
@@ -78,10 +79,10 @@ func (u *resultUsecase) UpdateRating(roomID string, userID string) error {
 
 	for i := 0; i < len(users); i++ {
 		if err := u.gameRepo.SetRating(users[i], ratings[i]); err != nil {
-			return xerrors.Errorf("error in UpdateRating(%s, %s). can't gameRepo.SetRating(%s, %d): %w", roomID, users[i], ratings[i], err)
+			return xerrors.Errorf("error in UpdateRating(%s, %s). can't gameRepo.SetRating(%s, %d): %w", player.RoomID, users[i], ratings[i], err)
 		}
 		if err := u.gameRepo.AddRatingHistory(users[i], ratings[i]); err != nil {
-			return xerrors.Errorf("error in UpdateRating(%s, %s). can't gameRepo.AddRatingHistory(%s, %d): %w", roomID, users[i], ratings[i], err)
+			return xerrors.Errorf("error in UpdateRating(%s, %s). can't gameRepo.AddRatingHistory(%s, %d): %w", player.RoomID, users[i], ratings[i], err)
 		}
 	}
 
@@ -93,7 +94,7 @@ func (u *resultUsecase) UpdateRating(roomID string, userID string) error {
 // rating standard: 1500
 func ratingDeltasByExtendedEloRating(ratings []int64, scores []float64) ([]int64, error) {
 	if !(len(ratings) == len(scores)) {
-		xerrors.New("all args must be same length.")
+		return []int64{}, xerrors.New("all args must be same length.")
 	}
 
 	elo := elogo.NewElo()
