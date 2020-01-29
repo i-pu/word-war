@@ -30,15 +30,6 @@ func main() {
 	reflection.Register(grpcServer)
 	log.Info("Start server")
 
-	go func() {
-		for {
-			// redis の特定のキーを監視し続ける
-			// lock
-			// [roomid]:endgame
-			// unlock
-		}
-	}()
-
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}

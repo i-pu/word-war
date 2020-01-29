@@ -5,9 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/i-pu/word-war/server/domain/service"
-	"github.com/i-pu/word-war/server/interface/memory"
 	pb "github.com/i-pu/word-war/server/interface/rpc/pb"
+	"github.com/i-pu/word-war/server/repository/memory"
 	"github.com/i-pu/word-war/server/usecase"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -27,18 +26,15 @@ func (suite *GRPCTestHealthCheckSuite) SetupTest() {
 		suite.Error(err)
 	}
 	messageRepo := memory.NewMessageRepository()
-	messageService := service.NewMessageService(messageRepo)
 
 	counterRepo := memory.NewCounterRepository()
-	counterService := service.NewCounterService(counterRepo)
-	counterUsecase := usecase.NewCounterUsecase(counterRepo, counterService)
+	counterUsecase := usecase.NewCounterUsecase(counterRepo)
 
 	gameRepo := memory.NewGameStateRepository()
-	gameUsecase := usecase.NewGameUsecase(gameRepo, messageRepo, messageService, counterRepo)
+	gameUsecase := usecase.NewGameUsecase(gameRepo, messageRepo, counterRepo)
 
 	resultRepo := memory.NewResultRepository()
-	resultService := service.NewResultService(resultRepo)
-	resultUsecase := usecase.NewResultUsecase(resultRepo, gameRepo, resultService)
+	resultUsecase := usecase.NewResultUsecase(resultRepo, gameRepo)
 
 	matchingUsecase := usecase.NewMatchingUsecase(gameRepo)
 	suite.grpcServer = newWordWarService(gameUsecase, counterUsecase, resultUsecase, matchingUsecase)

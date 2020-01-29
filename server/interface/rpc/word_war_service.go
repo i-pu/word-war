@@ -3,9 +3,7 @@ package rpc
 import (
 	"context"
 	"errors"
-	"github.com/i-pu/word-war/server/domain/service"
-	"github.com/i-pu/word-war/server/interface/memory"
-	"google.golang.org/grpc"
+	"github.com/i-pu/word-war/server/repository"
 	"os"
 	"strconv"
 
@@ -14,25 +12,23 @@ import (
 	"github.com/i-pu/word-war/server/usecase"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/xerrors"
+	"google.golang.org/grpc"
 )
 
 type wordWarService struct {
 	// 個々にいろんなusecaseついかすればよさそう
 	gameUsecase     usecase.GameUsecase
-	counterUsecase  usecase.CounterUsecase
 	resultUsecase   usecase.ResultUsecase
 	matchingUsecase usecase.MatchingUsecase
 }
 
 func newWordWarService(
 	gameUsecase usecase.GameUsecase,
-	counterUsecase usecase.CounterUsecase,
 	resultUsecase usecase.ResultUsecase,
 	matchingUsecase usecase.MatchingUsecase,
 ) *wordWarService {
 	return &wordWarService{
 		gameUsecase:     gameUsecase,
-		counterUsecase:  counterUsecase,
 		resultUsecase:   resultUsecase,
 		matchingUsecase: matchingUsecase,
 	}
@@ -41,23 +37,14 @@ func newWordWarService(
 func NewGRPCServer() *grpc.Server {
 	grpcServer := grpc.NewServer()
 
-	messageRepo := memory.NewMessageRepository()
-	counterRepo := memory.NewCounterRepository()
-	resultRepo := memory.NewResultRepository()
-	gameRepo := memory.NewGameStateRepository()
-	roomRepo := memory.NewRoomRepository()
+	gameRepo := repository.NewGameRepository()
 
-	messageService := service.NewMessageService(messageRepo)
-	counterService := service.NewCounterService(counterRepo)
-	resultService := service.NewResultService(resultRepo)
-
-	counterUsecase := usecase.NewCounterUsecase(counterRepo, counterService)
-	gameUsecase := usecase.NewGameUsecase(gameRepo, messageRepo, messageService, counterRepo, resultRepo, roomRepo)
-	resultUsecase := usecase.NewResultUsecase(resultRepo, gameRepo, resultService)
+	gameUsecase := usecase.NewGameUsecase(gameRepo)
+	resultUsecase := usecase.NewResultUsecase(gameRepo)
 	// TODO: 🤔🤔🤔ユースケースとか色々名前がきもい
-	matchingUsecase := usecase.NewMatchingUsecase(gameRepo, roomRepo)
+	matchingUsecase := usecase.NewMatchingUsecase(gameRepo)
 
-	pb.RegisterWordWarServer(grpcServer, newWordWarService(gameUsecase, counterUsecase, resultUsecase, matchingUsecase))
+	pb.RegisterWordWarServer(grpcServer, newWordWarService(gameUsecase, resultUsecase, matchingUsecase))
 
 	return grpcServer
 }

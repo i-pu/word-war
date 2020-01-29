@@ -5,8 +5,7 @@ import (
 	"math"
 
 	"github.com/i-pu/word-war/server/domain/entity"
-	"github.com/i-pu/word-war/server/domain/repository"
-	"github.com/i-pu/word-war/server/domain/service"
+	"github.com/i-pu/word-war/server/repository"
 	"github.com/kortemy/elo-go"
 	"golang.org/x/xerrors"
 )
@@ -19,37 +18,33 @@ type ResultUsecase interface {
 }
 
 type resultUsecase struct {
-	resultRepo    repository.ResultRepository
-	gameStateRepo repository.GameStateRepository
-	service       *service.ResultService
+	gameRepo   repository.GameRepository
 }
 
-func NewResultUsecase(resultRepo repository.ResultRepository, gameStateRepo repository.GameStateRepository, service *service.ResultService) *resultUsecase {
+func NewResultUsecase(gameRepo repository.GameRepository) *resultUsecase {
 	return &resultUsecase{
-		resultRepo:    resultRepo,
-		gameStateRepo: gameStateRepo,
-		service:       service,
+		gameRepo:   gameRepo,
 	}
 }
 
 func (u *resultUsecase) IncrScore(roomID string, userID string, by int64) error {
-	return u.resultRepo.IncrScoreBy(roomID, userID, by)
+	return u.gameRepo.IncrScoreBy(roomID, userID, by)
 }
 
 func (u *resultUsecase) GetScore(roomID string, userID string) (*entity.Result, error) {
-	return u.resultRepo.GetScore(roomID, userID)
+	return u.gameRepo.GetScore(roomID, userID)
 }
 
 func (u *resultUsecase) UpdateRating(roomID string, userID string) error {
 	// TODO: 部屋に100人いれば100回UpdateRatingが呼ばれるので部屋に固有のgoroutineを作成し、1回だけ呼ばれるようにしたい
-	users, err := u.gameStateRepo.GetUsers(roomID)
+	users, err := u.gameRepo.GetUsers(roomID)
 	if err != nil {
-		return xerrors.Errorf("error in UpdateRating(%s, %s). can't gameStateRepo.GetUsers\n%v", roomID, userID, err)
+		return xerrors.Errorf("error in UpdateRating(%s, %s). can't gameRepo.GetUsers\n%v", roomID, userID, err)
 	}
 
 	scores := make([]int64, 0, len(users))
 	for _, user := range users {
-		score, err := u.resultRepo.GetScore(roomID, user)
+		score, err := u.gameRepo.GetScore(roomID, user)
 		if err != nil {
 			return xerrors.Errorf("error in UpdateRating(%s, %s).\n%w", roomID, userID, err)
 		}
@@ -63,9 +58,9 @@ func (u *resultUsecase) UpdateRating(roomID string, userID string) error {
 
 	ratings := make([]int64, 0, len(users))
 	for _, user := range users {
-		rating, err := u.resultRepo.GetLatestRating(user)
+		rating, err := u.gameRepo.GetLatestRating(user)
 		if err != nil {
-			return xerrors.Errorf("error in UpdateRating(%s, %s). can't resultRepo.GetLatestRating(%s): %w", roomID, userID, user, err)
+			return xerrors.Errorf("error in UpdateRating(%s, %s). can't gameRepo.GetLatestRating(%s): %w", roomID, userID, user, err)
 		}
 		ratings = append(ratings, rating)
 	}
@@ -82,11 +77,11 @@ func (u *resultUsecase) UpdateRating(roomID string, userID string) error {
 	}
 
 	for i := 0; i < len(users); i++ {
-		if err := u.resultRepo.SetRating(users[i], ratings[i]); err != nil {
-			return xerrors.Errorf("error in UpdateRating(%s, %s). can't resultRepo.SetRating(%s, %d): %w", roomID, users[i], ratings[i], err)
+		if err := u.gameRepo.SetRating(users[i], ratings[i]); err != nil {
+			return xerrors.Errorf("error in UpdateRating(%s, %s). can't gameRepo.SetRating(%s, %d): %w", roomID, users[i], ratings[i], err)
 		}
-		if err := u.resultRepo.AddRatingHistory(users[i], ratings[i]); err != nil {
-			return xerrors.Errorf("error in UpdateRating(%s, %s). can't resultRepo.AddRatingHistory(%s, %d): %w", roomID, users[i], ratings[i], err)
+		if err := u.gameRepo.AddRatingHistory(users[i], ratings[i]); err != nil {
+			return xerrors.Errorf("error in UpdateRating(%s, %s). can't gameRepo.AddRatingHistory(%s, %d): %w", roomID, users[i], ratings[i], err)
 		}
 	}
 
