@@ -14,7 +14,7 @@ type ResultUsecase interface {
 	// userIDはそのuserの結果
 	IncrScore(player *entity.Player, by int64) error
 	GetScore(player *entity.Player) (*entity.Result, error)
-	UpdateRating(player *entity.Player) error
+	UpdateRating(room *entity.Room) error
 }
 
 type resultUsecase struct {
@@ -35,16 +35,15 @@ func (u *resultUsecase) GetScore(player *entity.Player) (*entity.Result, error) 
 	return u.roomRepo.GetScore(player)
 }
 
-func (u *resultUsecase) UpdateRating(player *entity.Player) error {
-	// TODO: 部屋に100人いれば100回UpdateRatingが呼ばれるので部屋に固有のgoroutineを作成し、1回だけ呼ばれるようにしたい
-	users, err := u.roomRepo.GetUserIDs(player.RoomID)
+func (u *resultUsecase) UpdateRating(room *entity.Room) error {
+	users, err := u.roomRepo.GetUserIDs(room.RoomID)
 	if err != nil {
-		return xerrors.Errorf("error in UpdateRating(%v). can't roomRepo.GetUsers\n%v", player, err)
+		return xerrors.Errorf("error in UpdateRating(%v). can't roomRepo.GetUsers(%s)\n%v", room, room.RoomID, err)
 	}
 
 	scores := make([]int64, 0, len(users))
 	for _, userID := range users {
-		p := &entity.Player{RoomID: player.RoomID, UserID: userID}
+		p := &entity.Player{RoomID: room.RoomID, UserID: userID}
 		score, err := u.roomRepo.GetScore(p)
 		if err != nil {
 			return xerrors.Errorf("error in UpdateRating(%v).\n%w", p, err)
@@ -61,7 +60,7 @@ func (u *resultUsecase) UpdateRating(player *entity.Player) error {
 	for _, userID := range users {
 		rating, err := u.roomRepo.GetLatestRating(userID)
 		if err != nil {
-			return xerrors.Errorf("error in UpdateRating(%v). can't roomRepo.GetLatestRating(%s): %w", player, userID, err)
+			return xerrors.Errorf("error in UpdateRating(%v). can't roomRepo.GetLatestRating(%s): %w", room, userID, err)
 		}
 		ratings = append(ratings, rating)
 	}
@@ -72,17 +71,18 @@ func (u *resultUsecase) UpdateRating(player *entity.Player) error {
 		return xerrors.Errorf("%v", err)
 	}
 
+	log.Debug("[Rating Result]")
 	for i := 0; i < len(ratingDeltas); i++ {
-		log.Debugf("[%d] %d(%d)", i, ratings[i], ratingDeltas[i])
+		log.Debugf("Player %d: %d(%d)", users[i], ratings[i], ratingDeltas[i])
 		ratings[i] += ratingDeltas[i]
 	}
 
 	for i := 0; i < len(users); i++ {
 		if err := u.roomRepo.SetRating(users[i], ratings[i]); err != nil {
-			return xerrors.Errorf("error in UpdateRating(%s, %s). can't roomRepo.SetRating(%s, %d): %w", player.RoomID, users[i], ratings[i], err)
+			return xerrors.Errorf("error in UpdateRating(%s, %s). can't roomRepo.SetRating(%s, %d): %w", room.RoomID, users[i], ratings[i], err)
 		}
 		if err := u.roomRepo.AddRatingHistory(users[i], ratings[i]); err != nil {
-			return xerrors.Errorf("error in UpdateRating(%s, %s). can't roomRepo.AddRatingHistory(%s, %d): %w", player.RoomID, users[i], ratings[i], err)
+			return xerrors.Errorf("error in UpdateRating(%s, %s). can't roomRepo.AddRatingHistory(%s, %d): %w", room.RoomID, users[i], ratings[i], err)
 		}
 	}
 
@@ -103,9 +103,9 @@ func ratingDeltasByExtendedEloRating(ratings []int64, scores []float64) ([]int64
 		for j := i + 1; j < len(scores); j++ {
 			// normalized score
 			relScoreI := (scores[i] - scores[j] + 1) / 2
-			deltas[i] += int64(elo.RatingDelta(int(ratings[i]), int(ratings[j]), relScoreI))
-			relScoreJ := (scores[j] - scores[i] + 1) / 2
-			deltas[j] += int64(elo.RatingDelta(int(ratings[i]), int(ratings[j]), relScoreJ))
+			outcomeI, outcomeJ := elo.Outcome(int(ratings[i]), int(ratings[j]), relScoreI)
+			deltas[i] += int64(outcomeI.Delta)
+			deltas[j] += int64(outcomeJ.Delta)
 		}
 	}
 

@@ -142,7 +142,6 @@ func (m *SayResponse) GetValid() bool {
 	return false
 }
 
-// 新しくroomを作成する
 type MatchingRequest struct {
 	UserId               string   `protobuf:"bytes,1,opt,name=userId,proto3" json:"userId,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -182,7 +181,6 @@ func (m *MatchingRequest) GetUserId() string {
 	return ""
 }
 
-// TODO: ここにへやのメンバーなどの情報がはいる
 type MatchingResponse struct {
 	RoomId               string   `protobuf:"bytes,1,opt,name=roomId,proto3" json:"roomId,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -458,8 +456,7 @@ func (m *HealthCheckRequest) XXX_DiscardUnknown() {
 var xxx_messageInfo_HealthCheckRequest proto.InternalMessageInfo
 
 type HealthCheckResponse struct {
-	Active bool `protobuf:"varint,1,opt,name=active,proto3" json:"active,omitempty"`
-	// v1.1
+	Active               bool     `protobuf:"varint,1,opt,name=active,proto3" json:"active,omitempty"`
 	ServerVersion        string   `protobuf:"bytes,2,opt,name=serverVersion,proto3" json:"serverVersion,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -550,11 +547,11 @@ var fileDescriptor_9e6bc0bf977bdab9 = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConn
+var _ grpc.ClientConnInterface
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion4
+const _ = grpc.SupportPackageIsVersion6
 
 // WordWarClient is the client API for WordWar service.
 //
@@ -568,10 +565,10 @@ type WordWarClient interface {
 }
 
 type wordWarClient struct {
-	cc *grpc.ClientConn
+	cc grpc.ClientConnInterface
 }
 
-func NewWordWarClient(cc *grpc.ClientConn) WordWarClient {
+func NewWordWarClient(cc grpc.ClientConnInterface) WordWarClient {
 	return &wordWarClient{cc}
 }
 

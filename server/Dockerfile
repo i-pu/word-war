@@ -27,13 +27,8 @@ COPY . .
 
 COPY --from=dic /word.txt /
 
-# https://studygolang.com/topics/5954
-# enable cgo
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /go/bin/app
 
-# [TODO] Hot reload
-# RUN go get github.com/oxequa/realize
-# CMD ["realize start"]
 EXPOSE 50051
 
 WORKDIR /

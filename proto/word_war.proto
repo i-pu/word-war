@@ -23,16 +23,12 @@ message SayResponse {
   bool valid = 4;
 }
 
-// 新しくroomを作成する
 message MatchingRequest {
   string userId = 1;
 }
 
-// TODO: ここにへやのメンバーなどの情報がはいる
 message MatchingResponse {
   string roomId = 1;
-  // member
-  // repeat member []string = 2;
 }
 
 message GameRequest {
@@ -44,8 +40,6 @@ message GameResponse {
   string userId = 1;
   string message = 2;
   string roomId = 3;
-  // TODO: 無効なmessageもレスポンスとして返して、client側でほかのひとこんなの言ってたよアニメーションを流してもいいかも
-  // TODO: bool valid =  4;
 }
 
 message ResultRequest {
@@ -62,6 +56,5 @@ message ResultResponse {
 message HealthCheckRequest {}
 message HealthCheckResponse {
   bool active = 1;
-  // v1.1
   string serverVersion = 2;
 }

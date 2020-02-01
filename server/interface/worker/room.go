@@ -2,6 +2,10 @@ package worker
 
 import (
 	"fmt"
+	"github.com/i-pu/word-war/server/repository"
+	"github.com/i-pu/word-war/server/usecase"
+	"golang.org/x/xerrors"
+	
 	"os"
 	"time"
 
@@ -35,16 +39,29 @@ func Worker() {
 	fmt.Println("after work")
 }
 
+
 func Start(queue string, args ...interface{}) error {
 	b, _ := json.Marshal(&args[0])
 	var room entity.Room
 	_ = json.Unmarshal(b, &room)
 
-	log.Infof("Hello from Worker %+v", room)
+	// new room usecase
+	r := usecase.NewRoomUsecase(repository.NewRoomRepository())
 
-	time.Sleep(time.Second * 5)
+	limit := time.Second * 10
+	if err := r.StartGame(&room, limit); err != nil {
+		return xerrors.Errorf("StartGame(%+v, %s): %w", room, limit, err)
+	}
+	log.Debug("timer done")
 
-	log.Infof("GoodBye from Worker %+v", room)
+	resultUsecase := usecase.NewResultUsecase(repository.NewRoomRepository())
+	if err := resultUsecase.UpdateRating(&room); err != nil {
+		return xerrors.Errorf("UpdateRating(%+v): %w", room, err)
+	}
+	log.Debug("done updateRating")
 
+	if err := r.EndGame(&room); err != nil {
+		return xerrors.Errorf("EndGame(%+v): %w", room, err)
+	}
 	return nil
 }

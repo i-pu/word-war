@@ -11,3 +11,8 @@ setup.server.dev:
 teardown.server.dev:
 	docker-compose down
 
+.PHONY: protoc-gen
+protoc-gen:
+	go get -u github.com/golang/protobuf/protoc-gen-go
+	./protoc-gen.sh
+

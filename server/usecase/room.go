@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"regexp"
+	"time"
 
 	"github.com/i-pu/word-war/server/domain/entity"
 	"github.com/i-pu/word-war/server/repository"
@@ -11,13 +12,18 @@ import (
 )
 
 type RoomUsecase interface {
+	// from worker
+	StartGame(room *entity.Room, limit time.Duration) error
+	EndGame(room *entity.Room) error
+
 	InitUser(player *entity.Player) error
-	CleanPlayer(player *entity.Player) error
 	TryUpdateWord(message *entity.Message) (*entity.Room, error)
 	SendMessage(message *entity.Message) error
+
 	GetMessageChan(ctx context.Context, roomID string) (<-chan *entity.Message, <-chan error)
 	GetCurrentMessage(roomID string) (*entity.Message, error)
-	GetCounter(roomID string) (int64, error)
+
+	GetTimer(room *entity.Room) (context.Context, error)
 }
 
 type roomUsecase struct {
@@ -28,15 +34,6 @@ func NewRoomUsecase(roomRepo repository.RoomRepository) *roomUsecase {
 	return &roomUsecase{
 		roomRepo: roomRepo,
 	}
-}
-
-// ユーザのゲーム中のデータを削除する。
-// 最後のユーザは部屋をきれいにする。複数回読んでも問題ない。resultから呼ばれる
-func (u *roomUsecase) CleanPlayer(player *entity.Player) error {
-	if err := u.roomRepo.DeletePlayer(player); err != nil {
-		return xerrors.Errorf("error roomRepo. CleanPlayer(%+v): %w", player, err)
-	}
-	return nil
 }
 
 // stringは日本語を期待する
@@ -83,7 +80,6 @@ func (u *roomUsecase) TryUpdateWord(message *entity.Message) (*entity.Room, erro
 		)
 	}
 
-	// TODO: 伸ばし棒終わったらそのまえの文字を最後の文字とする
 	r := regexp.MustCompile(`^[\p{Hiragana}ー]+$`)
 	if !r.Match([]byte(message.Message)) {
 		log.WithFields(log.Fields{
@@ -117,13 +113,6 @@ func (u *roomUsecase) TryUpdateWord(message *entity.Message) (*entity.Room, erro
 		return nil, xerrors.Errorf(
 			"TryUpdateWord can't UpdateCurrentWord(%+v): %w",
 			message,
-			err,
-		)
-	}
-
-	if _, err := u.roomRepo.IncrCounter(message.RoomID); err != nil {
-		return nil, xerrors.Errorf("TryUpdateWord can't IncrCounter(%s): %w",
-			message.RoomID,
 			err,
 		)
 	}
@@ -164,6 +153,22 @@ func (u *roomUsecase) GetCurrentMessage(roomID string) (*entity.Message, error) 
 	return mes, nil
 }
 
-func (u *roomUsecase) GetCounter(roomID string) (int64, error) {
-	return u.roomRepo.GetCounter(roomID)
+func (u *roomUsecase) GetTimer(room *entity.Room) (context.Context, error) {
+	return u.roomRepo.SubscribeTimer(room)
+}
+
+func (u *roomUsecase) StartGame(room *entity.Room, limit time.Duration) error {
+	log.Infof("StartGame: %v, %v", room, limit)
+
+	time.Sleep(limit)
+	// notify end
+	if err := u.roomRepo.PublishTimer(room); err != nil {
+		return xerrors.Errorf("PublishTimer(%+v): %w", room, err)
+	}
+	return nil
+}
+
+func (u *roomUsecase) EndGame(room *entity.Room) error {
+	log.Infof("EndGame %+v", room)
+	return u.roomRepo.CleanRoom(room)
 }

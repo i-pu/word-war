@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"github.com/benmanns/goworker"
 	"github.com/i-pu/word-war/server/domain/entity"
 	"github.com/i-pu/word-war/server/repository"
 	log "github.com/sirupsen/logrus"
@@ -60,8 +61,6 @@ func (u matchingUsecase) TryEnterRandomRoom(userID string) (*entity.Room, error)
 		}
 
 		userIDs, _ := u.roomRepo.GetUserIDs(roomID)
-		// TODO: 待機画面のことを考える。今は空いている部屋があればすぐにroomIDを返すようになっているが、
-		// matching rpcをgrpcのstreamで返すようにすれば待機することができるかも
 		if len(userIDs) == 4 {
 			if err := u.roomRepo.DeleteRoomCandidateID(roomID); err != nil {
 				return nil, xerrors.Errorf("DeleteRoomCandidateID(%s) error: %w", roomID, err)
@@ -78,7 +77,6 @@ func (u matchingUsecase) TryEnterRandomRoom(userID string) (*entity.Room, error)
 	}
 }
 
-// TODO: RoomIdがかぶった場合などすでに部屋が存在した場合はもう一度作成するようにする
 func (u matchingUsecase) CreateRoom(userID string) (*entity.Room, error) {
 	room, err := u.roomRepo.CreateRoom()
 	if err != nil {
@@ -94,7 +92,17 @@ func (u matchingUsecase) CreateRoom(userID string) (*entity.Room, error) {
 		return nil, xerrors.Errorf("AddUser(%+v) error: %w", player, err)
 	}
 
-	// workerにenqueueする
-	u.roomRepo.StartRoom(room)
+	// enqueue
+	err = goworker.Enqueue(&goworker.Job{
+		Queue: "rooms",
+		Payload: goworker.Payload{
+			Class: "Room",
+			Args:  []interface{}{room},
+		},
+	})
+	if err != nil {
+		log.Error(xerrors.Errorf("goworker.Enqueue room: %w", err))
+	}
+	log.Debug("Enqueue job")
 	return room, nil
 }

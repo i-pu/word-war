@@ -91,8 +91,6 @@ func (s *wordWarService) Matching(ctx context.Context, in *pb.MatchingRequest) (
 	return ret, nil
 }
 
-// TODO: だめなメッセージも全員に送るようにしてクライアントで処理してもらう
-// TODO: 2回同じ単語はだめなので、履歴を保存して検査する
 func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) error {
 	err := s.roomUsecase.InitUser(&entity.Player{RoomID: in.RoomId, UserID: in.UserId})
 	if err != nil {
@@ -103,16 +101,7 @@ func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) err
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	// childのcontext荷関数が終了することを教えてあげる
-	defer func() {
-		if err := s.resultUsecase.UpdateRating(&entity.Player{RoomID: in.RoomId, UserID: in.UserId}); err != nil {
-			log.WithFields(log.Fields{
-				"roomId": in.RoomId,
-				"userId": in.UserId,
-			}).Fatal(xerrors.Errorf("error in resultUsecase.UpdateRating: %w", err))
-		}
-		cancel()
-	}()
+	defer cancel()
 
 	// 今の単語を教えてあげる
 	mes, err := s.roomUsecase.GetCurrentMessage(in.RoomId)
@@ -124,6 +113,7 @@ func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) err
 	}
 
 	messageChan, errChan := s.roomUsecase.GetMessageChan(ctx, in.RoomId)
+	timerCtx, err := s.roomUsecase.GetTimer(&entity.Room{RoomID: in.RoomId})
 	for {
 		select {
 		case message, ok := <-messageChan:
@@ -133,20 +123,6 @@ func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) err
 				}).Info("already close messageChan.")
 				return nil
 			}
-			counter, err := s.roomUsecase.GetCounter(mes.RoomID)
-			if err != nil {
-				return xerrors.Errorf("Game rpc can't Send. roomId: %v, userId: %v. : %w", in.RoomId, in.UserId, err)
-			}
-
-			if counter > 10 {
-				// 終了処理
-				log.WithFields(log.Fields{
-					"roomId":  mes.RoomID,
-					"counter": counter,
-				}).Info("Finish game in GetMessageChan.")
-				return nil
-			}
-
 			res := &pb.GameResponse{
 				UserId:  message.UserID,
 				Message: message.Message,
@@ -164,6 +140,12 @@ func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) err
 				return nil
 			}
 			log.Error(xerrors.Errorf("error in game rpc: %w", err))
+
+		case <-timerCtx.Done():
+			log.WithFields(log.Fields{
+				"roomID": in.RoomId,
+			}).Info("Finish game in timerCtx.")
+			return nil
 		}
 	}
 }
@@ -194,7 +176,6 @@ func (s *wordWarService) Say(ctx context.Context, in *pb.SayRequest) (*pb.SayRes
 
 	res := &pb.SayResponse{Valid: true, UserId: in.UserId, Message: in.Message, RoomId: in.RoomId}
 
-	// TODO: 文字の長さが長かったら得点大にしたい、思考時間とかも考慮して点数を変えたい
 	err = s.resultUsecase.IncrScore(&entity.Player{RoomID: in.RoomId, UserID: in.UserId}, 5)
 	if err != nil {
 		return nil, xerrors.Errorf("Say rpc can't IncrScore. roomId: %v, userId: %v. : %w", in.RoomId, in.UserId, err)
@@ -203,15 +184,7 @@ func (s *wordWarService) Say(ctx context.Context, in *pb.SayRequest) (*pb.SayRes
 	return res, nil
 }
 
-// 結果を取得する
-// TODO: workerに計算処理を任せる
 func (s *wordWarService) Result(ctx context.Context, in *pb.ResultRequest) (*pb.ResultResponse, error) {
-	defer func() {
-		if err := s.roomUsecase.CleanPlayer(&entity.Player{RoomID: in.RoomId, UserID: in.UserId}); err != nil {
-			panic(xerrors.Errorf("error CleanRoom(%s, %s): %w", in.RoomId, in.UserId, err))
-		}
-	}()
-
 	result, err := s.resultUsecase.GetScore(&entity.Player{RoomID: in.RoomId, UserID: in.UserId})
 	if err != nil {
 		return nil, xerrors.Errorf("Result rpc can't GetScore. roomId: %v, userId: %v. : %w", in.RoomId, in.UserId, err)

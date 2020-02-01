@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/go-redis/redis"
 	"math/rand"
 	"os"
 	"time"
@@ -12,8 +13,6 @@ import (
 
 	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go"
-	"github.com/benmanns/goworker"
-	"github.com/go-redis/redis"
 	"github.com/i-pu/word-war/server/domain/entity"
 	"github.com/i-pu/word-war/server/external"
 	log "github.com/sirupsen/logrus"
@@ -34,12 +33,6 @@ type RoomRepository interface {
 	// user
 	AddPlayer(player *entity.Player) error
 	GetUserIDs(roomID string) ([]string, error)
-	DeletePlayer(player *entity.Player) error
-
-	// counter
-	IncrCounter(roomID string) (int64, error)
-	SetCounter(roomID string, value int64) error
-	GetCounter(roomID string) (int64, error)
 
 	// message
 	Publish(message *entity.Message) error
@@ -53,8 +46,11 @@ type RoomRepository interface {
 	// room
 	GetRoom(roomID string) (*entity.Room, error)
 	CreateRoom() (*entity.Room, error)
-	StartRoom(room *entity.Room)
 	CleanRoom(player *entity.Room) error
+
+	// timer
+	PublishTimer(room *entity.Room) error
+	SubscribeTimer(room *entity.Room) (context.Context, error)
 
 	// score
 	GetScore(player *entity.Player) (*entity.Result, error)
@@ -205,17 +201,6 @@ func (r *roomRepository) GetUserIDs(roomID string) ([]string, error) {
 	return users, nil
 }
 
-// delete hash key from '<roomID>:users'
-func (r *roomRepository) DeletePlayer(player *entity.Player) error {
-	key := player.RoomID + ":users"
-	err := r.conn.HDel(key, player.UserID).Err()
-	if err != nil {
-		return xerrors.Errorf("error in DeletePlayer %+v: %w", player, err)
-	}
-	log.Debugf("DeletePlayer: %+v", player)
-	return nil
-}
-
 // delete '<room>:*'
 func (r *roomRepository) CleanRoom(room *entity.Room) error {
 	log.Debugf("called CleanRoom. room: %+v", room)
@@ -232,42 +217,6 @@ func (r *roomRepository) CleanRoom(room *entity.Room) error {
 
 	log.Debugf("done CleanRoom. room: %+v", room)
 	return nil
-}
-
-func (r *roomRepository) IncrCounter(roomID string) (int64, error) {
-	key := roomID + ":counter"
-	value, err := r.conn.Incr(key).Result()
-	if err != nil {
-		return -1, xerrors.Errorf("error in incr counter: %w", err)
-	}
-
-	err = r.conn.Expire(key, r.keyTTL).Err()
-	if err != nil {
-		return -1, xerrors.Errorf("error in IncrCounter expire: %w", err)
-	}
-	return value, nil
-}
-
-func (r *roomRepository) SetCounter(roomID string, value int64) error {
-	key := roomID + ":counter"
-	err := r.conn.Set(key, value, r.keyTTL).Err()
-	if err != nil {
-		return xerrors.Errorf("error in set counter: %w", err)
-	}
-	return nil
-}
-
-func (r *roomRepository) GetCounter(roomID string) (int64, error) {
-	key := roomID + ":counter"
-	value, err := r.conn.Get(key).Int64()
-	if err != nil {
-		return -1, xerrors.Errorf("error in main method: %w", err)
-	}
-	err = r.conn.Expire(key, r.keyTTL).Err()
-	if err != nil {
-		return -1, xerrors.Errorf("error in GetCounter expire: %w", err)
-	}
-	return value, nil
 }
 
 func (r *roomRepository) Publish(message *entity.Message) error {
@@ -331,16 +280,6 @@ func (r *roomRepository) Subscribe(ctx context.Context, roomID string) (<-chan *
 			case v, ok := <-pubSubChan:
 				if !ok {
 					return
-				}
-				if v != nil {
-					log.WithFields(log.Fields{
-						"v.String()": v.String(),
-						"v.Payload":  v.Payload,
-						"v.Channel":  v.Channel,
-						"v.Pattern":  v.Pattern,
-					}).Debug("value of pubSub message:")
-				} else {
-					log.Debug("value of pubSub message is nil!!!")
 				}
 				var message entity.Message
 				if err := json.Unmarshal([]byte(v.Payload), &message); err != nil {
@@ -435,7 +374,6 @@ func (r *roomRepository) GetRoom(roomID string) (*entity.Room, error) {
 func (r *roomRepository) CreateRoom() (*entity.Room, error) {
 	roomID := fmt.Sprintf("%d", rand.Intn(90000)+10000)
 
-	// TODO: だれ
 	initialMessage := &entity.Message{
 		Message: "しりとり",
 		UserID:  "unknown",
@@ -452,21 +390,6 @@ func (r *roomRepository) CreateRoom() (*entity.Room, error) {
 	log.Debugf("CreateRoom ID: %v", roomID)
 
 	return room, nil
-}
-
-func (r *roomRepository) StartRoom(room *entity.Room) {
-	log.Debugf("StartRoom %v", room)
-
-	err := goworker.Enqueue(&goworker.Job{
-		Queue: "rooms",
-		Payload: goworker.Payload{
-			Class: "Room",
-			Args:  []interface{}{room},
-		},
-	})
-	if err != nil {
-		log.Error(err)
-	}
 }
 
 func (r *roomRepository) GetScore(player *entity.Player) (*entity.Result, error) {
@@ -508,7 +431,6 @@ func (r *roomRepository) IncrScoreBy(player *entity.Player, by int64) error {
 }
 
 func (r *roomRepository) GetLatestRating(userID string) (int64, error) {
-	// TODO get only users.<id>.rating
 	ctx := context.Background()
 	client := external.GetFirestore()
 	defer func() {
@@ -584,4 +506,61 @@ func (r *roomRepository) AddRatingHistory(userID string, rating int64) error {
 	}
 
 	return nil
+}
+
+func (r *roomRepository) PublishTimer(room *entity.Room) error {
+	key := room.RoomID + ":timer"
+
+	err := r.conn.Publish(key, 0).Err()
+
+	if err != nil {
+		return xerrors.Errorf("error in redis publish: %w", err)
+	}
+
+	err = r.conn.Expire(key, r.keyTTL).Err()
+	if err != nil {
+		return xerrors.Errorf("error in Publish expire: %w", err)
+	}
+
+	log.WithFields(log.Fields{
+		"roomId": room.RoomID,
+	}).Info("PublishTimer")
+
+	return nil
+}
+
+func (r *roomRepository) SubscribeTimer(room *entity.Room) (context.Context, error) {
+	pubSub := r.conn.Subscribe(room.RoomID + ":timer")
+	_, err := pubSub.Receive()
+	if err != nil {
+		panic(err)
+	}
+
+	pubSubChan := pubSub.Channel()
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		defer func() {
+			if err := pubSub.Close(); err != nil {
+				panic(xerrors.Errorf("error in subscribe: %w", err))
+			}
+		}()
+
+		for {
+			select {
+			case v, ok := <-pubSubChan:
+				if !ok {
+					log.Warn("pubSubChan is closed")
+					return
+				}
+				if v != nil {
+					log.Debug(v.Payload)
+				} else {
+					log.Debug("v is nil")
+				}
+				cancel()
+				return
+			}
+		}
+	}()
+	return ctx, nil
 }
