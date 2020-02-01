@@ -18,34 +18,34 @@ type ResultUsecase interface {
 }
 
 type resultUsecase struct {
-	gameRepo repository.GameRepository
+	roomRepo repository.RoomRepository
 }
 
-func NewResultUsecase(gameRepo repository.GameRepository) *resultUsecase {
+func NewResultUsecase(roomRepo repository.RoomRepository) *resultUsecase {
 	return &resultUsecase{
-		gameRepo: gameRepo,
+		roomRepo: roomRepo,
 	}
 }
 
 func (u *resultUsecase) IncrScore(player *entity.Player, by int64) error {
-	return u.gameRepo.IncrScoreBy(player, by)
+	return u.roomRepo.IncrScoreBy(player, by)
 }
 
 func (u *resultUsecase) GetScore(player *entity.Player) (*entity.Result, error) {
-	return u.gameRepo.GetScore(player)
+	return u.roomRepo.GetScore(player)
 }
 
 func (u *resultUsecase) UpdateRating(player *entity.Player) error {
 	// TODO: 部屋に100人いれば100回UpdateRatingが呼ばれるので部屋に固有のgoroutineを作成し、1回だけ呼ばれるようにしたい
-	users, err := u.gameRepo.GetUserIDs(player.RoomID)
+	users, err := u.roomRepo.GetUserIDs(player.RoomID)
 	if err != nil {
-		return xerrors.Errorf("error in UpdateRating(%v). can't gameRepo.GetUsers\n%v", player, err)
+		return xerrors.Errorf("error in UpdateRating(%v). can't roomRepo.GetUsers\n%v", player, err)
 	}
 
 	scores := make([]int64, 0, len(users))
 	for _, userID := range users {
 		p := &entity.Player{RoomID: player.RoomID, UserID: userID}
-		score, err := u.gameRepo.GetScore(p)
+		score, err := u.roomRepo.GetScore(p)
 		if err != nil {
 			return xerrors.Errorf("error in UpdateRating(%v).\n%w", p, err)
 		}
@@ -59,9 +59,9 @@ func (u *resultUsecase) UpdateRating(player *entity.Player) error {
 
 	ratings := make([]int64, 0, len(users))
 	for _, userID := range users {
-		rating, err := u.gameRepo.GetLatestRating(userID)
+		rating, err := u.roomRepo.GetLatestRating(userID)
 		if err != nil {
-			return xerrors.Errorf("error in UpdateRating(%v). can't gameRepo.GetLatestRating(%s): %w", player, userID, err)
+			return xerrors.Errorf("error in UpdateRating(%v). can't roomRepo.GetLatestRating(%s): %w", player, userID, err)
 		}
 		ratings = append(ratings, rating)
 	}
@@ -78,11 +78,11 @@ func (u *resultUsecase) UpdateRating(player *entity.Player) error {
 	}
 
 	for i := 0; i < len(users); i++ {
-		if err := u.gameRepo.SetRating(users[i], ratings[i]); err != nil {
-			return xerrors.Errorf("error in UpdateRating(%s, %s). can't gameRepo.SetRating(%s, %d): %w", player.RoomID, users[i], ratings[i], err)
+		if err := u.roomRepo.SetRating(users[i], ratings[i]); err != nil {
+			return xerrors.Errorf("error in UpdateRating(%s, %s). can't roomRepo.SetRating(%s, %d): %w", player.RoomID, users[i], ratings[i], err)
 		}
-		if err := u.gameRepo.AddRatingHistory(users[i], ratings[i]); err != nil {
-			return xerrors.Errorf("error in UpdateRating(%s, %s). can't gameRepo.AddRatingHistory(%s, %d): %w", player.RoomID, users[i], ratings[i], err)
+		if err := u.roomRepo.AddRatingHistory(users[i], ratings[i]); err != nil {
+			return xerrors.Errorf("error in UpdateRating(%s, %s). can't roomRepo.AddRatingHistory(%s, %d): %w", player.RoomID, users[i], ratings[i], err)
 		}
 	}
 

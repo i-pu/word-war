@@ -31,7 +31,7 @@ func (suite *GRPCTestHealthCheckSuite) SetupTest() {
 	counterUsecase := usecase.NewCounterUsecase(counterRepo)
 
 	gameRepo := memory.NewGameStateRepository()
-	gameUsecase := usecase.NewGameUsecase(gameRepo, messageRepo, counterRepo)
+	gameUsecase := usecase.NewRoomUsecase(gameRepo, messageRepo, counterRepo)
 
 	resultRepo := memory.NewResultRepository()
 	resultUsecase := usecase.NewResultUsecase(resultRepo, gameRepo)

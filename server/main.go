@@ -4,8 +4,10 @@ import (
 	"net"
 	"os"
 
+	"github.com/benmanns/goworker"
 	"github.com/i-pu/word-war/server/external"
 	"github.com/i-pu/word-war/server/interface/rpc"
+	"github.com/i-pu/word-war/server/interface/worker"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/reflection"
 )
@@ -26,10 +28,14 @@ func main() {
 
 	setUpExternal()
 
+	go worker.Worker()
+	defer goworker.Close()
+
 	grpcServer := rpc.NewGRPCServer()
 	reflection.Register(grpcServer)
 	log.Info("Start server")
 
+	defer grpcServer.Stop()
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
@@ -39,3 +45,4 @@ func setUpExternal() {
 	external.InitRedis()
 	external.InitFirebase()
 }
+
