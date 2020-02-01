@@ -13,6 +13,5 @@ teardown.server.dev:
 
 .PHONY: protoc-gen
 protoc-gen:
-	go get -u github.com/golang/protobuf/protoc-gen-go
 	./protoc-gen.sh
 

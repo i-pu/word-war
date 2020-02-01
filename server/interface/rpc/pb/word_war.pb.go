@@ -547,11 +547,11 @@ var fileDescriptor_9e6bc0bf977bdab9 = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConnInterface
+var _ grpc.ClientConn
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
+const _ = grpc.SupportPackageIsVersion4
 
 // WordWarClient is the client API for WordWar service.
 //
@@ -565,10 +565,10 @@ type WordWarClient interface {
 }
 
 type wordWarClient struct {
-	cc grpc.ClientConnInterface
+	cc *grpc.ClientConn
 }
 
-func NewWordWarClient(cc grpc.ClientConnInterface) WordWarClient {
+func NewWordWarClient(cc *grpc.ClientConn) WordWarClient {
 	return &wordWarClient{cc}
 }
 
