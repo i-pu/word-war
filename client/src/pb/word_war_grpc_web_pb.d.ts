@@ -19,9 +19,7 @@ export class WordWarClient {
 
   matching(
     request: MatchingRequest,
-    metadata: grpcWeb.Metadata | undefined,
-    callback: (err: grpcWeb.Error,
-               response: MatchingResponse) => void
+    metadata?: grpcWeb.Metadata
   ): grpcWeb.ClientReadableStream<MatchingResponse>;
 
   say(
@@ -60,7 +58,7 @@ export class WordWarPromiseClient {
   matching(
     request: MatchingRequest,
     metadata?: grpcWeb.Metadata
-  ): Promise<MatchingResponse>;
+  ): grpcWeb.ClientReadableStream<MatchingResponse>;
 
   say(
     request: SayRequest,

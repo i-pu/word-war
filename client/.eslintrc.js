@@ -3,11 +3,11 @@ module.exports = {
   env: {
     node: true
   },
-  extends: [
-    'plugin:vue/recommended', 
-    '@vue/prettier', 
-    '@vue/typescript'
-  ],
+  // extends: [
+  //   'plugin:vue/recommended',
+  //   '@vue/prettier',
+  //   '@vue/typescript'
+  // ],
   rules: {
     // 'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'off',
     'no-console': 'off',
@@ -19,16 +19,16 @@ module.exports = {
         'singleQuote': true
       }
     ],
-    "vue/html-indent": [
-      "error", 
-      {
-        "attribute": 1,
-        "baseIndent": 1,
-        "closeBracket": 0,
-        "alignAttributesVertically": true,
-        "ignores": []
-      },
-    ]
+    // "vue/html-indent": [
+    //   "error",
+    //   {
+    //     "attribute": 1,
+    //     "baseIndent": 1,
+    //     "closeBracket": 0,
+    //     "alignAttributesVertically": true,
+    //     "ignores": []
+    //   },
+    // ]
   },
   parserOptions: {
     parser: '@typescript-eslint/parser'

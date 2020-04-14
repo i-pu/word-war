@@ -3,7 +3,7 @@ syntax = "proto3";
 package word_war;
 
 service WordWar {
-  rpc Matching(MatchingRequest) returns (MatchingResponse) {};
+  rpc Matching(MatchingRequest) returns (stream MatchingResponse) {};
   rpc Say(SayRequest) returns (SayResponse) {};
   rpc Game(GameRequest) returns (stream GameResponse) {};
   rpc Result(ResultRequest) returns (ResultResponse) {};
@@ -29,6 +29,13 @@ message MatchingRequest {
 
 message MatchingResponse {
   string roomId = 1;
+  repeated User user = 2;
+  uint64 roomUserLimit = 3;
+  uint64 timerSeconds = 4;
+}
+
+message User {
+  string userId = 1;
 }
 
 message GameRequest {

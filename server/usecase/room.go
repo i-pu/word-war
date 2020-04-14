@@ -12,8 +12,7 @@ import (
 )
 
 type RoomUsecase interface {
-	// from worker
-	StartGame(room *entity.Room, limit time.Duration) error
+	StartTimer(room *entity.Room, limit time.Duration) error
 	EndGame(room *entity.Room) error
 
 	InitUser(player *entity.Player) error
@@ -157,8 +156,8 @@ func (u *roomUsecase) GetTimer(room *entity.Room) (context.Context, error) {
 	return u.roomRepo.SubscribeTimer(room)
 }
 
-func (u *roomUsecase) StartGame(room *entity.Room, limit time.Duration) error {
-	log.Infof("StartGame: %v, %v", room, limit)
+func (u *roomUsecase) StartTimer(room *entity.Room, limit time.Duration) error {
+	log.Infof("StartTimer: %v, %v", room, limit)
 
 	time.Sleep(limit)
 	// notify end

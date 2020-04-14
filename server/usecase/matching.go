@@ -1,7 +1,6 @@
 package usecase
 
 import (
-	"github.com/benmanns/goworker"
 	"github.com/i-pu/word-war/server/domain/entity"
 	"github.com/i-pu/word-war/server/repository"
 	log "github.com/sirupsen/logrus"
@@ -11,6 +10,7 @@ import (
 type MatchingUsecase interface {
 	TryEnterRandomRoom(userID string) (*entity.Room, error)
 	CreateRoom(userID string) (*entity.Room, error)
+	IsReady(room *entity.Room) (players []*entity.Player, roomUserLimit uint64, timerSeconds uint64, ok bool, err error)
 }
 type matchingUsecase struct {
 	roomRepo repository.RoomRepository
@@ -23,6 +23,7 @@ func NewMatchingUsecase(roomRepo repository.RoomRepository) *matchingUsecase {
 }
 
 // TryEnterRandomRoomはrandomなroomに入れなかったら、nilを返す
+// TODO: 4にんまでしか入れない変更できるようにする
 func (u matchingUsecase) TryEnterRandomRoom(userID string) (*entity.Room, error) {
 	log.WithFields(log.Fields{
 		"userID": userID,
@@ -77,6 +78,7 @@ func (u matchingUsecase) TryEnterRandomRoom(userID string) (*entity.Room, error)
 	}
 }
 
+// TODO: 部屋の設定を受け取るようにして、redisに部屋の上限と時間の制限を設定できるようにする
 func (u matchingUsecase) CreateRoom(userID string) (*entity.Room, error) {
 	room, err := u.roomRepo.CreateRoom()
 	if err != nil {
@@ -92,17 +94,30 @@ func (u matchingUsecase) CreateRoom(userID string) (*entity.Room, error) {
 		return nil, xerrors.Errorf("AddUser(%+v) error: %w", player, err)
 	}
 
-	// enqueue
-	err = goworker.Enqueue(&goworker.Job{
-		Queue: "rooms",
-		Payload: goworker.Payload{
-			Class: "Room",
-			Args:  []interface{}{room},
-		},
-	})
-	if err != nil {
-		log.Error(xerrors.Errorf("goworker.Enqueue room: %w", err))
-	}
 	log.Debug("Enqueue job")
 	return room, nil
+}
+
+// WatingGameは人が集まるまでblockし続ける関数
+// TODO: roomの情報の中に部屋の人数条件を含めたい
+// TODO: IsReadyの方で部屋の設定をしないようにしたい
+func (u matchingUsecase) IsReady(room *entity.Room) (players []*entity.Player, roomUserLimit uint64, timerSeconds uint64, ok bool, err error) {
+	userIDs, err := u.roomRepo.GetUserIDs(room.RoomID)
+	if err != nil {
+		return nil,
+			0,
+			0,
+			false,
+			xerrors.Errorf("AddRoomCandidateID(%s) error: %w", room.RoomID, err)
+	}
+
+	players = []*entity.Player{}
+	for _, userID := range userIDs {
+		players = append(players, u.roomRepo.GetPlayer(room.RoomID, userID))
+	}
+
+	roomUserLimit = 2
+	timerSeconds = 10
+	ok = len(userIDs) == int(roomUserLimit)
+	return
 }

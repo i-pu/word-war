@@ -10,19 +10,46 @@ import {
   ResultResponse
 } from '@/pb/word_war_pb'
 
+export interface User {
+  playerId: string
+}
+
+export enum Scene {
+  None,
+  // 待機中
+  Matching,
+  // ゲーム中
+  Gaming,
+  // 終了
+  End
+}
+
 interface GameState {
-  isPlaying: boolean
+  scene: Scene
   roomId: string
+  users: User[]
+  limit: number
+  timer: number
   score: number
   client: WordWarPromiseClient
   words: GameResponse[]
 }
 
+interface RoomInfo {
+  users: User[]
+  timer: number
+  limit: number
+  roomId: string
+}
+
 export const game: Module<GameState, RootState> = {
   namespaced: true,
   state: {
-    isPlaying: false,
+    scene: Scene.None,
     roomId: '',
+    timer: 0,
+    users: [],
+    limit: 0,
     score: 0,
     client: new WordWarPromiseClient(process.env.VUE_APP_API_ENDPOINT),
     words: []
@@ -30,25 +57,35 @@ export const game: Module<GameState, RootState> = {
   getters: {
     getWords: state => state.words,
     score: state => state.score,
-    roomId: state => state.roomId
+    roomId: state => state.roomId,
+    users: state => state.users,
+    scene: state => state.scene
   },
   mutations: {
-    start(commit) {
-      commit.isPlaying = true
-    },
-    reset(commit) {
-      commit.isPlaying = false
+    prepareRoom(commit) {
       commit.words = []
       commit.score = 0
+      commit.scene = Scene.Gaming
     },
     score(commit, score: number) {
       commit.score = score
     },
-    room(commit, roomId: string) {
-      commit.roomId = roomId
-    },
     push(commit, word: GameResponse) {
       commit.words.push(word)
+    },
+    setScene(commit, scene: Scene) {
+      console.log(`${commit.scene} -> ${scene}`)
+      commit.scene = scene
+    },
+    setTimer(commit, timer: number) {
+      commit.timer = timer
+    },
+    setRoomInfo(commit, info: RoomInfo) {
+      console.log('setRoomInfo')
+      commit.users = info.users
+      commit.timer = info.timer
+      commit.limit = info.limit
+      commit.roomId = info.roomId
     }
   },
   actions: {
@@ -56,28 +93,46 @@ export const game: Module<GameState, RootState> = {
       console.log(rootGetters.userId)
       const matchingReq: MatchingRequest = new MatchingRequest()
       matchingReq.setUserid(rootGetters.userId)
-      const matchingRes = await state.client
-        .matching(matchingReq)
-        .catch(console.error)
+      const stream = state.client.matching(matchingReq)
+      commit('setScene', Scene.Matching)
 
-      if (!matchingRes) {
-        return
-      }
+      stream.on('data', matchingRes => {
+        const [roomId, pbUsers, limit, timer] = [
+          matchingRes.getRoomid(),
+          matchingRes.getUserList(),
+          matchingRes.getRoomuserlimit(),
+          matchingRes.getTimerseconds()
+        ]
+        const users: User[] = pbUsers.map(u => ({ playerId: u.getUserid() }))
+        console.log(`${roomId} ${users} ${limit} ${timer}`)
 
-      console.log(matchingRes.getRoomid())
+        commit('setRoomInfo', { roomId, users, timer, limit })
+      })
 
-      return matchingRes.getRoomid()
+      stream.on('status', status => {
+        console.log('status', status)
+        if (status.code === 0) {
+          // ゲーム開始
+          commit('prepareRoom')
+        } else {
+          throw `やばいね, ${status}`
+        }
+      })
+
+      stream.on('error', res => {
+        throw res
+      })
     },
 
     async start({ commit, state, rootGetters }, { roomId }) {
-      commit('reset')
-
       if (!roomId) {
         console.error('error')
         return
       }
 
-      commit('room', roomId)
+      setInterval(() => {
+        commit('setTimer', state.timer - 1)
+      }, 1000)
 
       console.log(`roomId in store: ${state.roomId}`)
 
@@ -102,8 +157,6 @@ export const game: Module<GameState, RootState> = {
         commit('reset')
         console.log('error', res)
       })
-
-      commit('start')
     },
     async say(
       { state, commit, rootGetters },

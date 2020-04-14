@@ -2,8 +2,10 @@ package rpc
 
 import (
 	"context"
+	"github.com/i-pu/word-war/server/interface/adapter"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/i-pu/word-war/server/domain/entity"
 	"github.com/i-pu/word-war/server/external"
@@ -73,22 +75,118 @@ func (s *wordWarService) HealthCheck(ctx context.Context, in *pb.HealthCheckRequ
 }
 
 // RoomIDを発行するかもしれないし、すでにあるRoomIDを返すかもしれない
-func (s *wordWarService) Matching(ctx context.Context, in *pb.MatchingRequest) (*pb.MatchingResponse, error) {
-	// 部屋が存在したら入れる
+// 1.毎秒ユーザの人数を確認して、入っているユーザの情報を返す。
+// 新しく人が入ったらクライアントは表示できる
+// 人数上限になったらblockingを解除してstarttimerして、ストリームを終了
+// クライアントはmatchingストリームが終了したら、待機画面からゲーム画面に遷移
+
+// クライアントと通信が切れたら部屋から場外する
+func (s *wordWarService) Matching(in *pb.MatchingRequest, srv pb.WordWar_MatchingServer) error {
 	room, err := s.matchingUsecase.TryEnterRandomRoom(in.UserId)
 	if err != nil {
-		return nil, xerrors.Errorf("error: matchingUsecase.TryEnterRandomRoom(%s): %w", err)
+		return xerrors.Errorf("error: matchingUsecase.TryEnterRandomRoom(%s): %w", err)
 	}
 
 	if room == nil {
 		room, err = s.matchingUsecase.CreateRoom(in.UserId)
 		if err != nil {
-			return nil, xerrors.Errorf("error: matchingUsecase.CreateRoom(%s): %w", err)
+			return xerrors.Errorf("error: matchingUsecase.CreateRoom(%s): %w", in.UserId, err)
+		}
+
+		for {
+			players, roomUserLimit, timer, ok, err := s.matchingUsecase.IsReady(room)
+			if err != nil {
+				return xerrors.Errorf("error: matchingUsecase.IsReady(%v): %w", room, err)
+			}
+
+			var users []*pb.User
+			for _, player :=  range players {
+				user := adapter.Player2PbUser(player)
+				users = append(users, user)
+			}
+
+			res := &pb.MatchingResponse{
+				RoomId: room.RoomID,
+				User: users,
+				RoomUserLimit: roomUserLimit,
+				TimerSeconds: timer,
+			}
+
+			if err := srv.Send(res); err != nil {
+				return xerrors.Errorf("Matching rpc can't Send. roomId: %v, userId: %v. : %w", room.RoomID, in.UserId, err)
+			}
+
+			log.WithFields(log.Fields{
+				"roomId": room.RoomID,
+				"userId": in.UserId,
+				"ok": ok,
+			}).Debug()
+
+			if ok {
+				break
+			}
+			time.Sleep(time.Second)
+		}
+
+		go func() {
+			limit := time.Second * 10
+			log.Debug("timer start. limit: %v", limit)
+			err := s.roomUsecase.StartTimer(room, limit)
+			if err != nil {
+				log.Fatal(xerrors.Errorf("StartGame(%+v, %s): %w", room, limit, err))
+			}
+			log.Debug("timer done")
+
+			err = s.resultUsecase.UpdateRating(room)
+			if err != nil {
+				log.Fatal(xerrors.Errorf("UpdateRating(%+v): %w", room, err))
+			}
+			log.Debug("done updateRating")
+
+			err = s.roomUsecase.EndGame(room)
+			if err != nil {
+				log.Fatal(xerrors.Errorf("EndGame(%+v): %w", room, err))
+			}
+		}()
+	} else {
+		// waiting
+		for {
+			players, roomUserLimit, timer, ok, err := s.matchingUsecase.IsReady(room)
+			if err != nil {
+				return xerrors.Errorf("error: matchingUsecase.IsReady(%v): %w", room, err)
+			}
+
+			var users []*pb.User
+			for _, player :=  range players {
+				user := adapter.Player2PbUser(player)
+				users = append(users, user)
+			}
+
+			res := &pb.MatchingResponse{
+				RoomId: room.RoomID,
+				User: users,
+				RoomUserLimit: roomUserLimit,
+				TimerSeconds: timer,
+			}
+
+			if err := srv.Send(res); err != nil {
+				return xerrors.Errorf("Matching rpc can't Send. roomId: %v, userId: %v. : %w", room.RoomID, in.UserId, err)
+			}
+
+			log.WithFields(log.Fields{
+				"roomId": room.RoomID,
+				"userId": in.UserId,
+				"ok": ok,
+			}).Debug()
+
+			if ok {
+				break
+			}
+			time.Sleep(time.Second)
 		}
 	}
 
-	ret := &pb.MatchingResponse{RoomId: room.RoomID}
-	return ret, nil
+	return nil
 }
 
 func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) error {

@@ -5,7 +5,6 @@ go 1.13
 require (
 	cloud.google.com/go v0.38.0
 	firebase.google.com/go v3.11.1+incompatible
-	github.com/benmanns/goworker v0.1.3
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575 // indirect
 	github.com/garyburd/redigo v1.6.0 // indirect
 	github.com/go-redis/redis v6.15.6+incompatible

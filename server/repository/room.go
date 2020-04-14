@@ -33,6 +33,7 @@ type RoomRepository interface {
 	// user
 	AddPlayer(player *entity.Player) error
 	GetUserIDs(roomID string) ([]string, error)
+	GetPlayer(roomID string, userID string) *entity.Player
 
 	// message
 	Publish(message *entity.Message) error
@@ -199,6 +200,14 @@ func (r *roomRepository) GetUserIDs(roomID string) ([]string, error) {
 		return nil, xerrors.Errorf("error in GetPlayerIDs(%s): %w", roomID, err)
 	}
 	return users, nil
+}
+
+// TODO: ゆくゆくはPlayerの情報をredisに保存するかもしれない
+func (r *roomRepository) GetPlayer(roomID string, userID string) *entity.Player {
+	return &entity.Player{
+		UserID: userID,
+		RoomID: roomID,
+	}
 }
 
 // delete '<room>:*'

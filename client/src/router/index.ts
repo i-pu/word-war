@@ -19,6 +19,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/waiting',
+    name: 'waiting',
+    component: () => import('@/views/Waiting.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/game',
     name: 'game',
     component: () => import('@/views/Game.vue'),

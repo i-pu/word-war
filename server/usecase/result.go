@@ -35,6 +35,7 @@ func (u *resultUsecase) GetScore(player *entity.Player) (*entity.Result, error) 
 	return u.roomRepo.GetScore(player)
 }
 
+// TODO: 誰も何もしなかったときにerrorが出てたので直せ
 func (u *resultUsecase) UpdateRating(room *entity.Room) error {
 	users, err := u.roomRepo.GetUserIDs(room.RoomID)
 	if err != nil {

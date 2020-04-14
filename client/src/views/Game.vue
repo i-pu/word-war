@@ -2,7 +2,7 @@
   <div class="game">
     <Hero />
     <Navbar />
-    <Siritori />
+    <Siritori />c
   </div>
 </template>
 

@@ -183,6 +183,9 @@ func (m *MatchingRequest) GetUserId() string {
 
 type MatchingResponse struct {
 	RoomId               string   `protobuf:"bytes,1,opt,name=roomId,proto3" json:"roomId,omitempty"`
+	User                 []*User  `protobuf:"bytes,2,rep,name=user,proto3" json:"user,omitempty"`
+	RoomUserLimit        uint64   `protobuf:"varint,3,opt,name=roomUserLimit,proto3" json:"roomUserLimit,omitempty"`
+	TimerSeconds         uint64   `protobuf:"varint,4,opt,name=timerSeconds,proto3" json:"timerSeconds,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -220,6 +223,66 @@ func (m *MatchingResponse) GetRoomId() string {
 	return ""
 }
 
+func (m *MatchingResponse) GetUser() []*User {
+	if m != nil {
+		return m.User
+	}
+	return nil
+}
+
+func (m *MatchingResponse) GetRoomUserLimit() uint64 {
+	if m != nil {
+		return m.RoomUserLimit
+	}
+	return 0
+}
+
+func (m *MatchingResponse) GetTimerSeconds() uint64 {
+	if m != nil {
+		return m.TimerSeconds
+	}
+	return 0
+}
+
+type User struct {
+	UserId               string   `protobuf:"bytes,1,opt,name=userId,proto3" json:"userId,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *User) Reset()         { *m = User{} }
+func (m *User) String() string { return proto.CompactTextString(m) }
+func (*User) ProtoMessage()    {}
+func (*User) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9e6bc0bf977bdab9, []int{4}
+}
+
+func (m *User) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_User.Unmarshal(m, b)
+}
+func (m *User) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_User.Marshal(b, m, deterministic)
+}
+func (m *User) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_User.Merge(m, src)
+}
+func (m *User) XXX_Size() int {
+	return xxx_messageInfo_User.Size(m)
+}
+func (m *User) XXX_DiscardUnknown() {
+	xxx_messageInfo_User.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_User proto.InternalMessageInfo
+
+func (m *User) GetUserId() string {
+	if m != nil {
+		return m.UserId
+	}
+	return ""
+}
+
 type GameRequest struct {
 	UserId               string   `protobuf:"bytes,1,opt,name=userId,proto3" json:"userId,omitempty"`
 	RoomId               string   `protobuf:"bytes,2,opt,name=roomId,proto3" json:"roomId,omitempty"`
@@ -232,7 +295,7 @@ func (m *GameRequest) Reset()         { *m = GameRequest{} }
 func (m *GameRequest) String() string { return proto.CompactTextString(m) }
 func (*GameRequest) ProtoMessage()    {}
 func (*GameRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9e6bc0bf977bdab9, []int{4}
+	return fileDescriptor_9e6bc0bf977bdab9, []int{5}
 }
 
 func (m *GameRequest) XXX_Unmarshal(b []byte) error {
@@ -280,7 +343,7 @@ func (m *GameResponse) Reset()         { *m = GameResponse{} }
 func (m *GameResponse) String() string { return proto.CompactTextString(m) }
 func (*GameResponse) ProtoMessage()    {}
 func (*GameResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9e6bc0bf977bdab9, []int{5}
+	return fileDescriptor_9e6bc0bf977bdab9, []int{6}
 }
 
 func (m *GameResponse) XXX_Unmarshal(b []byte) error {
@@ -334,7 +397,7 @@ func (m *ResultRequest) Reset()         { *m = ResultRequest{} }
 func (m *ResultRequest) String() string { return proto.CompactTextString(m) }
 func (*ResultRequest) ProtoMessage()    {}
 func (*ResultRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9e6bc0bf977bdab9, []int{6}
+	return fileDescriptor_9e6bc0bf977bdab9, []int{7}
 }
 
 func (m *ResultRequest) XXX_Unmarshal(b []byte) error {
@@ -382,7 +445,7 @@ func (m *ResultResponse) Reset()         { *m = ResultResponse{} }
 func (m *ResultResponse) String() string { return proto.CompactTextString(m) }
 func (*ResultResponse) ProtoMessage()    {}
 func (*ResultResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9e6bc0bf977bdab9, []int{7}
+	return fileDescriptor_9e6bc0bf977bdab9, []int{8}
 }
 
 func (m *ResultResponse) XXX_Unmarshal(b []byte) error {
@@ -434,7 +497,7 @@ func (m *HealthCheckRequest) Reset()         { *m = HealthCheckRequest{} }
 func (m *HealthCheckRequest) String() string { return proto.CompactTextString(m) }
 func (*HealthCheckRequest) ProtoMessage()    {}
 func (*HealthCheckRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9e6bc0bf977bdab9, []int{8}
+	return fileDescriptor_9e6bc0bf977bdab9, []int{9}
 }
 
 func (m *HealthCheckRequest) XXX_Unmarshal(b []byte) error {
@@ -467,7 +530,7 @@ func (m *HealthCheckResponse) Reset()         { *m = HealthCheckResponse{} }
 func (m *HealthCheckResponse) String() string { return proto.CompactTextString(m) }
 func (*HealthCheckResponse) ProtoMessage()    {}
 func (*HealthCheckResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9e6bc0bf977bdab9, []int{9}
+	return fileDescriptor_9e6bc0bf977bdab9, []int{10}
 }
 
 func (m *HealthCheckResponse) XXX_Unmarshal(b []byte) error {
@@ -507,6 +570,7 @@ func init() {
 	proto.RegisterType((*SayResponse)(nil), "word_war.SayResponse")
 	proto.RegisterType((*MatchingRequest)(nil), "word_war.MatchingRequest")
 	proto.RegisterType((*MatchingResponse)(nil), "word_war.MatchingResponse")
+	proto.RegisterType((*User)(nil), "word_war.User")
 	proto.RegisterType((*GameRequest)(nil), "word_war.GameRequest")
 	proto.RegisterType((*GameResponse)(nil), "word_war.GameResponse")
 	proto.RegisterType((*ResultRequest)(nil), "word_war.ResultRequest")
@@ -518,31 +582,35 @@ func init() {
 func init() { proto.RegisterFile("word_war.proto", fileDescriptor_9e6bc0bf977bdab9) }
 
 var fileDescriptor_9e6bc0bf977bdab9 = []byte{
-	// 383 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x54, 0x4f, 0x4f, 0xfa, 0x40,
-	0x10, 0xfd, 0x95, 0xbf, 0xfd, 0x0d, 0x82, 0x66, 0xad, 0x58, 0x1b, 0x4d, 0x48, 0xe3, 0x01, 0x3d,
-	0x10, 0xa3, 0x5e, 0x3c, 0x10, 0x0f, 0x1c, 0x94, 0x44, 0x2f, 0x25, 0x01, 0x6f, 0x66, 0x6d, 0x27,
-	0xd0, 0x48, 0x59, 0xdc, 0x2d, 0x10, 0xbe, 0xa3, 0x1f, 0xca, 0xd0, 0x76, 0x59, 0x0a, 0x12, 0x12,
-	0xc3, 0xf1, 0xcd, 0xcc, 0x9b, 0x79, 0x3b, 0x6f, 0x5a, 0xa8, 0xcc, 0x18, 0xf7, 0xde, 0x67, 0x94,
-	0x37, 0xc6, 0x9c, 0x85, 0x8c, 0xe8, 0x12, 0xdb, 0x5d, 0x80, 0x0e, 0x9d, 0x3b, 0xf8, 0x35, 0x41,
-	0x11, 0x92, 0x2a, 0x14, 0x26, 0x02, 0x79, 0xdb, 0x33, 0xb5, 0x9a, 0x56, 0xff, 0xef, 0x24, 0x88,
-	0x98, 0x50, 0x0c, 0x50, 0x08, 0xda, 0x47, 0x33, 0x13, 0x25, 0x24, 0x5c, 0x30, 0x38, 0x63, 0x41,
-	0xdb, 0x33, 0xb3, 0x31, 0x23, 0x46, 0x76, 0x00, 0xa5, 0xa8, 0xaf, 0x18, 0xb3, 0x91, 0xc0, 0xfd,
-	0x35, 0x26, 0x06, 0xe4, 0xa7, 0x74, 0xe8, 0x7b, 0x66, 0xae, 0xa6, 0xd5, 0x75, 0x27, 0x06, 0xf6,
-	0x15, 0x1c, 0xbe, 0xd2, 0xd0, 0x1d, 0xf8, 0xa3, 0xfe, 0x8e, 0xb7, 0xd8, 0xd7, 0x70, 0xa4, 0x4a,
-	0x95, 0xbc, 0x64, 0x98, 0x96, 0x7a, 0x45, 0x13, 0x4a, 0x4f, 0x34, 0xc0, 0x5d, 0xeb, 0x51, 0xf4,
-	0x4c, 0x8a, 0xfe, 0x06, 0x07, 0x31, 0x7d, 0xdf, 0x5b, 0xb0, 0x1f, 0xa1, 0xec, 0xa0, 0x98, 0x0c,
-	0xc3, 0xbf, 0x4a, 0xeb, 0x42, 0x45, 0x36, 0xd8, 0x21, 0xce, 0x80, 0xbc, 0x70, 0x19, 0x97, 0xd2,
-	0x62, 0xb0, 0x55, 0x98, 0x01, 0xe4, 0x19, 0xe9, 0x30, 0x1c, 0xb4, 0x06, 0xe8, 0x7e, 0x26, 0xea,
-	0xec, 0x0e, 0x1c, 0xa7, 0xa2, 0x6a, 0x24, 0x75, 0x43, 0x7f, 0x8a, 0xd1, 0x48, 0xdd, 0x49, 0x10,
-	0xb9, 0x84, 0xb2, 0x40, 0x3e, 0x45, 0xde, 0x45, 0x2e, 0x7c, 0x36, 0x4a, 0x46, 0xa7, 0x83, 0xb7,
-	0xdf, 0x19, 0x28, 0xf6, 0x18, 0xf7, 0x7a, 0x94, 0x93, 0x16, 0xe8, 0xd2, 0x54, 0x72, 0xd6, 0x58,
-	0x5e, 0xfb, 0xda, 0x4d, 0x58, 0xd6, 0x6f, 0xa9, 0x58, 0x8c, 0xfd, 0x8f, 0xdc, 0x43, 0xb6, 0x43,
-	0xe7, 0xc4, 0x50, 0x45, 0xea, 0xd3, 0xb0, 0x4e, 0xd6, 0xa2, 0x4b, 0xd6, 0x03, 0xe4, 0x16, 0x26,
-	0x93, 0x95, 0x82, 0x95, 0x9b, 0xb1, 0xaa, 0xeb, 0x61, 0x49, 0xbc, 0xd1, 0x48, 0x13, 0x0a, 0xb1,
-	0x09, 0xe4, 0x54, 0x55, 0xa5, 0x7c, 0xb5, 0xcc, 0xcd, 0xc4, 0x72, 0xf2, 0x0b, 0x94, 0x56, 0xb6,
-	0x4a, 0xce, 0x55, 0xe9, 0xa6, 0x05, 0xd6, 0xc5, 0x96, 0xac, 0xec, 0xf6, 0x51, 0x88, 0x7e, 0x0d,
-	0x77, 0x3f, 0x01, 0x00, 0x00, 0xff, 0xff, 0x8c, 0x35, 0x83, 0x29, 0x2c, 0x04, 0x00, 0x00,
+	// 445 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x54, 0x4d, 0x6f, 0xd3, 0x40,
+	0x14, 0xc4, 0x8e, 0x9b, 0x9a, 0xe7, 0x36, 0xa0, 0xc5, 0x14, 0x63, 0x01, 0x8a, 0x56, 0x1c, 0xc2,
+	0xa5, 0x42, 0x85, 0x0b, 0x87, 0x8a, 0x03, 0x42, 0x50, 0xa9, 0x5c, 0xd6, 0x22, 0xe5, 0x86, 0x16,
+	0xfb, 0x29, 0xb1, 0x88, 0xbd, 0x61, 0x77, 0x93, 0x28, 0xff, 0x84, 0x5f, 0xc5, 0x6f, 0x42, 0xfe,
+	0xca, 0xda, 0x09, 0x51, 0x24, 0x94, 0xe3, 0xcc, 0xfb, 0x98, 0xf1, 0xce, 0x4b, 0x60, 0xb0, 0x12,
+	0x32, 0xf9, 0xbe, 0xe2, 0xf2, 0x72, 0x2e, 0x85, 0x16, 0xc4, 0x6d, 0x30, 0x1d, 0x03, 0x44, 0x7c,
+	0xcd, 0xf0, 0xd7, 0x02, 0x95, 0x26, 0x17, 0xd0, 0x5f, 0x28, 0x94, 0x37, 0x49, 0x60, 0x0d, 0xad,
+	0xd1, 0x7d, 0x56, 0x23, 0x12, 0xc0, 0x69, 0x86, 0x4a, 0xf1, 0x09, 0x06, 0x76, 0x59, 0x68, 0x60,
+	0x31, 0x21, 0x85, 0xc8, 0x6e, 0x92, 0xa0, 0x57, 0x4d, 0x54, 0x88, 0x66, 0xe0, 0x95, 0x7b, 0xd5,
+	0x5c, 0xe4, 0x0a, 0x8f, 0xb7, 0x98, 0xf8, 0x70, 0xb2, 0xe4, 0xb3, 0x34, 0x09, 0x9c, 0xa1, 0x35,
+	0x72, 0x59, 0x05, 0xe8, 0x2b, 0x78, 0xf0, 0x85, 0xeb, 0x78, 0x9a, 0xe6, 0x93, 0x03, 0xdf, 0x42,
+	0x7f, 0x5b, 0xf0, 0xd0, 0xf4, 0x1a, 0x7f, 0xb5, 0x9a, 0xd5, 0x51, 0xa3, 0xe0, 0x14, 0x63, 0x81,
+	0x3d, 0xec, 0x8d, 0xbc, 0xab, 0xc1, 0xe5, 0xe6, 0x1d, 0xbf, 0x2a, 0x94, 0xac, 0xac, 0x91, 0x97,
+	0x70, 0x5e, 0x74, 0x17, 0xcc, 0x6d, 0x9a, 0xa5, 0xba, 0x34, 0xec, 0xb0, 0x2e, 0x49, 0x28, 0x9c,
+	0xe9, 0x34, 0x43, 0x19, 0x61, 0x2c, 0xf2, 0x44, 0x95, 0xf6, 0x1d, 0xd6, 0xe1, 0xe8, 0x0b, 0x70,
+	0x8a, 0x81, 0xbd, 0xd6, 0xaf, 0xc1, 0xfb, 0xc4, 0x33, 0x3c, 0x94, 0x96, 0xf9, 0x18, 0xbb, 0x93,
+	0xc9, 0x37, 0x38, 0xab, 0xc6, 0x8f, 0x1d, 0x0a, 0x7d, 0x0f, 0xe7, 0x0c, 0xd5, 0x62, 0xa6, 0xff,
+	0xd7, 0xda, 0x18, 0x06, 0xcd, 0x82, 0x03, 0xe6, 0x7c, 0x38, 0x51, 0xb1, 0x90, 0x8d, 0xb5, 0x0a,
+	0xec, 0x35, 0xe6, 0x03, 0xf9, 0x8c, 0x7c, 0xa6, 0xa7, 0x1f, 0xa6, 0x18, 0xff, 0xac, 0xdd, 0xd1,
+	0x08, 0x1e, 0x75, 0x58, 0x23, 0xc9, 0x63, 0x9d, 0x2e, 0xb1, 0x94, 0x74, 0x59, 0x8d, 0x8a, 0x80,
+	0x15, 0xca, 0x25, 0xca, 0x31, 0x4a, 0x95, 0x8a, 0xbc, 0x96, 0xee, 0x92, 0x57, 0x7f, 0x6c, 0x38,
+	0xbd, 0x13, 0x32, 0xb9, 0xe3, 0x92, 0x7c, 0x04, 0xb7, 0x39, 0x31, 0xf2, 0xd4, 0x1c, 0xcd, 0xd6,
+	0x89, 0x86, 0xe1, 0xbf, 0x4a, 0x95, 0x19, 0x7a, 0xef, 0xb5, 0x45, 0xde, 0x42, 0x2f, 0xe2, 0x6b,
+	0xe2, 0x9b, 0x36, 0xf3, 0x5b, 0x0d, 0x1f, 0x6f, 0xb1, 0xcd, 0x1c, 0x79, 0x07, 0x4e, 0x11, 0x33,
+	0x69, 0x35, 0xb4, 0xae, 0x26, 0xbc, 0xd8, 0xa6, 0x5b, 0x82, 0xd7, 0xd0, 0xaf, 0x62, 0x20, 0x4f,
+	0x4c, 0x57, 0x27, 0xd9, 0x30, 0xd8, 0x2d, 0x6c, 0x94, 0x6f, 0xc1, 0x6b, 0xbd, 0x2b, 0x79, 0x66,
+	0x5a, 0x77, 0x43, 0x08, 0x9f, 0xef, 0xa9, 0x36, 0xdb, 0x7e, 0xf4, 0xcb, 0xff, 0xaa, 0x37, 0x7f,
+	0x03, 0x00, 0x00, 0xff, 0xff, 0x86, 0x15, 0x46, 0xde, 0xbd, 0x04, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -557,7 +625,7 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type WordWarClient interface {
-	Matching(ctx context.Context, in *MatchingRequest, opts ...grpc.CallOption) (*MatchingResponse, error)
+	Matching(ctx context.Context, in *MatchingRequest, opts ...grpc.CallOption) (WordWar_MatchingClient, error)
 	Say(ctx context.Context, in *SayRequest, opts ...grpc.CallOption) (*SayResponse, error)
 	Game(ctx context.Context, in *GameRequest, opts ...grpc.CallOption) (WordWar_GameClient, error)
 	Result(ctx context.Context, in *ResultRequest, opts ...grpc.CallOption) (*ResultResponse, error)
@@ -572,13 +640,36 @@ func NewWordWarClient(cc *grpc.ClientConn) WordWarClient {
 	return &wordWarClient{cc}
 }
 
-func (c *wordWarClient) Matching(ctx context.Context, in *MatchingRequest, opts ...grpc.CallOption) (*MatchingResponse, error) {
-	out := new(MatchingResponse)
-	err := c.cc.Invoke(ctx, "/word_war.WordWar/Matching", in, out, opts...)
+func (c *wordWarClient) Matching(ctx context.Context, in *MatchingRequest, opts ...grpc.CallOption) (WordWar_MatchingClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_WordWar_serviceDesc.Streams[0], "/word_war.WordWar/Matching", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &wordWarMatchingClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type WordWar_MatchingClient interface {
+	Recv() (*MatchingResponse, error)
+	grpc.ClientStream
+}
+
+type wordWarMatchingClient struct {
+	grpc.ClientStream
+}
+
+func (x *wordWarMatchingClient) Recv() (*MatchingResponse, error) {
+	m := new(MatchingResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func (c *wordWarClient) Say(ctx context.Context, in *SayRequest, opts ...grpc.CallOption) (*SayResponse, error) {
@@ -591,7 +682,7 @@ func (c *wordWarClient) Say(ctx context.Context, in *SayRequest, opts ...grpc.Ca
 }
 
 func (c *wordWarClient) Game(ctx context.Context, in *GameRequest, opts ...grpc.CallOption) (WordWar_GameClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_WordWar_serviceDesc.Streams[0], "/word_war.WordWar/Game", opts...)
+	stream, err := c.cc.NewStream(ctx, &_WordWar_serviceDesc.Streams[1], "/word_war.WordWar/Game", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -642,7 +733,7 @@ func (c *wordWarClient) HealthCheck(ctx context.Context, in *HealthCheckRequest,
 
 // WordWarServer is the server API for WordWar service.
 type WordWarServer interface {
-	Matching(context.Context, *MatchingRequest) (*MatchingResponse, error)
+	Matching(*MatchingRequest, WordWar_MatchingServer) error
 	Say(context.Context, *SayRequest) (*SayResponse, error)
 	Game(*GameRequest, WordWar_GameServer) error
 	Result(context.Context, *ResultRequest) (*ResultResponse, error)
@@ -653,8 +744,8 @@ type WordWarServer interface {
 type UnimplementedWordWarServer struct {
 }
 
-func (*UnimplementedWordWarServer) Matching(ctx context.Context, req *MatchingRequest) (*MatchingResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Matching not implemented")
+func (*UnimplementedWordWarServer) Matching(req *MatchingRequest, srv WordWar_MatchingServer) error {
+	return status.Errorf(codes.Unimplemented, "method Matching not implemented")
 }
 func (*UnimplementedWordWarServer) Say(ctx context.Context, req *SayRequest) (*SayResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Say not implemented")
@@ -673,22 +764,25 @@ func RegisterWordWarServer(s *grpc.Server, srv WordWarServer) {
 	s.RegisterService(&_WordWar_serviceDesc, srv)
 }
 
-func _WordWar_Matching_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MatchingRequest)
-	if err := dec(in); err != nil {
-		return nil, err
+func _WordWar_Matching_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(MatchingRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
 	}
-	if interceptor == nil {
-		return srv.(WordWarServer).Matching(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/word_war.WordWar/Matching",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WordWarServer).Matching(ctx, req.(*MatchingRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+	return srv.(WordWarServer).Matching(m, &wordWarMatchingServer{stream})
+}
+
+type WordWar_MatchingServer interface {
+	Send(*MatchingResponse) error
+	grpc.ServerStream
+}
+
+type wordWarMatchingServer struct {
+	grpc.ServerStream
+}
+
+func (x *wordWarMatchingServer) Send(m *MatchingResponse) error {
+	return x.ServerStream.SendMsg(m)
 }
 
 func _WordWar_Say_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -771,10 +865,6 @@ var _WordWar_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*WordWarServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Matching",
-			Handler:    _WordWar_Matching_Handler,
-		},
-		{
 			MethodName: "Say",
 			Handler:    _WordWar_Say_Handler,
 		},
@@ -788,6 +878,11 @@ var _WordWar_serviceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "Matching",
+			Handler:       _WordWar_Matching_Handler,
+			ServerStreams: true,
+		},
 		{
 			StreamName:    "Game",
 			Handler:       _WordWar_Game_Handler,

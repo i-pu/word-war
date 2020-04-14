@@ -3,7 +3,7 @@
     <Hero />
     <Navbar />
     <section class="section">
-      <b-button type="is-link" tag="router-link" to="/game">
+      <b-button type="is-link" tag="router-link" to="/waiting">
         ランダムマッチ
       </b-button>
 
@@ -39,19 +39,10 @@ import Navbar from '@/components/Navbar.vue'
 export default class Home extends Vue {
   private roomIdInput: string = ''
 
-  get count(): number {
-    return this.$store.state.sample.count
-  }
-
-  private onClick() {
-    this.$store.commit('sample/increment')
-    console.log(this.$store.state.sample.count)
-  }
-
-  private joinRoom() {
-    console.log(`roomId: ${this.roomIdInput}`)
-    this.$router.push(`/game?roomid=${this.roomIdInput}`)
-  }
+  // private joinRoom() {
+  //   console.log(`roomId: ${this.roomIdInput}`)
+  //   this.$router.push(`/waiting?roomid=${this.roomIdInput}`)
+  // }
 
   private signOut() {
     this.$store.dispatch('signOut')
