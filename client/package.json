@@ -6,7 +6,6 @@
     "serve": "vue-cli-service serve --port 1234",
     "build": "vue-cli-service build",
     "test:unit": "vue-cli-service test:unit",
-    "lint": "vue-cli-service lint",
     "firebase:serve": "yarn build && firebase serve -p 8080 -o 127.0.0.1",
     "firebase:deploy": "yarn build && firebase deploy"
   },
@@ -28,8 +27,8 @@
   },
   "devDependencies": {
     "@types/jest": "^24.0.11",
+    "@typescript-eslint/parser": "^2.29.0",
     "@vue/cli-plugin-babel": "^4.0.0",
-    "@vue/cli-plugin-eslint": "^4.0.0",
     "@vue/cli-plugin-router": "^4.0.0",
     "@vue/cli-plugin-typescript": "^4.0.0",
     "@vue/cli-plugin-unit-jest": "^4.0.0",

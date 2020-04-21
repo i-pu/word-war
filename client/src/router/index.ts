@@ -61,6 +61,12 @@ router.beforeEach((to, from, next) => {
 
   // when un-authrized
   firebase.auth().onAuthStateChanged(user => {
+    if (user) {
+      if (to.path === 'top') {
+        next({ name: 'home' })
+      }
+    }
+
     if (!user) {
       next('/')
     }

@@ -24,6 +24,11 @@ export enum Scene {
   End
 }
 
+export interface Word {
+  id: string
+  text: string
+}
+
 interface GameState {
   scene: Scene
   roomId: string
@@ -32,7 +37,7 @@ interface GameState {
   timer: number
   score: number
   client: WordWarPromiseClient
-  words: GameResponse[]
+  words: Word[]
 }
 
 interface RoomInfo {
@@ -70,11 +75,11 @@ export const game: Module<GameState, RootState> = {
     score(commit, score: number) {
       commit.score = score
     },
-    push(commit, word: GameResponse) {
+    push(commit, word: Word) {
       commit.words.push(word)
     },
     setScene(commit, scene: Scene) {
-      console.log(`${commit.scene} -> ${scene}`)
+      console.log(`${Scene[commit.scene]} -> ${Scene[scene]}`)
       commit.scene = scene
     },
     setTimer(commit, timer: number) {
@@ -90,6 +95,7 @@ export const game: Module<GameState, RootState> = {
   },
   actions: {
     async match({ commit, state, rootGetters }) {
+      console.log('Matching ...')
       console.log(rootGetters.userId)
       const matchingReq: MatchingRequest = new MatchingRequest()
       matchingReq.setUserid(rootGetters.userId)
@@ -124,10 +130,9 @@ export const game: Module<GameState, RootState> = {
       })
     },
 
-    async start({ commit, state, rootGetters }, { roomId }) {
-      if (!roomId) {
-        console.error('error')
-        return
+    async start({ commit, state, rootGetters }) {
+      if (!state.roomId) {
+        throw 'RoomId is empty'
       }
 
       setInterval(() => {
@@ -137,25 +142,31 @@ export const game: Module<GameState, RootState> = {
       console.log(`roomId in store: ${state.roomId}`)
 
       const gameReq: GameRequest = new GameRequest()
-      gameReq.setRoomid(roomId)
+      gameReq.setRoomid(state.roomId)
       gameReq.setUserid(rootGetters.userId)
       const stream = state.client.game(gameReq)
 
+      // on message
       stream.on('data', res => {
-        console.log(`${res.getRoomid()} ${res.getUserid()} ${res.getMessage()}`)
-        commit('push', res)
+        const [roomId, userId, message] = [res.getRoomid(), res.getUserid(), res.getMessage()]
+        console.log(`game response data ${roomId} ${userId} ${message}`)
+        commit('push', { id: userId, text: message })
       })
 
+      // fire on stream end
       stream.on('status', status => {
         console.log('status', status)
         if (status.code === 0) {
-          commit('reset')
+          console.log("無事終わりました")
+          commit('setScene', Scene.End)
+        } else {
+          console.error(`無事に終わりませんでした ${status}`)
         }
       })
 
-      stream.on('error', res => {
-        commit('reset')
-        console.log('error', res)
+      stream.on('error', error => {
+        console.log('Error')
+        console.error(error)
       })
     },
     async say(
@@ -167,9 +178,14 @@ export const game: Module<GameState, RootState> = {
       req.setUserid(rootGetters.userId)
       req.setMessage(message)
 
-      console.log(req)
+      console.log(`Said ${req.getMessage()}`)
 
-      await state.client.say(req).catch(console.error)
+      try {
+        const res = await state.client.say(req)
+        console.log(`Response: ${res.getMessage()}`)
+      } catch (e) {
+        console.error(e)
+      }
     },
     async result({ state, commit, rootGetters }) {
       const req = new ResultRequest()

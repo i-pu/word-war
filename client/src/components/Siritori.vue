@@ -11,7 +11,7 @@
         <!-- FIXME: word.id を keyにするのダメそう -->
         <!-- 発言ごとに固有のランダムなIDを与えたい -->
         <li v-for="(word, i) in words" :key="i">
-          {{ word.getUserid() }}: {{ word.getMessage() }}
+          {{ word.id }}: {{ word.text }}
         </li>
       </ul>
     </div>
@@ -19,61 +19,43 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator'
+import { Component, Vue, Watch } from 'vue-property-decorator'
+import { Word, Scene } from '@/store/game'
 
-@Component
+@Component({})
 export default class Siritori extends Vue {
   private message: string = ''
 
-  private get words() {
-    return this.$store.getters['game/getWords']
+  private get words(): Word[] {
+    return this.$store.getters['game/getWords'] as Word[]
   }
 
-  private get roomId() {
+  private get roomId(): string {
     return this.$store.getters['game/roomId']
+  }
+
+  private get scene(): Scene {
+    return this.$store.getters['game/scene']
   }
 
   private get currentWord(): string {
     return this.words.length === 0
       ? 'り'
-      : this.words[this.words.length - 1].getMessage()
+      : this.words[this.words.length - 1].text
+  }
+
+  @Watch('scene')
+  private onSceneChanged(scene: Scene) {
+    console.log(`シーンが ${Scene[scene]} になったよ`)
+    if (scene === Scene.End) {
+      this.$router.push('/result')
+    }
   }
 
   async mounted() {
-    try {
-      console.log(this.$route.params)
-      console.log(this.$route.query)
-      if (this.$route.query.roomid) {
-        const roomId = this.$route.query.roomid
-        await this.$store.dispatch('game/start', { roomId })
-        console.log(`joined ${roomId}`)
-      } else {
-        const roomId = await this.$store.dispatch('game/match')
-        console.log(`match ${roomId}`)
-
-        if (!roomId) {
-          console.error('invalid roomid')
-          return
-        }
-
-        await this.$store.dispatch('game/start', { roomId })
-        console.log(`created and joined ${roomId}`)
-      }
-    } catch (e) {
-      console.error(e)
-    }
-
-    this.$store.watch(
-      (state, getter) => {
-        return state.game.isPlaying
-      },
-      (isPlaying, old) => {
-        console.log(`${old} => ${isPlaying}`)
-        if (!isPlaying) {
-          this.$router.push('/result')
-        }
-      }
-    )
+    // start
+    await this.$store.dispatch('game/start')
+    console.log('Game started')
   }
 
   private async send() {

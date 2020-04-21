@@ -100,16 +100,16 @@ func (s *wordWarService) Matching(in *pb.MatchingRequest, srv pb.WordWar_Matchin
 			}
 
 			var users []*pb.User
-			for _, player :=  range players {
+			for _, player := range players {
 				user := adapter.Player2PbUser(player)
 				users = append(users, user)
 			}
 
 			res := &pb.MatchingResponse{
-				RoomId: room.RoomID,
-				User: users,
+				RoomId:        room.RoomID,
+				User:          users,
 				RoomUserLimit: roomUserLimit,
-				TimerSeconds: timer,
+				TimerSeconds:  timer,
 			}
 
 			if err := srv.Send(res); err != nil {
@@ -119,7 +119,7 @@ func (s *wordWarService) Matching(in *pb.MatchingRequest, srv pb.WordWar_Matchin
 			log.WithFields(log.Fields{
 				"roomId": room.RoomID,
 				"userId": in.UserId,
-				"ok": ok,
+				"ok":     ok,
 			}).Debug()
 
 			if ok {
@@ -157,16 +157,16 @@ func (s *wordWarService) Matching(in *pb.MatchingRequest, srv pb.WordWar_Matchin
 			}
 
 			var users []*pb.User
-			for _, player :=  range players {
+			for _, player := range players {
 				user := adapter.Player2PbUser(player)
 				users = append(users, user)
 			}
 
 			res := &pb.MatchingResponse{
-				RoomId: room.RoomID,
-				User: users,
+				RoomId:        room.RoomID,
+				User:          users,
 				RoomUserLimit: roomUserLimit,
-				TimerSeconds: timer,
+				TimerSeconds:  timer,
 			}
 
 			if err := srv.Send(res); err != nil {
@@ -176,7 +176,7 @@ func (s *wordWarService) Matching(in *pb.MatchingRequest, srv pb.WordWar_Matchin
 			log.WithFields(log.Fields{
 				"roomId": room.RoomID,
 				"userId": in.UserId,
-				"ok": ok,
+				"ok":     ok,
 			}).Debug()
 
 			if ok {
@@ -190,6 +190,10 @@ func (s *wordWarService) Matching(in *pb.MatchingRequest, srv pb.WordWar_Matchin
 }
 
 func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) error {
+	log.WithFields(log.Fields{
+		"RoomId": in.RoomId,
+		"UserId": in.UserId,
+	}).Debug("GameRequest")
 	err := s.roomUsecase.InitUser(&entity.Player{RoomID: in.RoomId, UserID: in.UserId})
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -226,6 +230,9 @@ func (s *wordWarService) Game(in *pb.GameRequest, srv pb.WordWar_GameServer) err
 				Message: message.Message,
 				RoomId:  message.RoomID,
 			}
+			log.WithFields(log.Fields{
+				"res": res,
+			}).Debug()
 			if err := srv.Send(res); err != nil {
 				return xerrors.Errorf("Game rpc can't Send. roomId: %v, userId: %v. : %w", in.RoomId, in.UserId, err)
 			}
@@ -263,7 +270,12 @@ func (s *wordWarService) Say(ctx context.Context, in *pb.SayRequest) (*pb.SayRes
 		// なんにも周りに送らない
 		res := &pb.SayResponse{Valid: false, UserId: in.UserId, Message: in.Message, RoomId: in.RoomId}
 		return res, nil
-
+	} else {
+		log.WithFields(log.Fields{
+			"roomID":  in.RoomId,
+			"userId":  in.UserId,
+			"message": in.Message,
+		}).Debug("Update word")
 	}
 
 	// 有効なメッセージしか送らないようになっているから大丈夫なのでまわりに教える

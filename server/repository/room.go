@@ -258,7 +258,7 @@ func (r *roomRepository) Publish(message *entity.Message) error {
 }
 
 func (r *roomRepository) Subscribe(ctx context.Context, roomID string) (<-chan *entity.Message, <-chan error) {
-	// Subscribeのより良いやり方あるかも
+	// TODO: Subscribeのより良いやり方あるかも
 	// ctx: 親のcontextで親のcontextが終了するとgo func()内でctx.Done()により終了する
 	// roomID: どこの部屋のイベントをsubscribeするか
 	pubSub := r.conn.Subscribe(roomID + ":message")

@@ -15,3 +15,6 @@ teardown.server.dev:
 protoc-gen:
 	./protoc-gen.sh
 
+.PHONY: logs
+logs:
+	docker logs word-war_server_1 -f

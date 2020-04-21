@@ -74,7 +74,7 @@ func (u *resultUsecase) UpdateRating(room *entity.Room) error {
 
 	log.Debug("[Rating Result]")
 	for i := 0; i < len(ratingDeltas); i++ {
-		log.Debugf("Player %d: %d(%d)", users[i], ratings[i], ratingDeltas[i])
+		log.Debugf("Player %v: %d(%d)", users[i], ratings[i], ratingDeltas[i])
 		ratings[i] += ratingDeltas[i]
 	}
 
