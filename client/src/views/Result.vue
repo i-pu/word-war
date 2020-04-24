@@ -5,6 +5,8 @@
     <section class="section">
       <p>result: {{ $store.getters['game/score'] }}</p>
     </section>
+
+    <b-button @click="$router.push('/home')" >ホームに戻る</b-button>
   </div>
 </template>
 
