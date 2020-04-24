@@ -2,12 +2,12 @@
   <div class="waiting">
     <Hero />
 
-    <b-loading is-full-page :active="loading" />
+    <b-loading is-full-page :active="state.loading" />
 
-    <h1>待機中 scene: {{ scene }}. {{ users }}..</h1>
+    <h1>待機中 scene: {{ scene }}. {{ players }}..</h1>
 
-    <p v-for="user in users" :key="user.playerId">
-      {{ user }}
+    <p v-for="player in players" :key="player.playerId">
+      {{ player }}
     </p>
   </div>
 </template>
@@ -17,7 +17,7 @@ import { defineComponent, reactive, SetupContext, onMounted, watch } from '@vue/
 import { useGameStore } from '@/store/game'
 import Hero from '@/components/Hero.vue'
 import Navbar from '@/components/Navbar.vue'
-import { Scene, User } from '@/store/game'
+import { Scene, User } from '@/model'
 
 export default defineComponent({
   components: {
@@ -25,7 +25,7 @@ export default defineComponent({
     Navbar
   },
   setup(props: {}, {root}: SetupContext) {
-    const { scene, users, match } = useGameStore()
+    const { scene, players, match } = useGameStore()
     const state = reactive({
       loading: true
     })
@@ -47,9 +47,7 @@ export default defineComponent({
       await match()
     })
 
-    return {
-      scene, users
-    }
+    return { scene, players, state }
   }
 })
 </script>

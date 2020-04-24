@@ -1,17 +1,17 @@
 <template>
   <div>
-    <template v-if="$store.getters.serverHealth">
+    <template v-if="status.active">
       <div class="hero is-primary">
         <div class="hero-body">
           <div class="container">
             <h2 class="title has-text-left">
-              Word War {{ $store.getters.version }}
+              Word War {{ status.version }}
             </h2>
           </div>
         </div>
         <div class="hero-footer">
           <div class="container">
-            <h2 class="subtitle">userId:{{ $store.getters.userId }}</h2>
+            <h2 class="subtitle">userId:{{ userId }}</h2>
           </div>
         </div>
       </div>
@@ -31,8 +31,16 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, } from '@vue/composition-api'
+import { defineComponent } from '@vue/composition-api'
+import { useRootStore } from '@/store'
 
 export default defineComponent({
+  setup() {
+    const { status, userId } = useRootStore()
+    return {
+      status,
+      userId
+    }
+  }
 })
 </script>

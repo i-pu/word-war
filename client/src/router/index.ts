@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import firebase from 'firebase'
+import { useRootStore } from '@/store'
 
 Vue.use(VueRouter)
 
@@ -43,8 +44,18 @@ const router = new VueRouter({
   routes
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
+  const { status, healthCheck } = useRootStore()
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+
+  console.log(`${from.path} -> ${to.path}`)
+
+  await healthCheck()
+  if (!status.value.active && to.path !== '/') {
+    await new Promise(res => setTimeout(res, 500))
+    console.log('やばいですアクティブじゃないです')
+    next('/')
+  }
 
   // un-authrized
   if (requiresAuth) {
@@ -59,17 +70,19 @@ router.beforeEach((to, from, next) => {
   next()
 
   // when un-authrized
-  firebase.auth().onAuthStateChanged(user => {
-    if (user) {
-      if (to.path === 'top') {
-        next({ name: 'home' })
-      }
-    }
+  // firebase.auth().onAuthStateChanged(user => {
+  //   if (user) {
+  //     if (to.path === '/') {
+  //       console.log('自動ログイン')
+  //       next('/home')
+  //     }
+  //   }
 
-    if (!user) {
-      next('/')
-    }
-  })
+  //   if (!user) {
+  //     console.log('再ログインしてください')
+  //     next('/')
+  //   }
+  // })
 })
 
 export default router

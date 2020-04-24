@@ -3,7 +3,7 @@
     <div class="container">
       <p>Siritori</p>
       <b-field>
-        <b-input v-model="message" @keyup.native.enter="send"></b-input>
+        <b-input v-model="state.message" @keyup.native.enter="send"></b-input>
       </b-field>
       <p>room: {{ roomId }}</p>
       <p>{{ currentWord }}</p>
@@ -19,7 +19,7 @@
 </template>
 
 <script lang="ts">
-import { Word, Scene } from '@/store/game'
+import { Word, Scene } from '@/model'
 import { defineComponent, reactive, computed, watch, onMounted } from '@vue/composition-api'
 import { useGameStore } from '@/store/game'
 
@@ -57,6 +57,7 @@ export default defineComponent({
 
     return {
       state,
+      currentWord,
       words,
       roomId,
       scene,
