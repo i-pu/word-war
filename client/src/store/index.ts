@@ -1,15 +1,18 @@
-import Vue from 'vue'
-import Vuex from 'vuex'
-
+import { createStore } from 'pinia'
 import firebase from '@/config/firebase'
-import { RootState, User } from '@/store/root_state'
-import { sample } from '@/store/sample'
-import { game } from '@/store/game'
 import { WordWarPromiseClient } from '@/pb/word_war_grpc_web_pb'
 import { HealthCheckRequest, HealthCheckResponse } from '@/pb/word_war_pb'
 
-Vue.use(Vuex)
-// TODO: linterの細かい調整
+export interface User {
+  userId: string
+}
+
+export interface RootState {
+  version: string
+  user: User
+  serverHealth: boolean
+}
+
 
 const setInitialUserdata = (uid: string) => {
   return firebase
@@ -23,25 +26,16 @@ const setInitialUserdata = (uid: string) => {
     })
 }
 
-export default new Vuex.Store<RootState>({
-  state: {
+export const useRootStore = createStore({
+  id: 'root',
+  state: () => ({
     // server info
     version: '',
     serverHealth: false,
     user: {
       userId: ''
     }
-  },
-  mutations: {
-    setUserId(state, { userId }: { userId: string }) {
-      console.log(`${state.user.userId} -> ${userId}`)
-      state.user.userId = userId
-    },
-    serverHealth(state, res: HealthCheckResponse) {
-      state.version = res.getServerversion()
-      state.serverHealth = res.getActive()
-    }
-  },
+  }),
   getters: {
     userId: state => {
       return state.user.userId
@@ -54,18 +48,27 @@ export default new Vuex.Store<RootState>({
     }
   },
   actions: {
-    async healthCheck({ commit }) {
-      const client = new WordWarPromiseClient(process.env.VUE_APP_API_ENDPOINT)
-      const req = new HealthCheckRequest()
-      const res = await client.healthCheck(req).catch(console.error)
-
-      console.log(res)
-
-      // :thinking_face:
-      commit('serverHealth', res)
+    setUserId({ userId }: { userId: string }) {
+      console.log(`${this.state.user.userId} -> ${userId}`)
+      this.state.user.userId = userId
     },
+    serverHealth(res: HealthCheckResponse) {
+      this.state.version = res.getServerversion()
+      this.state.serverHealth = res.getActive()
+    },
+    async healthCheck() {
+      try {
+        const client = new WordWarPromiseClient(process.env.VUE_APP_API_ENDPOINT)
+        const req = new HealthCheckRequest()
+        const res = await client.healthCheck(req)
 
-    async signIn({ commit }, { email, password }) {
+        console.log(res)
+        this.serverHealth(res)
+      } catch (e) {
+        console.error(e)
+      }
+    },
+    async signIn({ email, password }: { email: string, password: string }) {
       const result = await firebase
         .auth()
         .signInWithEmailAndPassword(email, password)
@@ -75,12 +78,11 @@ export default new Vuex.Store<RootState>({
         throw new Error(`can't authorized: ${email}, ${password}`)
       }
 
-      commit('setUserId', { userId: result.user.uid })
+      this.setUserId( { userId: result.user.uid })
 
       console.log(`signIn: ${email}, ${password}`)
     },
-
-    async signUp({ commit }, { email, password }) {
+    async signUp({ email, password }: { email: string, password: string }) {
       // create user
       const result = await firebase
         .auth()
@@ -95,21 +97,16 @@ export default new Vuex.Store<RootState>({
 
       console.log('initialized userdata in firestore')
 
-      commit('setUserId', { userId: result.user.uid })
+      this.setUserId({ userId: result.user.uid })
 
       console.log(`signUp: ${email}, ${password}`)
     },
-
-    async signOut({ commit }) {
-      commit('setUserId', { userId: '' })
+    async signOut() {
+      this.setUserId({ userId: '' })
       await firebase
         .auth()
         .signOut()
         .catch(console.error)
-    }
-  },
-  modules: {
-    sample,
-    game
+    },
   }
 })

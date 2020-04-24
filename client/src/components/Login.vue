@@ -2,7 +2,7 @@
   <div class="container">
     <b-field label="email">
       <b-input
-        v-model="email"
+        v-model="form.email"
         type="email"
         icon="email"
         placeholder="Input your email"
@@ -12,7 +12,7 @@
 
     <b-field label="password">
       <b-input
-        v-model="password"
+        v-model="form.password"
         type="password"
         icon="lock"
         placeholder="Input your password"
@@ -27,27 +27,31 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator'
+import { defineComponent, reactive } from '@vue/composition-api'
+import { useRootStore } from '@/store/index'
 
-@Component
-export default class Login extends Vue {
-  private email: string = ''
-  private password: string = ''
-
-  private async signIn() {
-    await this.$store.dispatch('signIn', {
-      email: this.email,
-      password: this.password
+export default defineComponent({
+  setup(props: {}, { root }) {
+    const store = useRootStore()
+    const form = reactive({
+      email: '',
+      password: '',
     })
-    this.$router.push('/home')
-  }
 
-  private async signUp() {
-    await this.$store.dispatch('signUp', {
-      email: this.email,
-      password: this.password
-    })
-    this.$router.push('/home')
+    const signIn = async () => {
+      await store.signIn(form)
+      root.$router.push('/home')
+    }
+
+    const signUp = async () => {
+      await store.signUp(form)
+      root.$router.push('/home')
+    }
+    return {
+      form,
+      signIn,
+      signUp,
+    }
   }
-}
+})
 </script>

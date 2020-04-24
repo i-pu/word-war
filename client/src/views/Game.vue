@@ -7,15 +7,14 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator'
+import { defineComponent } from '@vue/composition-api'
 import Siritori from '@/components/Siritori.vue'
 import Hero from '@/components/Hero.vue'
 
-@Component({
+export default defineComponent({
   components: {
     Siritori,
     Hero
   }
 })
-export default class Game extends Vue {}
 </script>

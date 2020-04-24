@@ -6,16 +6,22 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator'
 import Login from '@/components/Login.vue'
 import Hero from '@/components/Hero.vue'
+import { defineComponent, SetupContext, onMounted } from '@vue/composition-api'
+import { useRootStore } from '@/store'
 
-@Component({
-  components: { Hero, Login }
-})
-export default class Top extends Vue {
-  mounted() {
-    this.$store.dispatch('healthCheck')
+export default defineComponent({
+  components: {
+    Hero,
+    Login
+  },
+  setup(props:{}, {root}: SetupContext) {
+    const {healthCheck} = useRootStore()
+    onMounted(() => {
+      healthCheck()
+    })
+    return {}
   }
-}
+})
 </script>

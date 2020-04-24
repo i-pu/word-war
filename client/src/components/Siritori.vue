@@ -19,48 +19,49 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Watch } from 'vue-property-decorator'
 import { Word, Scene } from '@/store/game'
+import { defineComponent, reactive, computed, watch, onMounted } from '@vue/composition-api'
+import { useGameStore } from '@/store/game'
 
-@Component({})
-export default class Siritori extends Vue {
-  private message: string = ''
+export default defineComponent({
+  setup(props: {}, { root }) {
+    const state = reactive({
+      message: ''
+    })
 
-  private get words(): Word[] {
-    return this.$store.getters['game/getWords'] as Word[]
-  }
+    const { words, roomId, scene, start, say } = useGameStore()
 
-  private get roomId(): string {
-    return this.$store.getters['game/roomId']
-  }
-
-  private get scene(): Scene {
-    return this.$store.getters['game/scene']
-  }
-
-  private get currentWord(): string {
-    return this.words.length === 0
+    const currentWord = computed(() => {
+      return words.value.length === 0
       ? 'り'
-      : this.words[this.words.length - 1].text
-  }
+      : words.value[words.value.length - 1].text
+    })
 
-  @Watch('scene')
-  private onSceneChanged(scene: Scene) {
-    console.log(`シーンが ${Scene[scene]} になったよ`)
-    if (scene === Scene.End) {
-      this.$router.push('/result')
+    watch([scene], () => {
+      console.log("scene watched")
+      console.log(`シーンが ${Scene[scene.value]} になったよ`)
+      if (scene.value === Scene.End) {
+        root.$router.push('/result')
+      }
+    })
+
+    onMounted(async () => {
+      await start()
+      console.log('Game started')
+    })
+
+    const send = async() => {
+      say(state.message)
+      state.message = ''
+    }
+
+    return {
+      state,
+      words,
+      roomId,
+      scene,
+      send,
     }
   }
-
-  async mounted() {
-    // start
-    await this.$store.dispatch('game/start')
-    console.log('Game started')
-  }
-
-  private async send() {
-    this.$store.dispatch('game/say', { message: this.message })
-    this.message = ''
-  }
-}
+})
 </script>

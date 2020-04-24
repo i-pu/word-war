@@ -1,5 +1,5 @@
-import { Module } from 'vuex'
-import { RootState } from '@/store/root_state'
+import { createStore } from 'pinia'
+import { useRootStore } from '@/store'
 import { WordWarPromiseClient } from '@/pb/word_war_grpc_web_pb'
 import {
   SayRequest,
@@ -7,7 +7,8 @@ import {
   GameRequest,
   GameResponse,
   ResultRequest,
-  ResultResponse
+  ResultResponse,
+  MatchingResponse
 } from '@/pb/word_war_pb'
 
 export interface User {
@@ -47,62 +48,61 @@ interface RoomInfo {
   roomId: string
 }
 
-export const game: Module<GameState, RootState> = {
-  namespaced: true,
-  state: {
+export const useGameStore = createStore({
+  id: 'game',
+  state: () => ({
     scene: Scene.None,
     roomId: '',
     timer: 0,
-    users: [],
+    users: [] as User[],
     limit: 0,
     score: 0,
     client: new WordWarPromiseClient(process.env.VUE_APP_API_ENDPOINT),
-    words: []
-  },
+    words: [] as Word[],
+  }),
   getters: {
-    getWords: state => state.words,
+    words: state => state.words,
     score: state => state.score,
     roomId: state => state.roomId,
     users: state => state.users,
     scene: state => state.scene
   },
-  mutations: {
-    prepareRoom(commit) {
-      commit.words = []
-      commit.score = 0
-      commit.scene = Scene.Gaming
-    },
-    score(commit, score: number) {
-      commit.score = score
-    },
-    push(commit, word: Word) {
-      commit.words.push(word)
-    },
-    setScene(commit, scene: Scene) {
-      console.log(`${Scene[commit.scene]} -> ${Scene[scene]}`)
-      commit.scene = scene
-    },
-    setTimer(commit, timer: number) {
-      commit.timer = timer
-    },
-    setRoomInfo(commit, info: RoomInfo) {
-      console.log('setRoomInfo')
-      commit.users = info.users
-      commit.timer = info.timer
-      commit.limit = info.limit
-      commit.roomId = info.roomId
-    }
-  },
   actions: {
-    async match({ commit, state, rootGetters }) {
+    prepareRoom() {
+      this.state.words = []
+      this.state.score = 0
+      this.state.scene = Scene.Gaming
+    },
+    score(score: number) {
+      this.state.score = score
+    },
+    push(word: Word) {
+      this.state.words.push(word)
+    },
+    setScene(scene: Scene) {
+      console.log(`${Scene[this.state.scene]} -> ${Scene[scene]}`)
+      this.state.scene = scene
+    },
+    setTimer(timer: number) {
+      this.state.timer = timer
+    },
+    setRoomInfo(info: RoomInfo) {
+      console.log('setRoomInfo')
+      this.state.users = info.users
+      this.state.timer = info.timer
+      this.state.limit = info.limit
+      this.state.roomId = info.roomId
+    },
+    async match() {
       console.log('Matching ...')
-      console.log(rootGetters.userId)
+      const { userId } = useRootStore()
+      console.log(userId.value)
       const matchingReq: MatchingRequest = new MatchingRequest()
-      matchingReq.setUserid(rootGetters.userId)
-      const stream = state.client.matching(matchingReq)
-      commit('setScene', Scene.Matching)
+      matchingReq.setUserid(userId.value)
+      const stream = this.state.client.matching(matchingReq)
+      this.setScene(Scene.Matching)
 
-      stream.on('data', matchingRes => {
+      stream.on('data', (matchingRes: MatchingResponse) => {
         const [roomId, pbUsers, limit, timer] = [
           matchingRes.getRoomid(),
           matchingRes.getUserList(),
@@ -112,45 +112,43 @@ export const game: Module<GameState, RootState> = {
         const users: User[] = pbUsers.map(u => ({ playerId: u.getUserid() }))
         console.log(`${roomId} ${users} ${limit} ${timer}`)
 
-        commit('setRoomInfo', { roomId, users, timer, limit })
+        this.setRoomInfo({ roomId, users, timer, limit })
       })
 
       stream.on('status', status => {
         console.log('status', status)
         if (status.code === 0) {
           // ゲーム開始
-          commit('prepareRoom')
+          this.prepareRoom()
         } else {
           throw `やばいね, ${status}`
         }
       })
-
-      stream.on('error', res => {
-        throw res
-      })
     },
 
-    async start({ commit, state, rootGetters }) {
-      if (!state.roomId) {
+    async start() {
+      const { userId } = useRootStore()
+
+      if (!this.state.roomId) {
         throw 'RoomId is empty'
       }
 
       setInterval(() => {
-        commit('setTimer', state.timer - 1)
+        this.setTimer(this.state.timer - 1)
       }, 1000)
 
-      console.log(`roomId in store: ${state.roomId}`)
+      console.log(`roomId in store: ${this.state.roomId}`)
 
       const gameReq: GameRequest = new GameRequest()
-      gameReq.setRoomid(state.roomId)
-      gameReq.setUserid(rootGetters.userId)
-      const stream = state.client.game(gameReq)
+      gameReq.setRoomid(this.state.roomId)
+      gameReq.setUserid(userId.value)
+      const stream = this.state.client.game(gameReq)
 
       // on message
-      stream.on('data', res => {
+      stream.on('data', (res: SayRequest) => {
         const [roomId, userId, message] = [res.getRoomid(), res.getUserid(), res.getMessage()]
         console.log(`game response data ${roomId} ${userId} ${message}`)
-        commit('push', { id: userId, text: message })
+        this.push({ id: userId, text: message })
       })
 
       // fire on stream end
@@ -158,7 +156,7 @@ export const game: Module<GameState, RootState> = {
         console.log('status', status)
         if (status.code === 0) {
           console.log("無事終わりました")
-          commit('setScene', Scene.End)
+          this.setScene(Scene.End)
         } else {
           console.error(`無事に終わりませんでした ${status}`)
         }
@@ -169,33 +167,32 @@ export const game: Module<GameState, RootState> = {
         console.error(error)
       })
     },
-    async say(
-      { state, commit, rootGetters },
-      { message }: { message: string }
-    ) {
+    async say(message: string) {
       const req: SayRequest = new SayRequest()
-      req.setRoomid(state.roomId)
-      req.setUserid(rootGetters.userId)
+      const { userId } = useRootStore()
+      req.setRoomid(this.state.roomId)
+      req.setUserid(userId.value)
       req.setMessage(message)
 
       console.log(`Said ${req.getMessage()}`)
 
       try {
-        const res = await state.client.say(req)
+        const res = await this.state.client.say(req)
         console.log(`Response: ${res.getMessage()}`)
       } catch (e) {
         console.error(e)
       }
     },
-    async result({ state, commit, rootGetters }) {
+    async result() {
+      const { userId } = useRootStore()
       const req = new ResultRequest()
-      req.setUserid(rootGetters.userId)
-      req.setRoomid(state.roomId)
-      const result = await state.client.result(req).catch(console.error)
+      req.setUserid(userId.value)
+      req.setRoomid(this.state.roomId)
+      const result = await this.state.client.result(req).catch(console.error)
       if (result) {
         console.log(result)
-        commit('score', result.getScore())
+        this.score(+result.getScore())
       }
     }
   }
-}
+})

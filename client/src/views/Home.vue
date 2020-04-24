@@ -21,31 +21,20 @@
       <p>{{ count }}</p> -->
     </section>
 
-    <b-button class="is-danger" @click="signOut">ログアウト</b-button>
+    <b-button class="is-danger">ログアウト</b-button>
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator'
+import { useRootStore } from '@/store'
 import Hero from '@/components/Hero.vue'
 import Navbar from '@/components/Navbar.vue'
+import { defineComponent, reactive, SetupContext } from '@vue/composition-api'
 
-@Component({
+export default defineComponent({
   components: {
     Hero,
     Navbar
-  }
+  },
 })
-export default class Home extends Vue {
-  private roomIdInput: string = ''
-
-  // private joinRoom() {
-  //   console.log(`roomId: ${this.roomIdInput}`)
-  //   this.$router.push(`/waiting?roomid=${this.roomIdInput}`)
-  // }
-
-  private signOut() {
-    this.$store.dispatch('signOut')
-  }
-}
 </script>

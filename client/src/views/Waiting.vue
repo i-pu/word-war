@@ -13,45 +13,43 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Watch } from 'vue-property-decorator'
+import { defineComponent, reactive, SetupContext, onMounted, watch } from '@vue/composition-api'
+import { useGameStore } from '@/store/game'
 import Hero from '@/components/Hero.vue'
 import Navbar from '@/components/Navbar.vue'
 import { Scene, User } from '@/store/game'
 
-@Component({
+export default defineComponent({
   components: {
     Hero,
     Navbar
-  }
-})
-export default class Waiting extends Vue {
-  private loading: boolean = true
+  },
+  setup(props: {}, {root}: SetupContext) {
+    const { scene, users, match } = useGameStore()
+    const state = reactive({
+      loading: true
+    })
 
-  // computed
-  private get scene(): Scene {
-    return this.$store.getters['game/scene']
-  }
+    watch([scene], () => {
+      console.log(`sceneChanged ${Scene[scene.value]}`)
+      if (scene.value === Scene.Gaming) {
+        root.$buefy.toast.open({
+          duration: 3000,
+          message: 'はじまるよ',
+          type: 'is-success'
+        })
+        state.loading = false
+        root.$router.push('/game')
+      }
+    })
 
-  private get users(): User[] {
-    return this.$store.getters['game/users']
-  }
+    onMounted(async () => {
+      await match()
+    })
 
-  @Watch('scene')
-  sceneChanged() {
-    console.log(`sceneChanged ${this.scene}`)
-    if (this.scene === Scene.Gaming) {
-      this.$buefy.toast.open({
-        duration: 3000,
-        message: 'はじまるよ',
-        type: 'is-success'
-      })
-      this.loading = false
-      this.$router.push('/game')
+    return {
+      scene, users
     }
   }
-
-  mounted() {
-    this.$store.dispatch('game/match')
-  }
-}
+})
 </script>
