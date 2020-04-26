@@ -38,10 +38,11 @@ export const getUserdata = async (uid: string): Promise<User> => {
     .get()
 
   // TODO: validation
-  const { history, name, rating } = ss.data()!
+  const { history, name, rating, avatarUrl } = ss.data()!
 
   return {
     userId: uid,
+    avatarUrl,
     history,
     name,
     rating
@@ -84,6 +85,52 @@ export const signUp = async ({ email, password }: { email: string, password: str
   setInitialUserdata(result.user.uid)
 
   return getUserdata(result.user.uid)
+}
+
+/**
+ *  Sign up with Twitter Mock
+ */
+export const signUpWithTwitter = async (): Promise<User> => {
+  throw 'Not Implemented'
+}
+
+/**
+ *  Sign up with GitHub Mock
+ */
+export const signUpWithGitHub = async (): Promise<User> => {
+  throw 'Not Implemented'
+}
+
+export const signUpWithGoogle = async (): Promise<User> => {
+  var provider = new firebase.auth.GoogleAuthProvider()
+  firebase.auth().useDeviceLanguage();
+  firebase.auth().signInWithRedirect(provider).catch(console.error)
+  // const result = await firebase.auth().signInWithPopup(provider).catch(console.error)
+  // if (!result || !result.user) {
+  //   throw 'WTF'
+  // }
+
+  // console.log(`result: ${result}`)
+
+  // await firebase.auth().getRedirectResult().then(function(result) {
+  //   var user = result.user;
+  //   console.log(`user: ${user}`)
+  //   user.uid
+  // }).catch(function(error) {
+  //   // Handle Errors here.
+  //   var errorCode = error.code
+  //   var errorMessage = error.message
+  //   // The email of the user's account used.
+  //   var email = error.email
+  //   // The firebase.auth.AuthCredential type that was used.
+  //   var credential = error.credential
+  //   // ...
+  // });
+
+  // setInitialUserdata(result.user.uid)
+
+  // return getUserdata(result.user.uid)
+  return defaultUser()
 }
 
 

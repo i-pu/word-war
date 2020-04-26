@@ -1,8 +1,6 @@
 <template>
   <div class="game">
-    <Hero />
-    <Navbar />
-    <Siritori />c
+    <Siritori />
   </div>
 </template>
 

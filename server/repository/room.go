@@ -284,22 +284,23 @@ func (r *roomRepository) Subscribe(ctx context.Context, roomID string) (<-chan *
 			case <-ctx.Done():
 				log.WithFields(log.Fields{
 					"roomId": roomID,
-				}).Infof("game finish")
+				}).Infof("context done game finish")
 				return
 			case v, ok := <-pubSubChan:
 				if !ok {
 					return
 				}
 				var message entity.Message
-				if err := json.Unmarshal([]byte(v.Payload), &message); err != nil {
+				err := json.Unmarshal([]byte(v.Payload), &message)
+				if err != nil {
 					errChan <- xerrors.Errorf("error in json.Unmarshal(%s): %w", v.String(), err)
 				}
+				messageChan <- &message
 				log.WithFields(log.Fields{
 					"roomId":  message.RoomID,
 					"userId":  message.UserID,
 					"message": message.Message,
 				}).Info("send message:")
-				messageChan <- &message
 			}
 		}
 	}()

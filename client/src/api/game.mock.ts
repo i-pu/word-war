@@ -34,7 +34,7 @@ export const match = async (
   const players = []
   for await (let player of playersGenerator(2, 2)) {
     players.push(player)
-    onData({ players, timer: 5, limit: 4, roomId })
+    onData({ players, timer: 5, limit: 4, roomId: "some-roomid" })
   }
 
   onEnd()

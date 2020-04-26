@@ -1,7 +1,7 @@
 import Vue from 'vue'
-import VueRouter from 'vue-router'
-import firebase from 'firebase'
+import VueRouter, { Route, NavigationGuard } from 'vue-router'
 import { useRootStore } from '@/store'
+import firebase from 'firebase'
 
 Vue.use(VueRouter)
 
@@ -10,6 +10,12 @@ const routes = [
     path: '/',
     name: 'top',
     component: () => import('@/views/Top.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: '/login',
+    name: 'login',
+    component: () => import('@/views/Login.vue'),
     meta: { requiresAuth: false }
   },
   {
@@ -35,6 +41,12 @@ const routes = [
     name: 'result',
     component: () => import('@/views/Result.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/user/:id',
+    name: 'user',
+    component: () => import('@/views/User.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 
@@ -44,45 +56,57 @@ const router = new VueRouter({
   routes
 })
 
+// const onStateChanged = (): Promise<firebase.User | null> => {
+//   return new Promise((resolve, reject) => {
+//     try {
+//       const unsubscribe = firebase.auth().onAuthStateChanged(async user => user ? resolve(user) : resolve(null))
+//       unsubscribe()
+//     } catch (e) {
+//       reject(e)
+//     }
+//   })
+// }
+
 router.beforeEach(async (to, from, next) => {
-  const { status, healthCheck } = useRootStore()
+  console.log('enter@beforeEach')
+  await new Promise(res => setTimeout(res, 500))
+
+  const { status, healthCheck, updateAuth, user } = useRootStore()
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
 
-  console.log(`${from.path} -> ${to.path}`)
+  console.log(`したいです。from: ${from.path} -> to: ${to.path}`)
 
   await healthCheck()
   if (!status.value.active && to.path !== '/') {
-    await new Promise(res => setTimeout(res, 500))
     console.log('やばいですアクティブじゃないです')
-    next('/')
+    next({ path: '/' })
+    return
   }
 
   // un-authrized
   if (requiresAuth) {
-    if (firebase.auth().currentUser) {
+    if (user.value) {
       next()
+      return
     } else {
       console.log('ログインしてください')
-      next('/')
+      next({ path: '/' })
+      return
     }
   }
 
+  firebase.auth().onAuthStateChanged(async auth => {
+    if (auth) {
+      console.log(`auth state changed user.value: ${user.value}, auth: ${auth}`)
+      updateAuth(auth)
+      next('/home')
+    } else {
+      next('/')
+      console.log("自動ログインしないよ")
+    }
+  })
+
   next()
-
-  // when un-authrized
-  // firebase.auth().onAuthStateChanged(user => {
-  //   if (user) {
-  //     if (to.path === '/') {
-  //       console.log('自動ログイン')
-  //       next('/home')
-  //     }
-  //   }
-
-  //   if (!user) {
-  //     console.log('再ログインしてください')
-  //     next('/')
-  //   }
-  // })
 })
 
 export default router
