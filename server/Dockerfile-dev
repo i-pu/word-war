@@ -27,9 +27,7 @@ COPY . .
 
 COPY --from=dic /word.txt /
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /go/bin/app
+RUN go get github.com/cespare/reflex
 
-EXPOSE 50051
-
-WORKDIR /
-ENTRYPOINT ["/go/bin/app"]
+# ENTRYPOINT "reflex --help"
+ENTRYPOINT /go/bin/reflex -r '(\.go$|go\.mod)' -s go run /go/src/app/main.go

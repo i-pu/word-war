@@ -38,22 +38,21 @@ async function* messagesGenerator(count: number = 10, wait: number = 1) {
  */
 export const match = async (
   userId: string,
-  roomId: string,
   onData: (roomInfo: RoomInfo) => void,
   onEnd: () => void,
-) => {
-  if (!roomId) {
-    throw 'RoomId is empty'
-  }
-
-  console.log(`Matching ${roomId} ...`)
-
+): Promise<() => void> => {
   console.log(userId)
 
   const matchingReq: MatchingRequest = new MatchingRequest()
   matchingReq.setUserid(userId)
 
   const stream = client.matching(matchingReq)
+
+  // timeout
+  setTimeout(() => {
+    console.log('Matching stream is timeout')
+    stream.cancel()
+  }, 60 * 1000)
 
   stream.on('data', (matchingRes: MatchingResponse) => {
     // convert
@@ -79,6 +78,11 @@ export const match = async (
       throw `やばいね, ${status}`
     }
   })
+
+  return () => {
+    console.log('Matching stream has been canceled')
+    stream.cancel()
+  }
 }
 
 /**

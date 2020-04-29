@@ -51,6 +51,7 @@ export default defineComponent({
 
     const onClickSignIn = async () => {
       await store.signIn(form)
+      root.$router.push('/home')
     }
 
     const onClickSignInWithGoogle = async () => {

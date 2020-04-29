@@ -71,17 +71,18 @@ router.beforeEach(async (to, from, next) => {
   console.log('enter@beforeEach')
   await new Promise(res => setTimeout(res, 500))
 
-  const { status, healthCheck, updateAuth, user } = useRootStore()
+  const { status, healthCheck, user } = useRootStore()
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
 
   console.log(`したいです。from: ${from.path} -> to: ${to.path}`)
 
   await healthCheck()
-  if (!status.value.active && to.path !== '/') {
-    console.log('やばいですアクティブじゃないです')
-    next({ path: '/' })
-    return
-  }
+
+  // if (!status.value.active && to.path !== '/') {
+  //   console.log('やばいですアクティブじゃないです')
+  //   next({ path: '/' })
+  //   return
+  // }
 
   // un-authrized
   if (requiresAuth) {
@@ -95,16 +96,17 @@ router.beforeEach(async (to, from, next) => {
     }
   }
 
-  firebase.auth().onAuthStateChanged(async auth => {
-    if (auth) {
-      console.log(`auth state changed user.value: ${user.value}, auth: ${auth}`)
-      updateAuth(auth)
-      next('/home')
-    } else {
-      next('/')
-      console.log("自動ログインしないよ")
-    }
-  })
+  // firebase.auth().onAuthStateChanged(async auth => {
+
+  //   if (auth) {
+  //     console.log(`auth state changed user.value: ${user.value}, auth: ${auth}`)
+  //     next('/home')
+  //   } else {
+  //     // /user/mock から /で無限にステートが変更しているので終わらない
+  //     //   next('/')
+  //     //   console.log("自動ログインしないよ")
+  //   }
+  // })
 
   next()
 })

@@ -28,7 +28,7 @@ func main() {
 
 	grpcServer := rpc.NewGRPCServer()
 	reflection.Register(grpcServer)
-	log.Info("Start server")
+	log.Info("Start server with reflesh AAA")
 
 	defer grpcServer.Stop()
 	if err := grpcServer.Serve(lis); err != nil {

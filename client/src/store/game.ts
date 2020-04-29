@@ -1,7 +1,7 @@
 import { createStore } from 'pinia'
 import { useRootStore } from '@/store'
-// import * as api from '@/api/game'
-import * as api from '@/api/game.mock'
+import * as api from '@/api/game'
+// import * as api from '@/api/game.mock'
 import { Scene, Player, Word, RoomInfo } from '@/model'
 
 export const useGameStore = createStore({
@@ -14,6 +14,8 @@ export const useGameStore = createStore({
     limit: 0,
     score: 0,
     words: [] as Word[],
+    // TODO: bad
+    cancel: (() => {}) as () => void,
   }),
   getters: {
     words: state => state.words,
@@ -52,17 +54,22 @@ export const useGameStore = createStore({
         this.setRoomInfo(roomInfo)
       }
       const matchOnEnd = () => {
+        console.log(`[room ${this.state.roomId}] Match end`)
         // ゲーム開始
         this.prepareRoom()
       }
 
       this.setScene(Scene.Matching)
 
-      api.match(userId.value, this.roomId.value, matchOnData, matchOnEnd)
-        .catch(console.error)
+      this.state.cancel = await api.match(userId.value, matchOnData, matchOnEnd)
     },
-
-
+    async cancelMatching() {
+      if (typeof this.state.cancel === 'function') {
+        // @ts-ignore
+        this.state.cancel()
+        this.state.scene = Scene.None
+      }
+    },
     async start() {
       const { userId } = useRootStore()
       const onData = (word: Word) => {

@@ -1,7 +1,5 @@
 <template>
   <div class="waiting">
-    <Hero />
-
     <b-loading is-full-page :active="state.loading" />
     <div class="content">
       <h1>RoomId <strong>{{ roomId }}</strong></h1>
@@ -38,13 +36,13 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive, SetupContext, onMounted, watch } from '@vue/composition-api'
+import { defineComponent, reactive, SetupContext, onMounted, watch, onUnmounted } from '@vue/composition-api'
 import { useGameStore } from '@/store/game'
 import { Scene, User } from '@/model'
 
 export default defineComponent({
   setup(props: {}, {root}: SetupContext) {
-    const { scene, players, match, roomId } = useGameStore()
+    const { scene, players, match, roomId, cancelMatching } = useGameStore()
     const state = reactive({
       loading: true
     })
@@ -59,6 +57,10 @@ export default defineComponent({
         })
         state.loading = false
         root.$router.push('/game')
+      } else if (scene.value === Scene.None) {
+        alert('ホームに戻ります')
+        state.loading = false
+        root.$router.push('/home')
       }
     })
 
@@ -66,11 +68,16 @@ export default defineComponent({
       await match()
     })
 
+    onUnmounted(async () => {
+      console.log('マッチングが中断されます')
+      await cancelMatching()
+    })
+
     return { roomId, scene, players, state, Scene }
   }
 })
 </script>
-<style scoped>
+<style scoped></style>
 .rounded {
   border-top-left-radius: 2em;
   border-bottom-right-radius: 2em;

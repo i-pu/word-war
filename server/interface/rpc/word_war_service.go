@@ -80,7 +80,8 @@ func (s *wordWarService) HealthCheck(ctx context.Context, in *pb.HealthCheckRequ
 // 人数上限になったらblockingを解除してstarttimerして、ストリームを終了
 // クライアントはmatchingストリームが終了したら、待機画面からゲーム画面に遷移
 
-// クライアントと通信が切れたら部屋から場外する
+// TODO: クライアントと通信が切れたら部屋から場外する
+// クライアントからキャンセルできるようになったので、ユーザをへやから除外するようにする
 func (s *wordWarService) Matching(in *pb.MatchingRequest, srv pb.WordWar_MatchingServer) error {
 	room, err := s.matchingUsecase.TryEnterRandomRoom(in.UserId)
 	if err != nil {

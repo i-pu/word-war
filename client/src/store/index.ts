@@ -1,6 +1,6 @@
 import { createStore } from 'pinia'
-// import * as api from '@/api'
-import * as api from '@/api/index.mock'
+import * as api from '@/api'
+// import * as api from '@/api/index.mock'
 import { defaultUser, User } from '@/model'
 
 export enum SignInMethod {
@@ -14,8 +14,7 @@ export const useRootStore = createStore({
       active: false,
       version: '',
     },
-    user: null as User | null,
-    auth: null as firebase.User | null,
+    user: defaultUser() as User | null,
   }),
   getters: {
     user: state => {
@@ -27,7 +26,6 @@ export const useRootStore = createStore({
     status: state => {
       return state.status
     },
-    auth: state => state.auth
   },
   actions: {
     async healthCheck() {
@@ -39,14 +37,6 @@ export const useRootStore = createStore({
       }
       this.state.status = status
       console.log(this.state.status)
-    },
-    async updateAuth(auth: firebase.User) {
-      this.state.user = defaultUser()
-      this.state.auth = auth
-      if (auth.displayName) {
-        this.state.user.name = auth.displayName
-      }
-      this.state.user.avatarUrl = auth.photoURL || ''
     },
     async signIn({ email, password }: { email: string, password: string }) {
       const user = await api.signIn({ email, password })
