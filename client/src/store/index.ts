@@ -14,7 +14,7 @@ export const useRootStore = createStore({
       active: false,
       version: '',
     },
-    user: defaultUser() as User | null,
+    user: null as User | null,
   }),
   getters: {
     user: state => {
@@ -32,28 +32,41 @@ export const useRootStore = createStore({
       const status = await api.healthCheck()
         .catch(console.error)
       if (!status) {
-        console.warn('やばいよ')
+        console.warn('statusがなんもはいってないよやばいよhealthcheckとおってないかもよ')
         return
       }
       this.state.status = status
       console.log(this.state.status)
     },
-    async signIn({ email, password }: { email: string, password: string }) {
-      const user = await api.signIn({ email, password })
-      console.log(`${this.state.user ? this.state.user.userId : 'null'} -> ${user.userId}`)
+    async onAuthChanged(auth: firebase.User) {
+      if (!auth) {
+        return
+      }
+
+      const firstLogin = !(await api.existUserData(auth.uid))
+
+      // はじめて google でログイン
+      // firebase に ユーザーデータがあるか確認
+      if (firstLogin) {
+        await api.registerUser(auth)
+      }
+
+      // fetch user
+      const user = await api.getUserdata(auth.uid)
+      // set user
       this.state.user = user
+      console.log(`${this.state.user ? this.state.user.userId : 'null'} -> ${user.userId}`)
+    },
+    async signIn({ email, password }: { email: string, password: string }) {
+      await api.signIn({ email, password })
     },
     async signUp({ email, password }: { email: string, password: string }) {
       // create user
-      const user = await api.signUp({ email, password })
-      this.state.user = user
-
+      await api.signUp({ email, password })
       console.log(`signUp: ${email}, ${password}`)
     },
     async google() {
-      const user = await api.signUpWithGoogle()
-      this.state.user = user
-
+      await api.signUpWithGoogle()
       console.log(`signUp with google`)
     },
     async signUpWithTwitter() {

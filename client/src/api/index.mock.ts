@@ -19,12 +19,6 @@ export const getUserdata = async (uid: string): Promise<User> => {
   return defaultUser()
 }
 
-/**
- *
- */
-export const setInitialUserdata = async (uid: string): Promise<void> => {
-  return
-}
 
 /**
  *  Sign in Mock
@@ -78,7 +72,6 @@ export const signUpWithGoogle = async (): Promise<User> => {
     throw 'WTF'
   }
   console.log(`result: ${result}`)
-  await setInitialUserdata(result.user.uid)
   return await getUserdata(result.user.uid)
 }
 

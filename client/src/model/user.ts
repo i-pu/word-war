@@ -16,12 +16,22 @@ const dummyRatings = (): Array<{ date: Date, rating: number }> => {
   return ratings
 }
 
-export const defaultUser = (): User => {
+export const mockUser = (): User => {
   return {
     userId: 'mock-userid',
     avatarUrl: 'https://img.atcoder.jp/icons/267f5de4d8768543b1570f07e47b5316.jpg',
     history: dummyRatings(),
     name: 'John Smith',
     rating: 16.75,
+  }
+}
+
+export const defaultUser = (): User => {
+  return {
+    userId: '',
+    avatarUrl: '',
+    history: [],
+    name: '',
+    rating: 0,
   }
 }

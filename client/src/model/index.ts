@@ -29,6 +29,7 @@ export interface RoomInfo {
   roomId: string
 }
 
+// TODO: Player \in User
 export interface Player {
   playerId: string
 }

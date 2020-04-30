@@ -57,11 +57,12 @@ export default defineComponent({
         })
         state.loading = false
         root.$router.push('/game')
-      } else if (scene.value === Scene.None) {
-        alert('ホームに戻ります')
-        state.loading = false
-        root.$router.push('/home')
       }
+      // else if (scene.value === Scene.None) {
+      //   alert('ホームに戻ります')
+      //   state.loading = false
+      //   root.$router.push('/home')
+      // }
     })
 
     onMounted(async () => {
@@ -77,7 +78,7 @@ export default defineComponent({
   }
 })
 </script>
-<style scoped></style>
+<style scoped>
 .rounded {
   border-top-left-radius: 2em;
   border-bottom-right-radius: 2em;

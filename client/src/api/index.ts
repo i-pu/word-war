@@ -20,14 +20,32 @@ export const healthCheck = async (): Promise<ServerStatus> => {
 }
 
 /**
- *
+ * ユーザデータの初期化をする
  */
-export const setInitialUserdata = async (uid: string): Promise<void> => {
+// Firebase Auth のデータでユーザー作成
+export const registerUser = async (fbUser: firebase.User): Promise<void> => {
+  const avatarUrl = fbUser.photoURL || ''
+  const name = fbUser.displayName || 'ななし'
+  console.log('ゲームデータを作成します')
+
+  const user: User = {
+    userId: fbUser.uid,
+    name,
+    avatarUrl,
+    history: [],
+    rating: 1500
+  }
+
   return firebase
     .firestore()
     .collection('users')
-    .doc(uid)
-    .set(defaultUser())
+    .doc(user.userId)
+    .set(user)
+    .catch(console.error)
+}
+
+export const existUserData = async (uid: string): Promise<boolean> => {
+  return (await firebase.firestore().collection('users').doc(uid).get()).exists
 }
 
 export const getUserdata = async (uid: string): Promise<User> => {
@@ -39,6 +57,8 @@ export const getUserdata = async (uid: string): Promise<User> => {
 
   // TODO: validation
   const { history, name, rating, avatarUrl } = ss.data()!
+
+  console.log('ユーザーデータを習得しました')
 
   return {
     userId: uid,
@@ -52,7 +72,7 @@ export const getUserdata = async (uid: string): Promise<User> => {
 /**
  *  Sign in
  */
-export const signIn = async ({ email, password }: { email: string, password: string }): Promise<User> => {
+export const signIn = async ({ email, password }: { email: string, password: string }): Promise<void> => {
   console.log(`signIn: ${email}, ${password}`)
 
   const result = await firebase
@@ -64,14 +84,14 @@ export const signIn = async ({ email, password }: { email: string, password: str
     throw new Error(`can't authorized: ${email}, ${password}`)
   }
 
-  return await getUserdata(result.user.uid)
+  console.log('Firebase Auth にサインインしました')
 }
 
 
 /**
  *  Sign iu
  */
-export const signUp = async ({ email, password }: { email: string, password: string }): Promise<User> => {
+export const signUp = async ({ email, password }: { email: string, password: string }): Promise<void> => {
   // create user
   const result = await firebase
     .auth()
@@ -82,9 +102,7 @@ export const signUp = async ({ email, password }: { email: string, password: str
     throw new Error(`can't authorized: ${email}, ${password}`)
   }
 
-  setInitialUserdata(result.user.uid)
-
-  return getUserdata(result.user.uid)
+  console.log('Firebase Auth アカウントを作成しました')
 }
 
 /**
@@ -101,36 +119,11 @@ export const signUpWithGitHub = async (): Promise<User> => {
   throw 'Not Implemented'
 }
 
-export const signUpWithGoogle = async (): Promise<User> => {
+export const signUpWithGoogle = async () => {
   var provider = new firebase.auth.GoogleAuthProvider()
   firebase.auth().useDeviceLanguage();
   firebase.auth().signInWithRedirect(provider).catch(console.error)
-  // const result = await firebase.auth().signInWithPopup(provider).catch(console.error)
-  // if (!result || !result.user) {
-  //   throw 'WTF'
-  // }
-
-  // console.log(`result: ${result}`)
-
-  // await firebase.auth().getRedirectResult().then(function(result) {
-  //   var user = result.user;
-  //   console.log(`user: ${user}`)
-  //   user.uid
-  // }).catch(function(error) {
-  //   // Handle Errors here.
-  //   var errorCode = error.code
-  //   var errorMessage = error.message
-  //   // The email of the user's account used.
-  //   var email = error.email
-  //   // The firebase.auth.AuthCredential type that was used.
-  //   var credential = error.credential
-  //   // ...
-  // });
-
-  // setInitialUserdata(result.user.uid)
-
-  // return getUserdata(result.user.uid)
-  return defaultUser()
+  return
 }
 
 

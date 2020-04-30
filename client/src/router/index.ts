@@ -77,36 +77,19 @@ router.beforeEach(async (to, from, next) => {
   console.log(`したいです。from: ${from.path} -> to: ${to.path}`)
 
   await healthCheck()
-
-  // if (!status.value.active && to.path !== '/') {
-  //   console.log('やばいですアクティブじゃないです')
-  //   next({ path: '/' })
-  //   return
-  // }
+  if (!status.value.active && to.path !== '/') {
+    console.log('やばいですアクティブじゃないです')
+    next({ path: '/' })
+    return
+  }
 
   // un-authrized
   if (requiresAuth) {
-    if (user.value) {
-      next()
-      return
-    } else {
+    if (!user.value) {
       console.log('ログインしてください')
       next({ path: '/' })
-      return
     }
   }
-
-  // firebase.auth().onAuthStateChanged(async auth => {
-
-  //   if (auth) {
-  //     console.log(`auth state changed user.value: ${user.value}, auth: ${auth}`)
-  //     next('/home')
-  //   } else {
-  //     // /user/mock から /で無限にステートが変更しているので終わらない
-  //     //   next('/')
-  //     //   console.log("自動ログインしないよ")
-  //   }
-  // })
 
   next()
 })

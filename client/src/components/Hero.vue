@@ -11,7 +11,7 @@
             </div>
             <div class="media-content">
               <div class="mt-auto">
-                  <p class="up has-text-white is-size-4 no-wrap">{{ user.userId }}</p>
+                  <p class="up has-text-white is-size-4 no-wrap">{{user.name}} id: {{ user.userId }}</p>
               </div>
               <div class="columns is-mobile">
                 <div class="column is-1 mt-auto">

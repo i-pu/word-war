@@ -92,8 +92,6 @@ export const useGameStore = createStore({
       const { userId } = useRootStore()
       await api.say(this.roomId.value, userId.value, message)
         .catch(console.error)
-      // at local
-      this.state.words.push({ id: userId.value, text: message })
     },
 
     async result() {
